@@ -981,7 +981,7 @@ function renderRatingPanel() {
 
 function renderRatingOverview() {
   var html = '<h3>附表九評估導覽</h3>';
-  html += '<p>請依四個構面逐步判斷衝擊程度。系統會先依清冊資料提供建議，若你選擇較低等級，必須補充覆核理由以利稽核追蹤。</p>';
+  html += '<p>請依四個構面逐步判斷衝擊程度。系統會先依清冊資料提供建議，你可以視需要補充評估說明或覆核理由，協助後續追蹤與溝通。</p>';
   html += '<div class="rating-result-card">';
   RATING_FIELDS.forEach(function(field) {
     var detail = ratingState.details[field];
@@ -1000,7 +1000,7 @@ function renderRatingOverview() {
 function renderRatingDimensionStep(field) {
   var detail = ratingState.details[field];
   var html = '<h3>' + escH(detail.label) + '</h3>';
-  html += '<p>請選擇最符合附表九描述的衝擊情境，再補充本系統的具體判斷理由。</p>';
+  html += '<p>請選擇最符合附表九描述的衝擊情境；若需要保留脈絡，可再補充本系統的判斷理由。</p>';
   html += '<div class="scenario-grid">';
   (detail.scenarioOptions || []).forEach(function(opt) {
     var cls = getLevelClass(opt.level);
@@ -1023,17 +1023,17 @@ function renderRatingDimensionStep(field) {
   });
   html += '</select></div>';
   html += '<div class="rating-field"><label>附表九情境等級</label><input type="text" value="' + escH(detail.scenarioLevel || '') + '" readonly></div>';
-  html += '<div class="rating-field"><label>評估說明</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="請說明本構面為何判定為此等級。">' + escH(detail.note || '') + '</textarea></div>';
-  html += '<div class="rating-field"><label>覆核理由</label><textarea id="rating-override-' + field + '" oninput="updateRatingText(\'' + field + '\',\'overrideReason\',this.value)" placeholder="若人工判定低於系統建議，請說明覆核原因。">' + escH(detail.overrideReason || '') + '</textarea></div>';
+  html += '<div class="rating-field"><label>評估說明（選填）</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="可補充本構面為何判定為此等級。">' + escH(detail.note || '') + '</textarea></div>';
+  html += '<div class="rating-field"><label>覆核理由（選填）</label><textarea id="rating-override-' + field + '" oninput="updateRatingText(\'' + field + '\',\'overrideReason\',this.value)" placeholder="若人工判定低於系統建議，可補充覆核原因。">' + escH(detail.overrideReason || '') + '</textarea></div>';
   html += '</div>';
   if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1)) {
-    html += '<div class="rating-warning">人工判定低於系統建議，儲存前必須填寫覆核理由。</div>';
+    html += '<div class="rating-warning">人工判定低於系統建議。若需要保留判斷脈絡，可補充覆核理由。</div>';
   }
   return html;
 }
 
 function renderRatingReview() {
-  var html = '<h3>結果確認</h3><p>請確認四個構面的人工判定、系統建議與覆核理由是否完整。最終防護需求等級取四構面最高者。</p>';
+  var html = '<h3>結果確認</h3><p>請確認四個構面的人工判定與系統建議是否正確。評估說明與覆核理由可視需要保留。最終防護需求等級取四構面最高者。</p>';
   html += '<table class="rating-matrix"><thead><tr><th>構面</th><th>系統建議</th><th>人工判定</th><th>評估說明</th><th>覆核理由</th></tr></thead><tbody>';
   RATING_FIELDS.forEach(function(field) {
     var detail = ratingState.details[field];
@@ -1102,14 +1102,6 @@ function prevRatingStep() {
 
 function validateRatingState() {
   if (!ratingState.currentEvaluator || !ratingState.currentEvaluator.email) return '無法取得目前登入帳號，請檢查 Web App 部署權限或網域設定。';
-  for (var i = 0; i < RATING_FIELDS.length; i++) {
-    var field = RATING_FIELDS[i];
-    var detail = ratingState.details[field];
-    if (!detail.note || !detail.note.trim()) return RATING_LABELS[field] + ' 尚未填寫評估說明。';
-    if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1) && (!detail.overrideReason || !detail.overrideReason.trim())) {
-      return RATING_LABELS[field] + ' 的人工判定低於系統建議，請填寫覆核理由。';
-    }
-  }
   return '';
 }
 
