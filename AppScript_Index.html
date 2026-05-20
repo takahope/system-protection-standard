@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --primary:#1a73e8; --primary-dark:#1557b0; --success:#0d904f;
+      --warning:#e37400; --danger:#d93025; --bg:#f8f9fa; --card:#fff;
+      --border:#dadce0; --text:#202124; --text2:#5f6368;
+      --high:#d93025; --mid:#e37400; --low:#0d904f;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Microsoft JhengHei','Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+
+    .topbar{background:var(--primary);color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+    .topbar h1{font-size:17px;font-weight:600}
+    .nav-btns{display:flex;gap:6px}
+    .nav-btns button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;transition:.2s}
+    .nav-btns button:hover,.nav-btns button.active{background:#fff;color:var(--primary)}
+
+    .container{max-width:1400px;margin:0 auto;padding:16px}
+    .card{background:var(--card);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px;margin-bottom:14px}
+    .card h2{font-size:15px;margin-bottom:10px}
+
+    /* Stats bar */
+    .stats-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+    .stat-item{background:var(--card);border-radius:8px;padding:10px 16px;flex:1;min-width:100px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .stat-item .stat-num{font-size:24px;font-weight:700}
+    .stat-item .stat-label{font-size:11px;color:var(--text2)}
+
+    /* System grid */
+    .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+    .sys-card{background:var(--card);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:14px;cursor:pointer;transition:.2s;border-left:4px solid var(--border)}
+    .sys-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateY(-1px)}
+    .sys-card.level-high{border-left-color:var(--high)} .sys-card.level-mid{border-left-color:var(--mid)} .sys-card.level-low{border-left-color:var(--low)}
+    .sys-name{font-size:14px;font-weight:600;margin-bottom:4px}
+    .sys-meta{font-size:11px;color:var(--text2);line-height:1.6}
+    .sys-meta span{display:inline-block;margin-right:10px}
+    .sys-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#fff}
+    .sys-badge.high{background:var(--high)} .sys-badge.mid{background:var(--mid)} .sys-badge.low{background:var(--low)} .sys-badge.na{background:#9e9e9e}
+
+    /* Mini progress */
+    .mini-progress{background:#e0e0e0;border-radius:10px;height:6px;overflow:hidden;margin-top:6px}
+    .mini-progress .fill{height:100%;border-radius:10px;transition:width .3s}
+
+    /* Action bar */
+    .action-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+    .search{padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:220px}
+
+    /* Buttons */
+    .btn{padding:7px 16px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:.2s}
+    .btn-primary{background:var(--primary);color:#fff} .btn-primary:hover{background:var(--primary-dark)}
+    .btn-success{background:var(--success);color:#fff} .btn-success:hover{opacity:.9}
+    .btn-warning{background:var(--warning);color:#fff}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-outline{background:none;border:1px solid var(--border);color:var(--text)} .btn-outline:hover{background:var(--bg)}
+    .btn-sm{padding:4px 10px;font-size:11px}
+
+    /* Tabs */
+    .tabs{display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:14px}
+    .tab-btn{padding:7px 18px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+    .tab-btn:hover{color:var(--primary)} .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+
+    /* Detail info */
+    .detail-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:10px 0}
+    .info-item{font-size:12px} .info-item label{color:var(--text2);font-size:10px;display:block}
+    .back-btn{background:none;border:1px solid var(--border);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2)}
+
+    /* Rating wizard */
+    .rating-wizard{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:18px}
+    .rating-sidebar{background:linear-gradient(180deg,#eef4ff 0%,#f8fbff 100%);border:1px solid #d7e6ff;border-radius:16px;padding:16px}
+    .rating-sidebar h3{font-size:13px;margin-bottom:10px}
+    .rating-context{display:grid;gap:8px}
+    .rating-context-item{background:rgba(255,255,255,.85);border:1px solid #dbe6f4;border-radius:12px;padding:10px 12px}
+    .rating-context-item label{display:block;font-size:10px;color:var(--text2);margin-bottom:3px}
+    .rating-context-item div{font-size:12px;font-weight:600}
+    .rating-chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .rating-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600}
+    .rating-chip.high{background:#fce8e6;color:var(--high)}
+    .rating-chip.mid{background:#fef7e0;color:var(--warning)}
+    .rating-chip.low{background:#e6f4ea;color:var(--success)}
+    .rating-main{display:grid;gap:14px}
+    .rating-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px;border-radius:16px;background:radial-gradient(circle at top left,#fff 0%,#f7f9fc 60%,#eef2f7 100%);border:1px solid #e4e8ee}
+    .rating-hero h2{font-size:18px;margin:0 0 8px}
+    .rating-hero p{font-size:12px;color:var(--text2);line-height:1.7;margin:0}
+    .wizard-summary-badge{background:#101828;color:#fff;border-radius:14px;padding:12px 14px;min-width:140px}
+    .wizard-summary-badge .small{display:block;font-size:10px;opacity:.7;margin-bottom:6px}
+    .wizard-summary-badge .big{font-size:30px;font-weight:800;line-height:1}
+    .wizard-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+    .wizard-step{padding:10px 12px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--text2);cursor:pointer;text-align:left}
+    .wizard-step.active{border-color:var(--primary);background:#edf4ff;color:var(--primary)}
+    .wizard-step.done{border-color:#cde9d8;background:#effbf3;color:var(--success)}
+    .wizard-step .idx{display:block;font-size:10px;font-weight:700;letter-spacing:.04em;margin-bottom:4px}
+    .wizard-step .name{display:block;font-size:12px;font-weight:700}
+    .wizard-panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(15,23,42,.04)}
+    .wizard-panel h3{font-size:16px;margin-bottom:8px}
+    .wizard-panel p{font-size:12px;color:var(--text2);line-height:1.7}
+    .scenario-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+    .scenario-card{border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff;cursor:pointer;transition:.2s;min-height:180px}
+    .scenario-card:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .scenario-card.selected{border-width:2px}
+    .scenario-card.high.selected{border-color:var(--high);background:#fff3f2}
+    .scenario-card.mid.selected{border-color:var(--warning);background:#fff8ee}
+    .scenario-card.low.selected{border-color:var(--success);background:#effaf3}
+    .scenario-card .level{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;margin-bottom:10px}
+    .scenario-card.high .level{background:var(--high)}
+    .scenario-card.mid .level{background:var(--warning)}
+    .scenario-card.low .level{background:var(--success)}
+    .scenario-card .title{font-size:12px;font-weight:700;margin-bottom:8px}
+    .scenario-card .body{font-size:12px;line-height:1.7;color:#334155}
+    .rating-recommend{margin-top:14px;padding:12px 14px;border-radius:14px;background:#f8fafc;border:1px solid #dbe2ea}
+    .rating-recommend .headline{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+    .rating-recommend .headline strong{font-size:12px}
+    .rating-signal-list{display:grid;gap:6px;margin-top:8px}
+    .rating-signal{font-size:12px;color:#475467}
+    .rating-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .rating-field label{display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px}
+    .rating-field textarea,.rating-field input{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;font-family:inherit}
+    .rating-field textarea{min-height:96px;resize:vertical}
+    .rating-warning{margin-top:12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px}
+    .rating-result-card{display:grid;gap:12px}
+    .rating-matrix{width:100%;border-collapse:collapse;font-size:12px}
+    .rating-matrix th,.rating-matrix td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}
+    .rating-matrix th{font-size:11px;color:var(--text2);font-weight:700}
+    .wizard-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}
+    .wizard-actions .left,.wizard-actions .right{display:flex;gap:8px;align-items:center}
+    .rating-inline-note{font-size:12px;color:var(--text2)}
+    .rating-status{padding:10px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px}
+    .rating-status.warn{background:#fff8ee;border-color:#fed7aa;color:#9a3412}
+    .exemption-card{background:linear-gradient(180deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;border-radius:18px;padding:22px}
+    .exemption-card h3{font-size:18px;margin-bottom:8px}
+    .exemption-card p{font-size:13px;line-height:1.8;color:#475467;margin-bottom:14px}
+    .exemption-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    .exemption-meta .item{background:#fff;border:1px solid #dbe6f4;border-radius:12px;padding:12px}
+    .exemption-meta .item label{display:block;font-size:10px;color:var(--text2);margin-bottom:4px}
+    .exemption-meta .item div{font-size:12px;font-weight:700}
+    textarea.rating-note{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px;font-size:12px;resize:vertical;min-height:50px;font-family:inherit}
+    .result-badge{display:inline-block;padding:4px 16px;border-radius:6px;font-size:16px;font-weight:700;color:#fff}
+    .result-badge.high{background:var(--high)} .result-badge.mid{background:var(--mid)} .result-badge.low{background:var(--low)}
+    @media (max-width:960px){
+      .rating-wizard{grid-template-columns:1fr}
+      .wizard-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .scenario-grid,.rating-form-grid{grid-template-columns:1fr}
+      .rating-hero{flex-direction:column}
+    }
+
+    /* Assessment table */
+    .assess-table{width:100%;border-collapse:collapse;font-size:12px}
+    .assess-table th{background:var(--primary);color:#fff;padding:6px 8px;text-align:left;font-weight:600;position:sticky;top:44px;z-index:10}
+    .assess-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+    .assess-table tr:hover{background:#f1f3f4}
+    .assess-table tr.applicable{background:#fffde7}
+    .assess-table tr.not-applicable{color:#9e9e9e}
+    .assess-table tr.dirty{background:#fff9c4 !important}
+    .assess-table select,.assess-table input,.assess-table textarea{width:100%;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:11px;font-family:inherit}
+    .assess-table textarea{min-height:40px;resize:vertical}
+    .assess-table .dim-cell{font-weight:600;background:#e8eaf6}
+
+    /* Filter bar */
+    .filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+    .filter-bar select{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px}
+    .filter-bar label{font-size:12px;color:var(--text2)}
+
+    /* Dashboard heatmap */
+    .heatmap-table{width:100%;border-collapse:collapse;font-size:12px}
+    .heatmap-table th,.heatmap-table td{padding:6px 8px;border:1px solid var(--border);text-align:center}
+    .heatmap-table th{background:#f1f3f4;font-weight:600}
+    .heatmap-table .heat-green{background:#e6f4ea;color:var(--success)}
+    .heatmap-table .heat-yellow{background:#fef7e0;color:var(--warning)}
+    .heatmap-table .heat-red{background:#fce8e6;color:var(--danger)}
+    .heatmap-table .heat-gray{background:#f5f5f5;color:#bbb}
+
+    /* Modal */
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center}
+    .modal{background:#fff;border-radius:12px;padding:24px;max-width:700px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+    .modal h2{margin-bottom:16px;font-size:16px}
+    .modal .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .modal .form-group{display:flex;flex-direction:column;gap:3px}
+    .modal .form-group.full{grid-column:1/-1}
+    .modal label{font-size:11px;color:var(--text2);font-weight:600}
+    .modal input,.modal select,.modal textarea{border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
+    .modal textarea{min-height:60px;resize:vertical}
+    .modal .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+    /* Progress bar */
+    .progress-bar{background:#e0e0e0;border-radius:10px;height:8px;overflow:hidden;margin:6px 0}
+    .progress-bar .fill{height:100%;border-radius:10px;transition:width .3s}
+    .fill.green{background:var(--success)} .fill.orange{background:var(--warning)} .fill.red{background:var(--danger)}
+
+    .loading{text-align:center;padding:30px;color:var(--text2)}
+    .spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .hidden{display:none!important}
+    .toast{position:fixed;bottom:20px;right:20px;background:#323232;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+    .toast.show{opacity:1}
+    .code-tag{display:inline-block;padding:1px 6px;background:#fce4ec;color:var(--danger);border-radius:4px;font-size:11px;font-weight:600;margin:1px}
+    .settings-shell{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+    .settings-stack{display:grid;gap:14px}
+    .settings-hero{padding:20px;border-radius:18px;background:linear-gradient(135deg,#0f172a 0%,#16324f 45%,#24527a 100%);color:#fff;position:relative;overflow:hidden}
+    .settings-hero:before{content:'';position:absolute;inset:auto -80px -100px auto;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08);filter:blur(2px)}
+    .settings-hero h2{font-size:20px;margin-bottom:8px}
+    .settings-hero p{font-size:13px;line-height:1.8;color:rgba(255,255,255,.82)}
+    .settings-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .settings-hero .btn-outline{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.34);color:#fff}
+    .settings-hero .btn-outline:hover,
+    .settings-hero .btn-outline:focus{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5);color:#fff}
+    .settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+    .rule-group-card{border:1px solid #dbe4ee;border-radius:18px;background:linear-gradient(180deg,#fff 0%,#fbfcfd 100%);padding:16px;box-shadow:0 14px 36px rgba(15,23,42,.04)}
+    .rule-group-card h3{font-size:15px;margin-bottom:6px}
+    .rule-group-card p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px}
+    .rule-row{border-top:1px solid #edf2f7;padding:12px 0;display:grid;gap:8px}
+    .rule-row:first-of-type{border-top:none;padding-top:0}
+    .rule-row-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .rule-row-title{font-size:13px;font-weight:700}
+    .rule-row-desc{font-size:11px;color:var(--text2);line-height:1.6}
+    .rule-row-meta{display:flex;flex-wrap:wrap;gap:6px}
+    .meta-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:#eef3f8;color:#52606d;font-size:10px;font-weight:700}
+    .rule-input, .rule-select, .rule-textarea{width:100%;border:1px solid #d0dae5;border-radius:10px;padding:10px 12px;font-size:12px;font-family:inherit;background:#fff}
+    .rule-textarea{min-height:82px;resize:vertical}
+    .rule-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text)}
+    .rule-toggle input{width:16px;height:16px}
+    .settings-sidecard{position:sticky;top:76px;border:1px solid #dbe4ee;border-radius:18px;background:#fff;padding:16px;box-shadow:0 10px 30px rgba(15,23,42,.05)}
+    .settings-sidecard h3{font-size:14px;margin-bottom:10px}
+    .settings-status{display:grid;gap:10px}
+    .settings-kpi{padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb}
+    .settings-kpi label{display:block;font-size:10px;color:var(--text2);margin-bottom:4px}
+    .settings-kpi div{font-size:13px;font-weight:700}
+    .settings-kpi.warn{background:#fff8ee;border-color:#fed7aa;color:#9a3412}
+    .audit-list{display:grid;gap:8px}
+    .audit-item{padding:12px;border-radius:14px;background:#fafbfc;border:1px solid #e6ebf1}
+    .audit-item strong{display:block;font-size:12px;margin-bottom:4px}
+    .audit-item div{font-size:11px;color:#5b6672;line-height:1.6}
+    .inline-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+    .inline-badge.ok{background:#e7f6ec;color:#18794e}
+    .inline-badge.lock{background:#fff4e5;color:#b54708}
+    .readonly-mask{opacity:.65;pointer-events:none}
+    .danger-copy{font-size:12px;color:#9a3412;line-height:1.8;background:#fff8ee;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px}
+    @media (max-width:1100px){
+      .settings-shell{grid-template-columns:1fr}
+      .settings-sidecard{position:static}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>資通系統防護基準管理系統</h1>
+  <div class="nav-btns">
+    <button class="active" onclick="showPage('list')">系統總覽</button>
+    <button onclick="showPage('dashboard')">儀表板</button>
+    <button id="nav-init-btn" class="hidden" onclick="showPage('init')">系統設定</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== 系統總覽 ===== -->
+  <div id="page-list">
+    <div class="stats-bar" id="global-stats"></div>
+    <div class="action-bar">
+      <input type="text" class="search" placeholder="搜尋系統名稱..." oninput="filterSystems(this.value)">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-primary" onclick="openAddSystemModal()">+ 新增系統</button>
+        <button class="btn btn-outline" onclick="refreshData()">重新整理</button>
+      </div>
+    </div>
+    <div class="sys-grid" id="system-grid"><div class="loading"><div class="spinner"></div><p>載入中...</p></div></div>
+  </div>
+
+  <!-- ===== 全域儀表板 ===== -->
+  <div id="page-dashboard" class="hidden">
+    <div class="card">
+      <h2>跨系統符合率總覽</h2>
+      <div id="dashboard-chart"></div>
+    </div>
+    <div class="card">
+      <h2>構面弱項熱區分析</h2>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">顯示各系統在每個構面的符合情況，紅色代表有未符合項目需優先處理</p>
+      <div style="overflow-x:auto"><div id="heatmap-container"></div></div>
+    </div>
+    <div class="card">
+      <h2>不符合防護基準項目代碼彙總</h2>
+      <div id="fail-codes-summary"></div>
+    </div>
+  </div>
+
+  <!-- ===== 系統設定 ===== -->
+  <div id="page-init" class="hidden">
+    <div class="settings-shell">
+      <div class="settings-stack">
+        <div class="settings-hero">
+          <h2>判斷邏輯管理台</h2>
+          <p>在這裡集中管理分級評估建議、自評適用性、套裝軟體免評估與不符合代碼對照。規則變更會即時影響系統判斷結果，並寫入變更紀錄供稽核追蹤。</p>
+          <div class="settings-toolbar">
+            <button class="btn btn-primary" onclick="doInit()">初始化試算表結構</button>
+            <button class="btn btn-success" onclick="doImport()">匯入預設系統資料</button>
+            <button class="btn btn-outline" onclick="loadRuleSettings(true)">重新載入規則</button>
+            <button class="btn btn-outline" onclick="loadRuleAuditLogs()">檢視變更紀錄</button>
+          </div>
+          <div id="init-result" style="margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <div>
+              <h2 style="margin-bottom:4px">規則設定</h2>
+              <p style="font-size:12px;color:var(--text2)">依規則群組編輯數值門檻、條件開關與對照碼；儲存後立即套用到前後端判斷。</p>
+            </div>
+            <div id="rule-save-summary" class="inline-badge lock">尚未載入</div>
+          </div>
+          <div id="rule-console"><div class="loading"><div class="spinner"></div><p>載入規則設定中...</p></div></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <div>
+              <h2 style="margin-bottom:4px">變更紀錄</h2>
+              <p style="font-size:12px;color:var(--text2)">保存每次規則調整的修改人、前後值與摘要。</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadRuleAuditLogs()">重新整理</button>
+          </div>
+          <div id="rule-audit-panel"><div class="loading"><div class="spinner"></div><p>載入變更紀錄中...</p></div></div>
+        </div>
+      </div>
+      <aside class="settings-sidecard">
+        <h3>治理狀態</h3>
+        <div class="settings-status">
+          <div class="settings-kpi" id="rule-admin-status">
+            <label>管理權限</label>
+            <div>載入中...</div>
+          </div>
+          <div class="settings-kpi" id="rule-user-status">
+            <label>目前使用者</label>
+            <div>-</div>
+          </div>
+          <div class="settings-kpi" id="rule-change-status">
+            <label>未儲存變更</label>
+            <div>0 項</div>
+          </div>
+          <div class="settings-kpi" id="rule-property-status">
+            <label>管理者名單設定</label>
+            <div>-</div>
+          </div>
+          <div class="settings-toolbar" style="margin-top:0">
+            <button class="btn btn-primary" onclick="saveRuleSettings()">儲存規則</button>
+            <button class="btn btn-outline" onclick="resetRuleSettings()">重設預設值</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ===== 系統詳情 ===== -->
+  <div id="page-detail" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <button class="back-btn" onclick="showPage('list')">← 返回總覽</button>
+          <h2 style="margin-top:6px" id="detail-title"></h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="detail-level-badge"></div>
+          <button class="btn btn-outline btn-sm" onclick="openEditSystemModal()">編輯系統資料</button>
+        </div>
+      </div>
+      <div class="detail-info" id="detail-info"></div>
+      <div id="detail-fail-codes" style="margin-top:6px"></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('tab-rating')">防護需求分級評估</button>
+      <button class="tab-btn" onclick="showTab('tab-assess')">防護基準自評</button>
+    </div>
+
+    <!-- 評級 -->
+    <div id="tab-rating">
+      <div class="card">
+        <div class="rating-wizard">
+          <aside class="rating-sidebar">
+            <h3>系統背景脈絡</h3>
+            <div class="rating-context" id="rating-context"></div>
+            <div class="rating-chip-list" id="rating-risk-chips"></div>
+          </aside>
+          <div class="rating-main">
+            <div class="rating-hero">
+              <div>
+                <h2>防護需求分級評估</h2>
+                <p>依附表九以四個構面逐步評估衝擊程度，系統先依既有清冊資料提供建議，再由評估人員覆核與補充理由，最終等級取四構面最高者。</p>
+              </div>
+              <div class="wizard-summary-badge">
+                <span class="small">目前預估總等級</span>
+                <div class="big" id="rating-overall-level">普</div>
+              </div>
+            </div>
+            <div class="wizard-steps" id="rating-steps"></div>
+            <div class="wizard-panel" id="rating-panel"></div>
+            <div class="wizard-actions">
+              <div class="left">
+                <button class="btn btn-outline" onclick="prevRatingStep()">上一步</button>
+                <span class="rating-inline-note" id="rating-step-note"></span>
+              </div>
+              <div class="right">
+                <div class="rating-field" style="min-width:220px">
+                  <label>評估人員</label>
+                  <input type="text" id="rating-assessor" readonly>
+                </div>
+                <button class="btn btn-outline" onclick="nextRatingStep()">下一步</button>
+                <button class="btn btn-primary" onclick="submitRating()">儲存評估結果</button>
+              </div>
+            </div>
+            <div id="rating-result" class="rating-status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自評 -->
+    <div id="tab-assess" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+          <h2 style="margin:0">防護基準自評表</h2>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="initAssessment()">初始化自評項目</button>
+            <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
+            <button class="btn btn-primary btn-sm" onclick="saveAllAssessment()">儲存所有變更</button>
+          </div>
+        </div>
+        <div id="assess-stats" style="margin-bottom:8px"></div>
+        <div class="filter-bar">
+          <label>篩選構面：</label>
+          <select id="filter-dim" onchange="applyFilters()">
+            <option value="">全部構面</option>
+            <option value="存取控制">存取控制</option>
+            <option value="事件日誌與可歸責性">事件日誌與可歸責性</option>
+            <option value="營運持續計畫">營運持續計畫</option>
+            <option value="識別與鑑別">識別與鑑別</option>
+            <option value="系統與服務獲得">系統與服務獲得</option>
+            <option value="系統與通訊保護">系統與通訊保護</option>
+            <option value="系統與資訊完整性">系統與資訊完整性</option>
+          </select>
+          <label>篩選狀態：</label>
+          <select id="filter-status" onchange="applyFilters()">
+            <option value="">全部狀態</option>
+            <option value="pending">待評估</option>
+            <option value="符合">符合</option>
+            <option value="部分符合">部分符合</option>
+            <option value="未符合">未符合</option>
+            <option value="不適用">不適用</option>
+          </select>
+          <label><input type="checkbox" id="filter-applicable" onchange="applyFilters()"> 只顯示應評項目</label>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="assess-table" id="assess-table">
+            <thead><tr>
+              <th style="width:35px">項次</th><th style="width:90px">構面</th><th style="width:110px">類別</th>
+              <th style="width:35px">等級</th><th style="width:230px">安全控制措施</th><th style="width:70px">符合性</th>
+              <th style="width:160px">現況說明</th><th style="width:120px">佐證資料</th>
+              <th style="width:120px">矯正作為</th><th style="width:90px">目標日期</th>
+            </tr></thead>
+            <tbody id="assess-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-container"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData = null;
+var LEVEL_ORDER = {'普':1,'中':2,'高':3};
+var RATING_STEPS = ['overview','confidentiality','integrity','availability','compliance','review'];
+var RATING_FIELDS = ['confidentiality','integrity','availability','compliance'];
+var RATING_LABELS = {
+  confidentiality: '機密性',
+  integrity: '完整性',
+  availability: '可用性',
+  compliance: '法律遵循性'
+};
+var ratingState = null;
+var ratingTabTemplate = '';
+var assessTabTemplate = '';
+var ruleState = {rows: [], adminStatus: null};
+var ruleDraftRows = [];
+var ruleAuditLogs = [];
+var ruleLoaded = false;
+var ruleDirty = false;
+var pendingConfirmAction = null;
+
+var RULE_GROUP_META = {
+  rating_confidentiality: {title:'機密性建議規則', desc:'管理個資門檻、機敏資訊類別關鍵字與提示顯示。'},
+  rating_integrity: {title:'完整性建議規則', desc:'管理核心系統與民生權益對完整性建議等級的影響。'},
+  rating_availability: {title:'可用性建議規則', desc:'管理核心系統、民生權益與 MTO 時限對可用性建議的升級邏輯。'},
+  rating_compliance: {title:'法律遵循性規則', desc:'管理民生權益、敏感資料規模與提示顯示的法遵升級條件。'},
+  package_exemption: {title:'套裝軟體免評估規則', desc:'設定哪些系統會被視為免分級評估與免自評對象。'},
+  assessment_applicability: {title:'防護基準自評適用性', desc:'設定控制措施是否應評的比較邏輯與不適用標示。'},
+  code_map: {title:'不符合代碼對照', desc:'管理構面 / 類別與不符合代碼的映射表。'}
+};
+
+function parseRuleBool(val) {
+  return String(val).toLowerCase() === 'true' || String(val) === '1' || String(val) === '是';
+}
+
+function getRuleRowsByGroup(group) {
+  return (ruleDraftRows || []).filter(function(rule) { return rule.group === group; }).sort(function(a, b) { return (a.sort || 0) - (b.sort || 0); });
+}
+
+function getRuleRow(group, key) {
+  var rows = getRuleRowsByGroup(group);
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].key === key) return rows[i];
+  }
+  return null;
+}
+
+function getRuleValue(group, key, fallback) {
+  var row = getRuleRow(group, key);
+  if (!row) return fallback;
+  if (row.enabled === false && row.type !== 'mapping') return fallback;
+  return row.value;
+}
+
+function getRuleRowEnabled(group, key, fallback) {
+  var row = getRuleRow(group, key);
+  return row ? row.enabled !== false : fallback;
+}
+
+function getRuleBool(group, key, fallback) {
+  var row = getRuleRow(group, key);
+  return row ? row.enabled !== false && parseRuleBool(row.value) : fallback;
+}
+
+function getPersistedRuleRow(group, key) {
+  var rows = ruleState.rows || [];
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].group === group && rows[i].key === key) return rows[i];
+  }
+  return null;
+}
+
+function getPersistedRuleValue(group, key, fallback) {
+  var row = getPersistedRuleRow(group, key);
+  if (!row) return fallback;
+  if (row.enabled === false && row.type !== 'mapping') return fallback;
+  return row.value;
+}
+
+function getPersistedRuleBool(group, key, fallback) {
+  var row = getPersistedRuleRow(group, key);
+  return row ? row.enabled !== false && parseRuleBool(row.value) : fallback;
+}
+
+function isPackageSystem() {
+  if (!currentSystem) return false;
+  var fieldName = getPersistedRuleValue('package_exemption', 'field_name', '防護需求等級');
+  var operator = getPersistedRuleValue('package_exemption', 'operator', 'equals');
+  var targetValue = getPersistedRuleValue('package_exemption', 'target_value', '套裝軟體');
+  var actual = String(currentSystem[fieldName] || '');
+  if (operator === 'not_equals') return actual !== targetValue;
+  if (operator === 'contains') return actual.indexOf(targetValue) !== -1;
+  return actual === targetValue;
+}
+
+function isAssessmentApplicable(ctrlLevel, systemLevel) {
+  if (!getPersistedRuleBool('assessment_applicability', 'enabled', true)) return true;
+  var ctrlLevelNum = LEVEL_ORDER[ctrlLevel] || 1;
+  var sysLevelNum = LEVEL_ORDER[systemLevel] || 1;
+  var operator = getPersistedRuleValue('assessment_applicability', 'comparison_operator', 'lte');
+  if (operator === 'gte') return ctrlLevelNum >= sysLevelNum;
+  if (operator === 'eq') return ctrlLevelNum === sysLevelNum;
+  return ctrlLevelNum <= sysLevelNum;
+}
+
+function isRuleAdmin() {
+  return !!(ruleState.adminStatus && ruleState.adminStatus.isAdmin);
+}
+
+function syncInitNavVisibility() {
+  var btn = document.getElementById('nav-init-btn');
+  if (!btn) return;
+  btn.classList.toggle('hidden', !isRuleAdmin());
+}
+
+function renderPackageExemption(tabType) {
+  if (!currentSystem) return;
+  var title = tabType === 'rating' ? '套裝軟體免分級評估' : '套裝軟體免防護基準自評';
+  var message = '此系統已標示為套裝軟體，因此不需要進行防護需求分級評估，也不需要進行防護基準自評。';
+  var html = '<div class="exemption-card">';
+  html += '<h3>' + title + '</h3>';
+  html += '<p>' + message + '</p>';
+  html += '<div class="exemption-meta">';
+  html += '<div class="item"><label>系統名稱</label><div>' + escH(String(currentSystem['系統名稱'] || '-')) + '</div></div>';
+  html += '<div class="item"><label>建置方式</label><div>' + escH(String(currentSystem['建置方式'] || '-')) + '</div></div>';
+  html += '<div class="item"><label>防護需求等級</label><div>' + escH(String(currentSystem['防護需求等級'] || '-')) + '</div></div>';
+  html += '</div></div>';
+  if (tabType === 'rating') {
+    document.getElementById('tab-rating').innerHTML = '<div class="card">' + html + '</div>';
+  } else {
+    document.getElementById('tab-assess').innerHTML = '<div class="card">' + html + '</div>';
+  }
+}
+
+function restoreAssessmentTabs() {
+  if (ratingTabTemplate) document.getElementById('tab-rating').innerHTML = ratingTabTemplate;
+  if (assessTabTemplate) document.getElementById('tab-assess').innerHTML = assessTabTemplate;
+}
+
+// ===== Pages =====
+function showPage(page) {
+  if (page === 'init' && !isRuleAdmin()) {
+    showToast('僅管理者可查看系統設定');
+    page = 'list';
+  }
+  ['page-list','page-detail','page-init','page-dashboard'].forEach(function(p){document.getElementById(p).classList.add('hidden')});
+  document.getElementById('page-'+page).classList.remove('hidden');
+  document.querySelectorAll('.nav-btns button').forEach(function(b){b.classList.remove('active')});
+  if(page==='list'){document.querySelectorAll('.nav-btns button')[0].classList.add('active');loadSystems();}
+  else if(page==='dashboard'){document.querySelectorAll('.nav-btns button')[1].classList.add('active');loadDashboard();}
+  else if(page==='init'){document.getElementById('nav-init-btn').classList.add('active');loadRuleSettings();}
+}
+
+function showTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  ['tab-rating','tab-assess'].forEach(function(t){document.getElementById(t).classList.add('hidden')});
+  document.getElementById(tabId).classList.remove('hidden');
+  event.target.classList.add('active');
+  if(isPackageSystem()) {
+    renderPackageExemption(tabId === 'tab-rating' ? 'rating' : 'assess');
+    return;
+  }
+  if(tabId==='tab-assess' && currentSystem) loadAssessment(currentSystem['系統ID']);
+}
+
+// ===== System List =====
+function loadSystems() {
+  document.getElementById('system-grid').innerHTML = '<div class="loading"><div class="spinner"></div><p>載入中...</p></div>';
+  google.script.run.withSuccessHandler(function(data){
+    var systems = Array.isArray(data) ? data : [];
+    allSystems = systems;
+    renderSystems(systems);
+    renderGlobalStats(systems);
+  }).withFailureHandler(function(err){
+    document.getElementById('system-grid').innerHTML = '<div class="card"><p>載入失敗：'+err.message+'</p><p style="margin-top:6px">請先至「系統設定」進行初始化。</p></div>';
+  }).getSystems();
+}
+
+function renderSystems(systems) {
+  var grid = document.getElementById('system-grid');
+  if(!systems||systems.length===0){grid.innerHTML='<div class="card" style="grid-column:1/-1;text-align:center;padding:30px"><p>尚無系統資料，請至「系統設定」匯入。</p></div>';return;}
+  var html='';
+  systems.forEach(function(sys){
+    var lv = sys['防護需求等級']||'未設定';
+    var lc = lv==='高'?'level-high':lv==='中'?'level-mid':lv==='普'?'level-low':'';
+    var bc = lv==='高'?'high':lv==='中'?'mid':lv==='普'?'low':'na';
+    html+='<div class="sys-card '+lc+'" onclick="openSystem(\''+sys['系統ID']+'\')">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+    html+='<div class="sys-name">'+escH(sys['系統名稱']||'未命名')+'</div>';
+    html+='<span class="sys-badge '+bc+'">'+lv+'</span></div>';
+    html+='<div class="sys-meta">';
+    html+='<span>'+escH(sys['系統屬性']||'-')+'</span>';
+    html+='<span>'+escH(sys['建置方式']||'-')+'</span>';
+    if(sys['核心系統']==='是') html+='<span style="color:var(--danger)">核心系統</span>';
+    if(sys['含機敏資訊']==='是') html+='<span style="color:var(--warning)">含機敏資訊</span>';
+    html+='</div></div>';
+  });
+  grid.innerHTML=html;
+}
+
+function renderGlobalStats(systems) {
+  systems = Array.isArray(systems) ? systems : [];
+  var t=systems.length,h=0,m=0,l=0,n=0;
+  systems.forEach(function(s){var lv=s['防護需求等級'];if(lv==='高')h++;else if(lv==='中')m++;else if(lv==='普')l++;else n++;});
+  document.getElementById('global-stats').innerHTML=
+    '<div class="stat-item"><div class="stat-num" style="color:var(--primary)">'+t+'</div><div class="stat-label">系統總數</div></div>'+
+    '<div class="stat-item"><div class="stat-num" style="color:var(--high)">'+h+'</div><div class="stat-label">高等級</div></div>'+
+    '<div class="stat-item"><div class="stat-num" style="color:var(--mid)">'+m+'</div><div class="stat-label">中等級</div></div>'+
+    '<div class="stat-item"><div class="stat-num" style="color:var(--low)">'+l+'</div><div class="stat-label">普等級</div></div>'+
+    '<div class="stat-item"><div class="stat-num" style="color:#9e9e9e">'+n+'</div><div class="stat-label">套裝/未設定</div></div>';
+}
+
+function filterSystems(kw) {
+  if(!kw){renderSystems(allSystems);return;}
+  renderSystems(allSystems.filter(function(s){return (s['系統名稱']||'').indexOf(kw)>=0;}));
+}
+
+// ===== Dashboard =====
+function loadDashboard() {
+  document.getElementById('dashboard-chart').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  google.script.run.withSuccessHandler(function(data){
+    dashboardData=data; renderDashboard(data);
+  }).withFailureHandler(function(err){
+    document.getElementById('dashboard-chart').innerHTML='<p>載入失敗：'+err.message+'</p>';
+  }).getGlobalDashboard();
+}
+
+function renderDashboard(data) {
+  // 1. Per-system compliance chart
+  var chartHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統名稱</th><th>等級</th><th>應評</th><th>符合</th><th>部分符合</th><th>未符合</th><th>待評</th><th>符合率</th><th>進度</th></tr>';
+  data.forEach(function(d){
+    if(!d.hasAssessment||d.packageExempt) return;
+    var s=d.stats, pct=s.applicable>0?Math.round(s.compliant/s.applicable*100):0;
+    var bc=pct>=80?'green':pct>=50?'orange':'red';
+    chartHtml+='<tr>';
+    chartHtml+='<td style="text-align:left;font-weight:500">'+escH(d.systemName)+'</td>';
+    chartHtml+='<td><span class="sys-badge '+(d.level==='高'?'high':d.level==='中'?'mid':'low')+'">'+d.level+'</span></td>';
+    chartHtml+='<td>'+s.applicable+'</td>';
+    chartHtml+='<td class="heat-green">'+s.compliant+'</td>';
+    chartHtml+='<td class="'+(s.partial>0?'heat-yellow':'')+'">'+s.partial+'</td>';
+    chartHtml+='<td class="'+(s.nonCompliant>0?'heat-red':'')+'">'+s.nonCompliant+'</td>';
+    chartHtml+='<td class="'+(s.pending>0?'heat-gray':'')+'">'+s.pending+'</td>';
+    chartHtml+='<td style="font-weight:700;color:'+(pct>=80?'var(--success)':pct>=50?'var(--warning)':'var(--danger)')+'">'+pct+'%</td>';
+    chartHtml+='<td style="min-width:100px"><div class="mini-progress"><div class="fill '+bc+'" style="width:'+pct+'%"></div></div></td>';
+    chartHtml+='</tr>';
+  });
+  chartHtml+='</table>';
+  document.getElementById('dashboard-chart').innerHTML=chartHtml;
+
+  // 2. Heatmap
+  var dims=['存取控制','事件日誌與可歸責性','營運持續計畫','識別與鑑別','系統與服務獲得','系統與通訊保護','系統與資訊完整性'];
+  var hmHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統</th>';
+  dims.forEach(function(d){hmHtml+='<th style="font-size:10px;max-width:80px">'+d+'</th>';});
+  hmHtml+='</tr>';
+  data.forEach(function(d){
+    if(!d.hasAssessment||d.packageExempt) return;
+    hmHtml+='<tr><td style="text-align:left;font-size:11px">'+escH(d.systemName)+'</td>';
+    dims.forEach(function(dim){
+      var ds=d.dimStats[dim];
+      if(!ds||ds.total===0){hmHtml+='<td class="heat-gray">-</td>';return;}
+      if(ds.fail>0) hmHtml+='<td class="heat-red">'+ds.fail+' 未符合</td>';
+      else if(ds.pending>0) hmHtml+='<td class="heat-yellow">'+ds.pending+' 待評</td>';
+      else hmHtml+='<td class="heat-green">全符合</td>';
+    });
+    hmHtml+='</tr>';
+  });
+  hmHtml+='</table>';
+  document.getElementById('heatmap-container').innerHTML=hmHtml;
+
+  // 3. Fail codes summary
+  var codesHtml='<div style="display:flex;flex-wrap:wrap;gap:10px">';
+  data.forEach(function(d){
+    if(!d.failCodes||d.failCodes.length===0||!d.hasAssessment) return;
+    codesHtml+='<div style="background:#fff5f5;border:1px solid #fecdd3;border-radius:8px;padding:10px;min-width:200px">';
+    codesHtml+='<div style="font-weight:600;font-size:12px;margin-bottom:4px">'+escH(d.systemName)+'</div>';
+    d.failCodes.forEach(function(c){codesHtml+='<span class="code-tag">'+c+'</span> ';});
+    codesHtml+='</div>';
+  });
+  codesHtml+='</div>';
+  if(data.every(function(d){return !d.failCodes||d.failCodes.length===0||!d.hasAssessment;}))
+    codesHtml='<p style="color:var(--text2);font-size:13px">尚無不符合項目，或尚未進行自評。</p>';
+  document.getElementById('fail-codes-summary').innerHTML=codesHtml;
+}
+
+// ===== System Detail =====
+function openSystem(sysId) {
+  currentSystem = allSystems.find(function(s){return s['系統ID']===sysId;});
+  if(!currentSystem) return;
+  restoreAssessmentTabs();
+  showPage('detail');
+  document.getElementById('detail-title').textContent=currentSystem['系統名稱'];
+
+  var lv=currentSystem['防護需求等級']||'未設定';
+  var bc=lv==='高'?'high':lv==='中'?'mid':lv==='普'?'low':'na';
+  document.getElementById('detail-level-badge').innerHTML='<span class="result-badge '+bc+'" style="font-size:14px;padding:4px 14px">'+lv+'</span>';
+
+  var fields=['系統屬性','建置方式','系統管理者(部門/單位)','系統使用者(部門/單位)','系統建置日期','主機設置於機關內','核心系統','含機敏資訊','個資數量','機敏資訊以非明文方式儲存','機敏資訊類別','是否與民生權益相關','是否包含於ISMS導入範圍','建置廠商','維運廠商','最大可容忍中斷時間','系統是否對外','系統日誌保存時間是否超過6個月','有無開放遠端連線維護','是否禁用弱密碼','系統是否備份'];
+  var ih='';
+  fields.forEach(function(f){var v=currentSystem[f]||'-';ih+='<div class="info-item"><label>'+f+'</label><div>'+escH(String(v))+'</div></div>';});
+  document.getElementById('detail-info').innerHTML=ih;
+
+  // Show fail codes
+  var fc = currentSystem['不符合防護基準項目代碼'];
+  if(fc) {
+    var codes = String(fc).split('/').filter(function(c){return c.trim();});
+    var fch = '<div style="font-size:12px;margin-top:4px"><b>不符合代碼：</b>';
+    codes.forEach(function(c){fch+='<span class="code-tag">'+escH(c.trim())+'</span> ';});
+    fch+='</div>';
+    document.getElementById('detail-fail-codes').innerHTML=fch;
+  } else {
+    document.getElementById('detail-fail-codes').innerHTML='';
+  }
+
+  // Reset tabs
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',i===0);});
+  document.getElementById('tab-rating').classList.remove('hidden');
+  document.getElementById('tab-assess').classList.add('hidden');
+  if (isPackageSystem()) {
+    renderPackageExemption('rating');
+    renderPackageExemption('assess');
+    return;
+  }
+
+  document.getElementById('rating-context').innerHTML = '<div class="loading" style="padding:12px"><div class="spinner"></div></div>';
+  document.getElementById('rating-risk-chips').innerHTML = '';
+  document.getElementById('rating-steps').innerHTML = '';
+  document.getElementById('rating-panel').innerHTML = '<div class="loading" style="padding:18px"><div class="spinner"></div><p>載入評估規則中...</p></div>';
+  document.getElementById('rating-result').innerHTML = '載入中...';
+
+  // Load rating
+  google.script.run.withSuccessHandler(function(rating){
+    setRatingState(rating);
+  }).getRating(sysId);
+}
+
+// ===== Rating =====
+function setRatingState(rating) {
+  ratingState = rating || {
+    systemId: currentSystem ? currentSystem['系統ID'] : '',
+    systemName: currentSystem ? currentSystem['系統名稱'] : '',
+    assessor: '',
+    assessDate: '',
+    finalLevel: '普',
+    details: {},
+    currentEvaluator: null
+  };
+  ratingState.step = 0;
+  if (!ratingState.details) ratingState.details = {};
+  RATING_FIELDS.forEach(function(field) {
+    if (!ratingState.details[field]) {
+      ratingState.details[field] = {
+        field: field,
+        label: RATING_LABELS[field],
+        recommendedLevel: '普',
+        signals: ['尚未取得系統建議，請人工判斷。'],
+        scenarioOptions: [],
+        selectedLevel: '普',
+        scenarioLevel: '普',
+        note: '',
+        overrideReason: ''
+      };
+    }
+  });
+  syncRatingEvaluator();
+  renderRatingContext();
+  renderRatingWizard();
+}
+
+function syncRatingEvaluator() {
+  var evaluator = ratingState && ratingState.currentEvaluator ? ratingState.currentEvaluator : null;
+  var display = evaluator && (evaluator.displayName || evaluator.email) ? (evaluator.displayName || evaluator.email) : (ratingState.assessor || '');
+  document.getElementById('rating-assessor').value = display;
+}
+
+function renderRatingContext() {
+  var ctx = document.getElementById('rating-context');
+  var chips = document.getElementById('rating-risk-chips');
+  if (!currentSystem || !ctx || !chips) return;
+  var fields = [
+    '系統屬性','建置方式','核心系統','含機敏資訊','個資數量',
+    '是否與民生權益相關','最大可容忍中斷時間','系統是否對外'
+  ];
+  var html = '';
+  fields.forEach(function(f) {
+    html += '<div class="rating-context-item"><label>' + escH(f) + '</label><div>' + escH(String(currentSystem[f] || '-')) + '</div></div>';
+  });
+  ctx.innerHTML = html;
+
+  var chipData = [];
+  if (currentSystem['核心系統'] === '是') chipData.push({text:'核心系統', cls:'high'});
+  if (currentSystem['含機敏資訊'] === '是') chipData.push({text:'含機敏資訊', cls:'high'});
+  if (currentSystem['是否與民生權益相關'] === '是') chipData.push({text:'民生權益相關', cls:'mid'});
+  if (currentSystem['系統是否對外'] === '是') chipData.push({text:'對外服務', cls:'mid'});
+  if (!currentSystem['最大可容忍中斷時間']) chipData.push({text:'缺少中斷時限資料', cls:'low'});
+  if (chipData.length === 0) chipData.push({text:'一般風險輪廓', cls:'low'});
+  chips.innerHTML = chipData.map(function(chip) {
+    return '<span class="rating-chip ' + chip.cls + '">' + escH(chip.text) + '</span>';
+  }).join('');
+}
+
+function computeOverallRatingLevel() {
+  var max = '普';
+  RATING_FIELDS.forEach(function(field) {
+    var detail = ratingState.details[field] || {};
+    var lv = detail.selectedLevel || detail.recommendedLevel || '普';
+    if ((LEVEL_ORDER[lv] || 1) > (LEVEL_ORDER[max] || 1)) max = lv;
+  });
+  ratingState.finalLevel = max;
+  return max;
+}
+
+function getLevelClass(level) {
+  return level === '高' ? 'high' : level === '中' ? 'mid' : 'low';
+}
+
+function renderRatingWizard() {
+  if (!ratingState) return;
+  var overall = computeOverallRatingLevel();
+  document.getElementById('rating-overall-level').textContent = overall;
+  renderRatingSteps();
+  renderRatingPanel();
+  renderRatingStatus();
+}
+
+function renderRatingSteps() {
+  var el = document.getElementById('rating-steps');
+  var html = '';
+  RATING_STEPS.forEach(function(step, idx) {
+    var done = idx < ratingState.step ? ' done' : '';
+    var active = idx === ratingState.step ? ' active' : '';
+    var name = step === 'overview' ? '總覽' : step === 'review' ? '結果確認' : RATING_LABELS[step];
+    html += '<button class="wizard-step' + done + active + '" onclick="goToRatingStep(' + idx + ')">';
+    html += '<span class="idx">STEP ' + (idx + 1) + '</span><span class="name">' + escH(name) + '</span></button>';
+  });
+  el.innerHTML = html;
+  document.getElementById('rating-step-note').textContent = '第 ' + (ratingState.step + 1) + ' / ' + RATING_STEPS.length + ' 步';
+}
+
+function renderRatingPanel() {
+  var step = RATING_STEPS[ratingState.step];
+  var panel = document.getElementById('rating-panel');
+  if (step === 'overview') panel.innerHTML = renderRatingOverview();
+  else if (step === 'review') panel.innerHTML = renderRatingReview();
+  else panel.innerHTML = renderRatingDimensionStep(step);
+}
+
+function renderRatingOverview() {
+  var html = '<h3>附表九評估導覽</h3>';
+  html += '<p>請依四個構面逐步判斷衝擊程度。系統會先依清冊資料提供建議，若你選擇較低等級，必須補充覆核理由以利稽核追蹤。</p>';
+  html += '<div class="rating-result-card">';
+  RATING_FIELDS.forEach(function(field) {
+    var detail = ratingState.details[field];
+    html += '<div class="rating-recommend">';
+    html += '<div class="headline"><strong>' + escH(detail.label) + '</strong><span class="sys-badge ' + getLevelClass(detail.recommendedLevel) + '">' + escH(detail.recommendedLevel) + '</span></div>';
+    html += '<div class="rating-signal-list">';
+    (detail.signals || []).forEach(function(sig) {
+      html += '<div class="rating-signal">- ' + escH(sig) + '</div>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderRatingDimensionStep(field) {
+  var detail = ratingState.details[field];
+  var html = '<h3>' + escH(detail.label) + '</h3>';
+  html += '<p>請選擇最符合附表九描述的衝擊情境，再補充本系統的具體判斷理由。</p>';
+  html += '<div class="scenario-grid">';
+  (detail.scenarioOptions || []).forEach(function(opt) {
+    var cls = getLevelClass(opt.level);
+    var selected = detail.scenarioLevel === opt.level ? ' selected' : '';
+    html += '<button class="scenario-card ' + cls + selected + '" onclick="chooseScenario(\'' + field + '\',\'' + opt.level + '\')">';
+    html += '<span class="level">' + escH(opt.level) + '</span>';
+    html += '<div class="title">' + escH(detail.label + ' - ' + opt.level + '級') + '</div>';
+    html += '<div class="body">' + escH(opt.text) + '</div></button>';
+  });
+  html += '</div>';
+  html += '<div class="rating-recommend">';
+  html += '<div class="headline"><strong>系統建議等級</strong><span class="sys-badge ' + getLevelClass(detail.recommendedLevel) + '">' + escH(detail.recommendedLevel) + '</span></div>';
+  html += '<div class="rating-signal-list">';
+  (detail.signals || []).forEach(function(sig) { html += '<div class="rating-signal">- ' + escH(sig) + '</div>'; });
+  html += '</div></div>';
+  html += '<div class="rating-form-grid">';
+  html += '<div class="rating-field"><label>人工最終判定</label><select id="rating-selected-' + field + '" onchange="updateSelectedLevel(\'' + field + '\', this.value)" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px">';
+  ['普','中','高'].forEach(function(level) {
+    html += '<option value="' + level + '"' + (detail.selectedLevel === level ? ' selected' : '') + '>' + level + '</option>';
+  });
+  html += '</select></div>';
+  html += '<div class="rating-field"><label>附表九情境等級</label><input type="text" value="' + escH(detail.scenarioLevel || '') + '" readonly></div>';
+  html += '<div class="rating-field"><label>評估說明</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="請說明本構面為何判定為此等級。">' + escH(detail.note || '') + '</textarea></div>';
+  html += '<div class="rating-field"><label>覆核理由</label><textarea id="rating-override-' + field + '" oninput="updateRatingText(\'' + field + '\',\'overrideReason\',this.value)" placeholder="若人工判定低於系統建議，請說明覆核原因。">' + escH(detail.overrideReason || '') + '</textarea></div>';
+  html += '</div>';
+  if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1)) {
+    html += '<div class="rating-warning">人工判定低於系統建議，儲存前必須填寫覆核理由。</div>';
+  }
+  return html;
+}
+
+function renderRatingReview() {
+  var html = '<h3>結果確認</h3><p>請確認四個構面的人工判定、系統建議與覆核理由是否完整。最終防護需求等級取四構面最高者。</p>';
+  html += '<table class="rating-matrix"><thead><tr><th>構面</th><th>系統建議</th><th>人工判定</th><th>評估說明</th><th>覆核理由</th></tr></thead><tbody>';
+  RATING_FIELDS.forEach(function(field) {
+    var detail = ratingState.details[field];
+    html += '<tr><td><strong>' + escH(detail.label) + '</strong></td>';
+    html += '<td><span class="sys-badge ' + getLevelClass(detail.recommendedLevel) + '">' + escH(detail.recommendedLevel) + '</span></td>';
+    html += '<td><span class="sys-badge ' + getLevelClass(detail.selectedLevel) + '">' + escH(detail.selectedLevel) + '</span></td>';
+    html += '<td>' + escH(detail.note || '-') + '</td>';
+    html += '<td>' + escH(detail.overrideReason || '-') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div style="margin-top:14px">最終防護需求等級：<span class="result-badge ' + getLevelClass(ratingState.finalLevel) + '">' + escH(ratingState.finalLevel) + '</span></div>';
+  return html;
+}
+
+function renderRatingStatus() {
+  var result = document.getElementById('rating-result');
+  if (!result) return;
+  var evaluator = ratingState.currentEvaluator || {};
+  var msg = '';
+  if (evaluator.email) {
+    msg += '目前評估人員：<b>' + escH(evaluator.displayName || evaluator.email) + '</b>。';
+  }
+  if (ratingState.assessDate) {
+    msg += (msg ? ' ' : '') + '目前資料日期：<b>' + escH(ratingState.assessDate) + '</b>，總等級為 <span class="sys-badge ' + getLevelClass(ratingState.finalLevel) + '">' + escH(ratingState.finalLevel) + '</span>';
+  } else if (!msg) {
+    msg = '尚未儲存本系統的分級評估。';
+  }
+  result.className = 'rating-status' + (evaluator.warning ? ' warn' : '');
+  if (evaluator.warning) {
+    msg += (msg ? '<br>' : '') + escH(evaluator.warning);
+  }
+  result.innerHTML = msg;
+}
+
+function chooseScenario(field, level) {
+  ratingState.details[field].scenarioLevel = level;
+  if (!ratingState.details[field].selectedLevel) ratingState.details[field].selectedLevel = level;
+  renderRatingWizard();
+}
+
+function updateSelectedLevel(field, level) {
+  ratingState.details[field].selectedLevel = level;
+  renderRatingWizard();
+}
+
+function updateRatingText(field, key, value) {
+  ratingState.details[field][key] = value;
+}
+
+function goToRatingStep(idx) {
+  ratingState.step = idx;
+  renderRatingWizard();
+}
+
+function nextRatingStep() {
+  if (!ratingState) return;
+  if (ratingState.step < RATING_STEPS.length - 1) ratingState.step++;
+  renderRatingWizard();
+}
+
+function prevRatingStep() {
+  if (!ratingState) return;
+  if (ratingState.step > 0) ratingState.step--;
+  renderRatingWizard();
+}
+
+function validateRatingState() {
+  if (!ratingState.currentEvaluator || !ratingState.currentEvaluator.email) return '無法取得目前登入帳號，請檢查 Web App 部署權限或網域設定。';
+  for (var i = 0; i < RATING_FIELDS.length; i++) {
+    var field = RATING_FIELDS[i];
+    var detail = ratingState.details[field];
+    if (!detail.note || !detail.note.trim()) return RATING_LABELS[field] + ' 尚未填寫評估說明。';
+    if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1) && (!detail.overrideReason || !detail.overrideReason.trim())) {
+      return RATING_LABELS[field] + ' 的人工判定低於系統建議，請填寫覆核理由。';
+    }
+  }
+  return '';
+}
+
+function submitRating() {
+  if (!currentSystem || !ratingState) return;
+  var err = validateRatingState();
+  if (err) { showToast(err); return; }
+  ratingState.assessor = ratingState.currentEvaluator ? (ratingState.currentEvaluator.displayName || ratingState.currentEvaluator.email || '') : '';
+  computeOverallRatingLevel();
+  var data = {
+    systemId: currentSystem['系統ID'],
+    systemName: currentSystem['系統名稱'],
+    assessor: ratingState.assessor,
+    details: ratingState.details
+  };
+  google.script.run.withSuccessHandler(function(r){
+    if(r.success){
+      var cls=getLevelClass(r.finalLevel);
+      ratingState.assessDate = r.assessDate || '';
+      ratingState.finalLevel = r.finalLevel;
+      ratingState.assessor = r.assessor || ratingState.assessor;
+      ratingState.currentEvaluator = r.currentEvaluator || ratingState.currentEvaluator;
+      syncRatingEvaluator();
+      document.getElementById('detail-level-badge').innerHTML='<span class="result-badge '+cls+'" style="font-size:14px;padding:4px 14px">'+r.finalLevel+'</span>';
+      currentSystem['防護需求等級']=r.finalLevel;
+      renderRatingWizard();
+      showToast('評估結果已儲存');
+    }
+  }).withFailureHandler(function(e){showToast('儲存失敗：'+e.message);}).saveRating(data);
+}
+
+// ===== Assessment =====
+function loadAssessment(sysId) {
+  if (isPackageSystem()) {
+    renderPackageExemption('assess');
+    return;
+  }
+  document.getElementById('assess-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
+  google.script.run.withSuccessHandler(function(data){
+    currentAssessment=data; renderAssessment(data);
+  }).withFailureHandler(function(e){
+    document.getElementById('assess-body').innerHTML='<tr><td colspan="10">載入失敗：'+e.message+'</td></tr>';
+  }).getAssessment(sysId);
+}
+
+function renderAssessment(items) {
+  var tbody=document.getElementById('assess-body');
+  if(!items||items.length===0){
+    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px"><p>尚無自評資料，請點擊「初始化自評項目」</p></td></tr>';
+    document.getElementById('assess-stats').innerHTML='';return;
+  }
+
+  var sysLevel=currentSystem['防護需求等級']||'普';
+
+  // Stats
+  var st={applicable:0,compliant:0,partial:0,nonCompliant:0,pending:0};
+  items.forEach(function(item){
+    if(isAssessmentApplicable(item.level, sysLevel)){
+      st.applicable++;
+      if(item.compliance==='符合')st.compliant++;
+      else if(item.compliance==='部分符合')st.partial++;
+      else if(item.compliance==='未符合')st.nonCompliant++;
+      else if(item.compliance!==getPersistedRuleValue('assessment_applicability', 'na_label', '不適用'))st.pending++;
+    }
+  });
+  var pct=st.applicable>0?Math.round(st.compliant/st.applicable*100):0;
+  var bc=pct>=80?'green':pct>=50?'orange':'red';
+  document.getElementById('assess-stats').innerHTML=
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;align-items:center">'+
+    '<span>應評：<b>'+st.applicable+'</b></span>'+
+    '<span style="color:var(--success)">符合：<b>'+st.compliant+'</b></span>'+
+    '<span style="color:var(--warning)">部分符合：<b>'+st.partial+'</b></span>'+
+    '<span style="color:var(--danger)">未符合：<b>'+st.nonCompliant+'</b></span>'+
+    '<span style="color:#9e9e9e">待評：<b>'+st.pending+'</b></span>'+
+    '<span>完成率：<b>'+pct+'%</b></span></div>'+
+    '<div class="progress-bar"><div class="fill '+bc+'" style="width:'+pct+'%"></div></div>';
+
+  renderAssessmentRows(items);
+}
+
+function renderAssessmentRows(items) {
+  var tbody=document.getElementById('assess-body');
+  var sysLevel=currentSystem['防護需求等級']||'普';
+  var filterDim=document.getElementById('filter-dim').value;
+  var filterStatus=document.getElementById('filter-status').value;
+  var filterApplicable=document.getElementById('filter-applicable').checked;
+  var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
+
+  var html='',prevDim='',prevCat='';
+  items.forEach(function(item,idx){
+    var applicable=isAssessmentApplicable(item.level, sysLevel);
+
+    // Filters
+    if(filterDim && item.dimension!==filterDim) return;
+    if(filterApplicable && !applicable) return;
+    if(filterStatus){
+      if(filterStatus==='pending' && (item.compliance && item.compliance!=='')) return;
+      else if(filterStatus!=='pending' && item.compliance!==filterStatus) return;
+    }
+
+    var rowClass=applicable?'applicable':'not-applicable';
+    html+='<tr class="'+rowClass+'" data-idx="'+idx+'">';
+    html+='<td style="text-align:center">'+item.index+'</td>';
+    html+='<td class="'+(item.dimension!==prevDim?'dim-cell':'')+'">'+escH(item.dimension!==prevDim?item.dimension:'')+'</td>';
+    html+='<td style="font-weight:'+(item.category!==prevCat?'500':'normal')+'">'+escH(item.category!==prevCat?item.category:'')+'</td>';
+    html+='<td style="text-align:center">'+item.level+'</td>';
+    html+='<td style="font-size:11px">'+escH(item.description)+'</td>';
+
+    if(applicable){
+      html+='<td><select data-field="compliance" onchange="markDirty(this)">';
+      html+='<option value="">--</option>';
+      ['符合','部分符合','未符合',naLabel].forEach(function(v){
+        html+='<option value="'+v+'"'+(item.compliance===v?' selected':'')+'>'+v+'</option>';
+      });
+      html+='</select></td>';
+      html+='<td><textarea data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></td>';
+      html+='<td><textarea data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></td>';
+      html+='<td><textarea data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></td>';
+      html+='<td><input type="date" data-field="targetDate" value="'+(item.targetDate||'')+'" onchange="markDirty(this)"></td>';
+    } else {
+      html+='<td style="color:#9e9e9e;font-size:11px">'+escH(naLabel)+'</td><td colspan="4" style="color:#bbb;font-size:11px">'+escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目'))+'</td>';
+    }
+    html+='</tr>';
+    prevDim=item.dimension;prevCat=item.category;
+  });
+  tbody.innerHTML=html||'<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text2)">無符合篩選條件的項目</td></tr>';
+}
+
+function applyFilters() { if(currentAssessment.length>0) renderAssessmentRows(currentAssessment); }
+
+function markDirty(el) {
+  var row=el.closest('tr');
+  if(row) row.classList.add('dirty');
+}
+
+function initAssessment() {
+  if(!currentSystem) return;
+  var lv=currentSystem['防護需求等級'];
+  if(!lv||isPackageSystem()){showToast('此系統依目前規則不需進行防護基準自評');return;}
+  showToast('初始化中...');
+  google.script.run.withSuccessHandler(function(r){
+    showToast('已初始化 '+r.added+' 個項目');
+    loadAssessment(currentSystem['系統ID']);
+  }).withFailureHandler(function(e){showToast('失敗：'+e.message);})
+  .initAssessmentForSystem(currentSystem['系統ID'],currentSystem['系統名稱'],lv);
+}
+
+function saveAllAssessment() {
+  var dirtyRows=document.querySelectorAll('#assess-body tr.dirty');
+  if(dirtyRows.length===0){showToast('沒有變更需要儲存');return;}
+
+  var batch=[];
+  dirtyRows.forEach(function(row){
+    var idx=parseInt(row.dataset.idx);
+    var item=Object.assign({},currentAssessment[idx]);
+    row.querySelectorAll('[data-field]').forEach(function(f){
+      item[f.dataset.field]=f.value||'';
+    });
+    batch.push(item);
+    // Update local
+    currentAssessment[idx].compliance=item.compliance;
+    currentAssessment[idx].currentStatus=item.currentStatus;
+    currentAssessment[idx].evidence=item.evidence;
+    currentAssessment[idx].corrective=item.corrective;
+    currentAssessment[idx].targetDate=item.targetDate;
+  });
+
+  showToast('儲存中 ('+batch.length+' 項)...');
+  google.script.run.withSuccessHandler(function(r){
+    showToast('已儲存 '+r.updated+' 項');
+    dirtyRows.forEach(function(row){row.classList.remove('dirty');});
+    // Recalculate stats
+    renderAssessment(currentAssessment);
+    // Auto-calc non-compliance codes
+    google.script.run.withSuccessHandler(function(codes){
+      if(codes.codeString){
+        currentSystem['不符合防護基準項目代碼']=codes.codeString;
+        var fch='<div style="font-size:12px;margin-top:4px"><b>不符合代碼：</b>';
+        codes.codes.forEach(function(c){fch+='<span class="code-tag">'+c+'</span> ';});
+        fch+='</div>';
+        document.getElementById('detail-fail-codes').innerHTML=fch;
+      } else {
+        document.getElementById('detail-fail-codes').innerHTML='<div style="font-size:12px;margin-top:4px;color:var(--success)"><b>全部符合</b></div>';
+      }
+    }).getNonComplianceCodes(currentSystem['系統ID']);
+  }).withFailureHandler(function(e){showToast('儲存失敗：'+e.message);})
+  .batchSaveAssessment(batch);
+}
+
+function exportReport() {
+  if(!currentSystem){showToast('請先選擇系統');return;}
+  showToast('匯出中...');
+  google.script.run.withSuccessHandler(function(r){
+    if(r.success) showToast('已匯出至工作表「'+r.sheetName+'」');
+    else showToast('匯出失敗：'+r.message);
+  }).withFailureHandler(function(e){showToast('匯出失敗：'+e.message);})
+  .exportAssessmentReport(currentSystem['系統ID']);
+}
+
+// ===== System CRUD Modal =====
+function openAddSystemModal() {
+  var fields = getSystemFormFields();
+  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
+  html += '<h2>新增系統</h2><div class="form-grid">';
+  fields.forEach(function(f){
+    html += '<div class="form-group'+(f.full?' full':'')+'">';
+    html += '<label>'+f.label+'</label>';
+    if(f.options){
+      html += '<select id="modal-'+f.key+'">';
+      f.options.forEach(function(o){html+='<option value="'+o+'">'+o+'</option>';});
+      html += '</select>';
+    } else {
+      html += '<input type="text" id="modal-'+f.key+'">';
+    }
+    html += '</div>';
+  });
+  html += '</div><div class="modal-actions">';
+  html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
+  html += '<button class="btn btn-primary" onclick="submitAddSystem()">新增</button>';
+  html += '</div></div></div>';
+  document.getElementById('modal-container').innerHTML=html;
+}
+
+function openEditSystemModal() {
+  if(!currentSystem) return;
+  var fields = getSystemFormFields();
+  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
+  html += '<h2>編輯系統：'+escH(currentSystem['系統名稱'])+'</h2><div class="form-grid">';
+  fields.forEach(function(f){
+    var val = currentSystem[f.label]||'';
+    html += '<div class="form-group'+(f.full?' full':'')+'">';
+    html += '<label>'+f.label+'</label>';
+    if(f.options){
+      html += '<select id="modal-'+f.key+'">';
+      f.options.forEach(function(o){html+='<option value="'+o+'"'+(String(val)===o?' selected':'')+'>'+o+'</option>';});
+      html += '</select>';
+    } else {
+      html += '<input type="text" id="modal-'+f.key+'" value="'+escH(String(val))+'">';
+    }
+    html += '</div>';
+  });
+  html += '</div><div class="modal-actions">';
+  html += '<button class="btn btn-danger" onclick="deleteCurrentSystem()" style="margin-right:auto">刪除系統</button>';
+  html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
+  html += '<button class="btn btn-primary" onclick="submitEditSystem()">儲存</button>';
+  html += '</div></div></div>';
+  document.getElementById('modal-container').innerHTML=html;
+}
+
+function getSystemFormFields() {
+  return [
+    {key:'name',label:'系統名稱'},
+    {key:'attr',label:'系統屬性',options:['行政','業務','兼具行政/業務']},
+    {key:'method',label:'建置方式',options:['本機關委外開發','本機關自行開發','本機關購置套裝軟體','本機關租用服務','其他']},
+    {key:'mgr',label:'系統管理者(部門/單位)'},
+    {key:'user',label:'系統使用者(部門/單位)'},
+    {key:'date',label:'系統建置日期'},
+    {key:'host',label:'主機設置於機關內',options:['是','否']},
+    {key:'core',label:'核心系統',options:['是','否']},
+    {key:'sensitive',label:'含機敏資訊',options:['是','否']},
+    {key:'pii',label:'個資數量'},
+    {key:'encrypt',label:'機敏資訊以非明文方式儲存',options:['是','否','無機敏資訊']},
+    {key:'sensitiveType',label:'機敏資訊類別'},
+    {key:'civil',label:'是否與民生權益相關',options:['是','否']},
+    {key:'level',label:'防護需求等級',options:['普','中','高','套裝軟體']},
+    {key:'isms',label:'是否包含於ISMS導入範圍',options:['是','否']},
+    {key:'builder',label:'建置廠商'},
+    {key:'builderCode',label:'建置廠商統一編號'},
+    {key:'operator',label:'維運廠商'},
+    {key:'operatorCode',label:'維運廠商統一編號'},
+    {key:'mto',label:'最大可容忍中斷時間'},
+    {key:'external',label:'系統是否對外',options:['是','否']},
+    {key:'log6m',label:'系統日誌保存時間是否超過6個月',options:['是','否']},
+    {key:'remote',label:'有無開放遠端連線維護',options:['有','無']},
+    {key:'weakpw',label:'是否禁用弱密碼',options:['是','否','不適用']},
+    {key:'backup',label:'系統是否備份',options:['是','否']},
+    {key:'note',label:'備註',full:true}
+  ];
+}
+
+function getModalData() {
+  var fields = getSystemFormFields();
+  var data = {};
+  fields.forEach(function(f){
+    var el = document.getElementById('modal-'+f.key);
+    if(el) data[f.label] = el.value;
+  });
+  return data;
+}
+
+function submitAddSystem() {
+  var data = getModalData();
+  if(!data['系統名稱']){showToast('請填寫系統名稱');return;}
+  google.script.run.withSuccessHandler(function(r){
+    if(r.success){showToast('系統已新增');closeModal();loadSystems();}
+  }).withFailureHandler(function(e){showToast('新增失敗：'+e.message);})
+  .addSystem(data);
+}
+
+function submitEditSystem() {
+  var data = getModalData();
+  data['系統ID'] = currentSystem['系統ID'];
+  google.script.run.withSuccessHandler(function(r){
+    if(r.success){showToast('系統已更新');closeModal();
+      // Update local
+      Object.keys(data).forEach(function(k){currentSystem[k]=data[k];});
+      openSystem(currentSystem['系統ID']);
+    }
+  }).withFailureHandler(function(e){showToast('更新失敗：'+e.message);})
+  .updateSystem(currentSystem._row, data);
+}
+
+function deleteCurrentSystem() {
+  if(!confirm('確定要刪除「'+currentSystem['系統名稱']+'」及其所有評估資料？此操作無法復原。')) return;
+  google.script.run.withSuccessHandler(function(r){
+    showToast('系統已刪除');closeModal();showPage('list');
+  }).withFailureHandler(function(e){showToast('刪除失敗：'+e.message);})
+  .deleteSystem(currentSystem['系統ID']);
+}
+
+function openConfirmModal(title, description, warningText, confirmLabel, confirmClass, action) {
+  pendingConfirmAction = typeof action === 'function' ? action : null;
+  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
+  html += '<h2>' + escH(title || '請再次確認') + '</h2>';
+  if (description) html += '<p style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:12px">' + escH(description) + '</p>';
+  if (warningText) html += '<div class="danger-copy" style="margin-bottom:16px">' + escH(warningText) + '</div>';
+  html += '<div class="modal-actions">';
+  html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
+  html += '<button class="btn ' + escH(confirmClass || 'btn-primary') + '" onclick="confirmPendingAction()">' + escH(confirmLabel || '確認') + '</button>';
+  html += '</div></div></div>';
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function confirmPendingAction() {
+  var action = pendingConfirmAction;
+  pendingConfirmAction = null;
+  closeModal();
+  if (typeof action === 'function') action();
+}
+
+function closeModal() {
+  pendingConfirmAction = null;
+  document.getElementById('modal-container').innerHTML='';
+}
+
+// ===== Rule Settings =====
+function cloneRows(rows) {
+  return JSON.parse(JSON.stringify(rows || []));
+}
+
+function countRuleChanges() {
+  var base = ruleState.rows || [];
+  var draft = ruleDraftRows || [];
+  var baseMap = {}, draftMap = {}, keys = {};
+  base.forEach(function(row) { baseMap[row.group + '|' + row.key] = row; keys[row.group + '|' + row.key] = true; });
+  draft.forEach(function(row) { draftMap[row.group + '|' + row.key] = row; keys[row.group + '|' + row.key] = true; });
+  var count = 0;
+  Object.keys(keys).forEach(function(key) {
+    var before = baseMap[key], after = draftMap[key];
+    var beforeValue = before ? [before.value, before.enabled].join('|') : '';
+    var afterValue = after ? [after.value, after.enabled].join('|') : '';
+    if (beforeValue !== afterValue) count++;
+  });
+  return count;
+}
+
+function refreshRuleDraftState() {
+  ruleDirty = countRuleChanges() > 0;
+  var count = countRuleChanges();
+  var summary = document.getElementById('rule-save-summary');
+  if (summary) {
+    summary.className = 'inline-badge ' + (ruleDirty ? 'lock' : 'ok');
+    summary.textContent = ruleDirty ? ('尚有 ' + count + ' 項未儲存') : '所有規則已同步';
+  }
+  var status = document.getElementById('rule-change-status');
+  if (status) {
+    status.className = 'settings-kpi' + (ruleDirty ? ' warn' : '');
+    status.innerHTML = '<label>未儲存變更</label><div>' + count + ' 項</div>';
+  }
+}
+
+function renderRuleStatus() {
+  var admin = ruleState.adminStatus || {};
+  var evaluator = admin.evaluator || {};
+  var adminEl = document.getElementById('rule-admin-status');
+  var userEl = document.getElementById('rule-user-status');
+  var propEl = document.getElementById('rule-property-status');
+  if (adminEl) {
+    adminEl.className = 'settings-kpi' + (admin.isAdmin ? '' : ' warn');
+    adminEl.innerHTML = '<label>管理權限</label><div>' + (admin.isAdmin ? '可編輯規則' : '僅可檢視') + '</div>';
+  }
+  if (userEl) {
+    userEl.innerHTML = '<label>目前使用者</label><div>' + escH(evaluator.displayName || evaluator.email || '未取得帳號') + '</div>';
+  }
+  if (propEl) {
+    propEl.className = 'settings-kpi' + (admin.adminEmailsConfigured ? '' : ' warn');
+    propEl.innerHTML = '<label>管理者名單設定</label><div>' + (admin.adminEmailsConfigured ? '已設定 RULE_ADMIN_EMAILS' : '尚未設定 RULE_ADMIN_EMAILS') + '</div>';
+  }
+  syncInitNavVisibility();
+  if (!admin.isAdmin && !document.getElementById('page-init').classList.contains('hidden')) {
+    showPage('list');
+  }
+  refreshRuleDraftState();
+}
+
+function renderRuleInput(row, disabled) {
+  var base = 'data-group="' + escH(row.group) + '" data-key="' + escH(row.key) + '"';
+  if (row.type === 'boolean') {
+    return '<label class="rule-toggle"><input type="checkbox" ' + base + ' onchange="toggleRuleBoolean(this)" ' + (parseRuleBool(row.value) ? 'checked ' : '') + (disabled ? 'disabled' : '') + '> 規則值為啟用</label>';
+  }
+  if (row.type === 'mapping' || row.type === 'text' || row.type === 'keyword_list') {
+    return '<textarea class="rule-textarea" ' + base + ' oninput="updateRuleValue(this)" ' + (disabled ? 'disabled' : '') + '>' + escH(row.value || '') + '</textarea>';
+  }
+  if (row.type === 'select') {
+    var options = [];
+    if (row.group === 'package_exemption' && row.key === 'operator') options = ['equals', 'not_equals', 'contains'];
+    else if (row.group === 'assessment_applicability' && row.key === 'comparison_operator') options = ['lte', 'gte', 'eq'];
+    else options = ['equals', 'contains'];
+    return '<select class="rule-select" ' + base + ' onchange="updateRuleValue(this)" ' + (disabled ? 'disabled' : '') + '>' + options.map(function(opt) {
+      return '<option value="' + opt + '"' + (row.value === opt ? ' selected' : '') + '>' + opt + '</option>';
+    }).join('') + '</select>';
+  }
+  if (row.type === 'level') {
+    return '<select class="rule-select" ' + base + ' onchange="updateRuleValue(this)" ' + (disabled ? 'disabled' : '') + '><option value="普"' + (row.value === '普' ? ' selected' : '') + '>普</option><option value="中"' + (row.value === '中' ? ' selected' : '') + '>中</option><option value="高"' + (row.value === '高' ? ' selected' : '') + '>高</option></select>';
+  }
+  return '<input class="rule-input" ' + base + ' value="' + escH(row.value || '') + '" oninput="updateRuleValue(this)" ' + (disabled ? 'disabled' : '') + '>';
+}
+
+function renderRuleConsole() {
+  var container = document.getElementById('rule-console');
+  if (!container) return;
+  var groups = Object.keys(RULE_GROUP_META);
+  var isAdmin = !!(ruleState.adminStatus && ruleState.adminStatus.isAdmin);
+  var html = '<div class="settings-grid' + (isAdmin ? '' : ' readonly-mask') + '">';
+  groups.forEach(function(group) {
+    var rows = getRuleRowsByGroup(group);
+    if (!rows.length) return;
+    var meta = RULE_GROUP_META[group];
+    html += '<section class="rule-group-card">';
+    html += '<h3>' + escH(meta.title) + '</h3><p>' + escH(meta.desc) + '</p>';
+    rows.forEach(function(row) {
+      html += '<div class="rule-row">';
+      html += '<div class="rule-row-head"><div><div class="rule-row-title">' + escH(row.label || row.key) + '</div><div class="rule-row-desc">' + escH(row.description || '') + '</div></div>';
+      html += '<div class="rule-row-meta"><span class="meta-pill">' + escH(row.type) + '</span><span class="meta-pill">' + escH(row.key) + '</span></div></div>';
+      html += renderRuleInput(row, !isAdmin);
+      html += '<label class="rule-toggle"><input type="checkbox" data-group="' + escH(row.group) + '" data-key="' + escH(row.key) + '" onchange="toggleRuleEnabled(this)" ' + (row.enabled !== false ? 'checked ' : '') + (!isAdmin ? 'disabled' : '') + '> 參與判斷</label>';
+      html += '</div>';
+    });
+    html += '</section>';
+  });
+  html += '</div>';
+  if (!isAdmin) {
+    html += '<div class="rating-status warn" style="margin-top:12px">目前帳號不是規則管理者，設定台以唯讀模式顯示。</div>';
+  }
+  container.innerHTML = html;
+  renderRuleStatus();
+}
+
+function getDraftRule(group, key) {
+  for (var i = 0; i < ruleDraftRows.length; i++) {
+    if (ruleDraftRows[i].group === group && ruleDraftRows[i].key === key) return ruleDraftRows[i];
+  }
+  return null;
+}
+
+function updateRuleValue(el) {
+  var row = getDraftRule(el.dataset.group, el.dataset.key);
+  if (!row) return;
+  row.value = el.value;
+  refreshRuleDraftState();
+}
+
+function toggleRuleBoolean(el) {
+  var row = getDraftRule(el.dataset.group, el.dataset.key);
+  if (!row) return;
+  row.value = el.checked ? 'true' : 'false';
+  refreshRuleDraftState();
+}
+
+function toggleRuleEnabled(el) {
+  var row = getDraftRule(el.dataset.group, el.dataset.key);
+  if (!row) return;
+  row.enabled = !!el.checked;
+  refreshRuleDraftState();
+}
+
+function loadRuleSettings(force) {
+  if (ruleLoaded && !force) {
+    renderRuleConsole();
+    if (!ruleAuditLogs.length) loadRuleAuditLogs();
+    return;
+  }
+  var consoleEl = document.getElementById('rule-console');
+  if (consoleEl) consoleEl.innerHTML = '<div class="loading"><div class="spinner"></div><p>載入規則設定中...</p></div>';
+  google.script.run.withSuccessHandler(function(data) {
+    ruleState = data || {rows: [], adminStatus: null};
+    ruleState.rows = ruleState.rows || [];
+    ruleDraftRows = cloneRows(ruleState.rows);
+    ruleLoaded = true;
+    renderRuleConsole();
+    loadRuleAuditLogs();
+  }).withFailureHandler(function(err) {
+    if (consoleEl) consoleEl.innerHTML = '<div class="rating-status warn">載入規則失敗：' + escH(err.message) + '</div>';
+  }).getRuleSettings();
+}
+
+function saveRuleSettings() {
+  if (!ruleState.adminStatus || !ruleState.adminStatus.isAdmin) {
+    showToast('僅管理者可儲存規則');
+    return;
+  }
+  showToast('規則儲存中...');
+  google.script.run.withSuccessHandler(function(res) {
+    ruleState.rows = cloneRows(ruleDraftRows);
+    ruleState.adminStatus = res.adminStatus || ruleState.adminStatus;
+    refreshRuleDraftState();
+    renderRuleStatus();
+    loadRuleAuditLogs();
+    showToast('已儲存 ' + res.changes + ' 項規則變更');
+  }).withFailureHandler(function(err) {
+    showToast('儲存失敗：' + err.message);
+  }).saveRuleSettings({rows: ruleDraftRows});
+}
+
+function resetRuleSettings() {
+  if (!ruleState.adminStatus || !ruleState.adminStatus.isAdmin) {
+    showToast('僅管理者可重設規則');
+    return;
+  }
+  if (!confirm('確定要將所有規則重設為預設值？')) return;
+  showToast('重設中...');
+  google.script.run.withSuccessHandler(function() {
+    showToast('規則已重設為預設值');
+    ruleLoaded = false;
+    loadRuleSettings(true);
+  }).withFailureHandler(function(err) {
+    showToast('重設失敗：' + err.message);
+  }).resetRuleSettings();
+}
+
+function loadRuleAuditLogs() {
+  var panel = document.getElementById('rule-audit-panel');
+  if (panel) panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>載入變更紀錄中...</p></div>';
+  google.script.run.withSuccessHandler(function(rows) {
+    ruleAuditLogs = rows || [];
+    renderRuleAuditLogs();
+  }).withFailureHandler(function(err) {
+    if (panel) panel.innerHTML = '<div class="rating-status warn">載入變更紀錄失敗：' + escH(err.message) + '</div>';
+  }).getRuleAuditLogs();
+}
+
+function renderRuleAuditLogs() {
+  var panel = document.getElementById('rule-audit-panel');
+  if (!panel) return;
+  if (!ruleAuditLogs.length) {
+    panel.innerHTML = '<div class="rating-status">尚無規則變更紀錄。</div>';
+    return;
+  }
+  var html = '<div class="audit-list">';
+  ruleAuditLogs.forEach(function(log) {
+    html += '<div class="audit-item">';
+    html += '<strong>' + escH(log.summary || (log.group + ' / ' + log.key)) + '</strong>';
+    html += '<div>' + escH(log.timestamp || '-') + ' ｜ ' + escH(log.editorName || log.editorEmail || '未知使用者') + '</div>';
+    html += '<div>規則：' + escH((log.group || '-') + ' / ' + (log.key || '-')) + '</div>';
+    html += '<div>變更前：' + escH(log.oldValue || '-') + '</div>';
+    html += '<div>變更後：' + escH(log.newValue || '-') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+// ===== Init =====
+function doInit() {
+  if (!isRuleAdmin()) { showToast('僅管理者可執行初始化'); return; }
+  openConfirmModal(
+    '確認初始化試算表結構',
+    '此操作會建立系統所需的工作表與標題列，適合首次部署或缺少必要工作表時使用。',
+    '請確認目前試算表為正確的正式環境，避免在錯誤的文件中建立結構。',
+    '確認初始化',
+    'btn-primary',
+    executeInitAction
+  );
+}
+
+function executeInitAction() {
+  document.getElementById('init-result').innerHTML='<div class="loading"><div class="spinner"></div> 初始化中...</div>';
+  google.script.run.withSuccessHandler(function(){
+    document.getElementById('init-result').innerHTML='<p style="color:var(--success)">初始化完成！</p>';
+    ruleLoaded = false;
+    loadRuleSettings(true);
+  }).withFailureHandler(function(e){
+    document.getElementById('init-result').innerHTML='<p style="color:var(--danger)">失敗：'+e.message+'</p>';
+  }).initializeSheets();
+}
+
+function doImport() {
+  if (!isRuleAdmin()) { showToast('僅管理者可匯入預設資料'); return; }
+  openConfirmModal(
+    '確認匯入預設系統資料',
+    '此操作會新增一批預設系統資料到系統清冊，適合示範或初始建置使用。',
+    '若重複執行，可能新增重複的預設系統資料。請先確認目前環境是否真的需要匯入。',
+    '確認匯入',
+    'btn-warning',
+    executeImportAction
+  );
+}
+
+function executeImportAction() {
+  document.getElementById('init-result').innerHTML='<div class="loading"><div class="spinner"></div> 匯入中...</div>';
+  google.script.run.withSuccessHandler(function(r){
+    document.getElementById('init-result').innerHTML='<p style="color:var(--success)">已匯入 '+r.count+' 個系統。</p>';
+  }).withFailureHandler(function(e){
+    document.getElementById('init-result').innerHTML='<p style="color:var(--danger)">失敗：'+e.message+'</p>';
+  }).importDefaultSystems();
+}
+
+function refreshData(){loadSystems();}
+
+// ===== Utils =====
+function escH(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+
+document.addEventListener('DOMContentLoaded',function(){
+  ratingTabTemplate = document.getElementById('tab-rating').innerHTML;
+  assessTabTemplate = document.getElementById('tab-assess').innerHTML;
+  loadRuleSettings();
+  loadSystems();
+});
+</script>
+</body>
+</html>
