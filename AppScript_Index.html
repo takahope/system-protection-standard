@@ -145,22 +145,66 @@
       .rating-hero{flex-direction:column}
     }
 
-    /* Assessment table */
-    .assess-table{width:100%;border-collapse:collapse;font-size:12px}
-    .assess-table th{background:var(--primary);color:#fff;padding:6px 8px;text-align:left;font-weight:600;position:sticky;top:44px;z-index:10}
-    .assess-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
-    .assess-table tr:hover{background:#f1f3f4}
-    .assess-table tr.applicable{background:#fffde7}
-    .assess-table tr.not-applicable{color:#9e9e9e}
-    .assess-table tr.dirty{background:#fff9c4 !important}
-    .assess-table select,.assess-table input,.assess-table textarea{width:100%;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:11px;font-family:inherit}
-    .assess-table textarea{min-height:40px;resize:vertical}
-    .assess-table .dim-cell{font-weight:600;background:#e8eaf6}
-
-    /* Filter bar */
-    .filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
-    .filter-bar select{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px}
-    .filter-bar label{font-size:12px;color:var(--text2)}
+    /* Assessment workspace */
+    .assess-shell{display:grid;gap:14px}
+    .assess-topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .assess-topbar h2{margin:0}
+    .assess-topbar p{font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px}
+    .assess-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .assess-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+    .assess-kpi{padding:12px 14px;border-radius:14px;border:1px solid #e5e7eb;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)}
+    .assess-kpi .label{font-size:10px;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+    .assess-kpi .value{font-size:24px;font-weight:800;line-height:1}
+    .assess-kpi .sub{font-size:11px;color:var(--text2);margin-top:4px}
+    .assess-kpi.ok .value{color:var(--success)}
+    .assess-kpi.partial .value{color:var(--warning)}
+    .assess-kpi.fail .value{color:var(--danger)}
+    .assess-kpi.pending .value{color:#6b7280}
+    .assess-panel{border:1px solid #e5e7eb;border-radius:18px;background:linear-gradient(180deg,#fff 0%,#fbfcfd 100%);overflow:hidden}
+    .assess-filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
+    .assess-filterbar select{padding:8px 10px;border:1px solid #d1d9e6;border-radius:10px;font-size:12px;background:#fff}
+    .assess-filterbar label{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px}
+    .assess-table-wrap{overflow:auto}
+    .assess-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:960px}
+    .assess-table th{background:#0f5fa8;color:#fff;padding:10px 12px;text-align:left;font-weight:700;position:sticky;top:0;z-index:5;white-space:nowrap}
+    .assess-table td{padding:10px 12px;border-bottom:1px solid #edf2f7;vertical-align:top;background:#fff}
+    .assess-table tr.assess-summary-row:hover td{background:#f8fbff}
+    .assess-table tr.applicable td{background:#fff}
+    .assess-table tr.not-applicable td{background:#fafafa;color:#6b7280}
+    .assess-table tr.dirty td{box-shadow:inset 4px 0 0 #f59e0b;background:#fffaf0}
+    .assess-table .dim-cell{font-weight:700;color:#1f3b57}
+    .assess-index{font-weight:700;text-align:center;color:#334155}
+    .assess-level-pill{display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#edf2f7;color:#334155}
+    .assess-control-text{max-width:420px;line-height:1.7;color:#334155}
+    .assess-control-title{font-weight:700;color:#111827;margin-bottom:4px}
+    .assess-control-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .assess-status-select{min-width:110px;width:100%;border:1px solid #d1d9e6;border-radius:10px;padding:7px 9px;font-size:12px;background:#fff}
+    .assess-expand-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d9e6;background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;color:#334155;cursor:pointer;transition:.18s}
+    .assess-expand-btn:hover{background:#eef6ff;border-color:#b7d1f3;color:#0f5fa8}
+    .assess-expand-btn .arrow{display:inline-block;transition:transform .18s}
+    .assess-expand-btn.open .arrow{transform:rotate(90deg)}
+    .assess-detail-row td{padding:0;border-bottom:1px solid #dbe4f0;background:#f8fbff}
+    .assess-detail-panel{padding:16px;border-top:1px solid #e1ebf7}
+    .assess-detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .assess-detail-head h3{font-size:14px;margin:0}
+    .assess-detail-head p{font-size:12px;color:var(--text2);margin:4px 0 0}
+    .assess-meta-row{display:flex;gap:8px;flex-wrap:wrap}
+    .assess-meta-pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#e8f1fb;color:#0f5fa8}
+    .assess-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .assess-field{display:grid;gap:6px}
+    .assess-field.full{grid-column:1/-1}
+    .assess-field label{font-size:11px;font-weight:700;color:#475467}
+    .assess-field textarea,.assess-field input,.assess-field select{width:100%;border:1px solid #d1d9e6;border-radius:12px;padding:10px 12px;font-size:12px;font-family:inherit;background:#fff}
+    .assess-field textarea{min-height:92px;resize:vertical}
+    .assess-empty-note{font-size:12px;color:var(--text2);padding:20px;text-align:center}
+    .assess-na-note{font-size:12px;color:#6b7280;line-height:1.7;background:#fff;border:1px dashed #d1d5db;border-radius:12px;padding:12px}
+    @media (max-width:960px){
+      .assess-topbar{flex-direction:column}
+      .assess-actions{width:100%}
+      .assess-actions .btn{flex:1}
+      .assess-editor-grid{grid-template-columns:1fr}
+      .assess-table{min-width:760px}
+    }
 
     /* Dashboard heatmap */
     .heatmap-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -480,48 +524,60 @@
     <!-- 自評 -->
     <div id="tab-assess" class="hidden">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
-          <h2 style="margin:0">防護基準自評表</h2>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-outline btn-sm" onclick="initAssessment()">初始化自評項目</button>
-            <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
-            <button class="btn btn-primary btn-sm" onclick="saveAllAssessment()">儲存所有變更</button>
+        <div class="assess-shell">
+          <div class="assess-topbar">
+            <div>
+              <h2>防護基準自評工作台</h2>
+              <p>先在主表快速掌握控制措施與符合性，再展開單筆項目補充現況、佐證與矯正作為，避免欄位互相擠壓。</p>
+            </div>
+            <div class="assess-actions">
+              <button class="btn btn-outline btn-sm" onclick="initAssessment()">初始化自評項目</button>
+              <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
+              <button class="btn btn-primary btn-sm" onclick="saveAllAssessment()">儲存所有變更</button>
+            </div>
           </div>
-        </div>
-        <div id="assess-stats" style="margin-bottom:8px"></div>
-        <div class="filter-bar">
-          <label>篩選構面：</label>
-          <select id="filter-dim" onchange="applyFilters()">
-            <option value="">全部構面</option>
-            <option value="存取控制">存取控制</option>
-            <option value="事件日誌與可歸責性">事件日誌與可歸責性</option>
-            <option value="營運持續計畫">營運持續計畫</option>
-            <option value="識別與鑑別">識別與鑑別</option>
-            <option value="系統與服務獲得">系統與服務獲得</option>
-            <option value="系統與通訊保護">系統與通訊保護</option>
-            <option value="系統與資訊完整性">系統與資訊完整性</option>
-          </select>
-          <label>篩選狀態：</label>
-          <select id="filter-status" onchange="applyFilters()">
-            <option value="">全部狀態</option>
-            <option value="pending">待評估</option>
-            <option value="符合">符合</option>
-            <option value="部分符合">部分符合</option>
-            <option value="未符合">未符合</option>
-            <option value="不適用">不適用</option>
-          </select>
-          <label><input type="checkbox" id="filter-applicable" onchange="applyFilters()"> 只顯示應評項目</label>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="assess-table" id="assess-table">
-            <thead><tr>
-              <th style="width:35px">項次</th><th style="width:90px">構面</th><th style="width:110px">類別</th>
-              <th style="width:35px">等級</th><th style="width:230px">安全控制措施</th><th style="width:70px">符合性</th>
-              <th style="width:160px">現況說明</th><th style="width:120px">佐證資料</th>
-              <th style="width:120px">矯正作為</th><th style="width:90px">目標日期</th>
-            </tr></thead>
-            <tbody id="assess-body"></tbody>
-          </table>
+          <div id="assess-stats"></div>
+          <div class="assess-panel">
+            <div class="assess-filterbar">
+              <label>篩選構面：
+                <select id="filter-dim" onchange="applyFilters()">
+                  <option value="">全部構面</option>
+                  <option value="存取控制">存取控制</option>
+                  <option value="事件日誌與可歸責性">事件日誌與可歸責性</option>
+                  <option value="營運持續計畫">營運持續計畫</option>
+                  <option value="識別與鑑別">識別與鑑別</option>
+                  <option value="系統與服務獲得">系統與服務獲得</option>
+                  <option value="系統與通訊保護">系統與通訊保護</option>
+                  <option value="系統與資訊完整性">系統與資訊完整性</option>
+                </select>
+              </label>
+              <label>篩選狀態：
+                <select id="filter-status" onchange="applyFilters()">
+                  <option value="">全部狀態</option>
+                  <option value="pending">待評估</option>
+                  <option value="符合">符合</option>
+                  <option value="部分符合">部分符合</option>
+                  <option value="未符合">未符合</option>
+                  <option value="不適用">不適用</option>
+                </select>
+              </label>
+              <label><input type="checkbox" id="filter-applicable" onchange="applyFilters()"> 只顯示應評項目</label>
+            </div>
+            <div class="assess-table-wrap">
+              <table class="assess-table" id="assess-table">
+                <thead><tr>
+                  <th style="width:54px">項次</th>
+                  <th style="width:110px">構面</th>
+                  <th style="width:140px">類別</th>
+                  <th style="width:72px">等級</th>
+                  <th>安全控制措施</th>
+                  <th style="width:130px">符合性</th>
+                  <th style="width:120px">操作</th>
+                </tr></thead>
+                <tbody id="assess-body"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -552,6 +608,7 @@ var ruleAuditLogs = [];
 var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
+var expandedAssessmentIndex = null;
 
 var RULE_GROUP_META = {
   rating_confidentiality: {title:'機密性建議規則', desc:'管理個資門檻、機敏資訊類別關鍵字與提示顯示。'},
@@ -1139,18 +1196,18 @@ function loadAssessment(sysId) {
     renderPackageExemption('assess');
     return;
   }
-  document.getElementById('assess-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
+  document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
     currentAssessment=data; renderAssessment(data);
   }).withFailureHandler(function(e){
-    document.getElementById('assess-body').innerHTML='<tr><td colspan="10">載入失敗：'+e.message+'</td></tr>';
+    document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="padding:20px">載入失敗：'+e.message+'</td></tr>';
   }).getAssessment(sysId);
 }
 
 function renderAssessment(items) {
   var tbody=document.getElementById('assess-body');
   if(!items||items.length===0){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px"><p>尚無自評資料，請點擊「初始化自評項目」</p></td></tr>';
+    tbody.innerHTML='<tr><td colspan="7"><div class="assess-empty-note">尚無自評資料，請點擊「初始化自評項目」。</div></td></tr>';
     document.getElementById('assess-stats').innerHTML='';return;
   }
 
@@ -1170,16 +1227,45 @@ function renderAssessment(items) {
   var pct=st.applicable>0?Math.round(st.compliant/st.applicable*100):0;
   var bc=pct>=80?'green':pct>=50?'orange':'red';
   document.getElementById('assess-stats').innerHTML=
-    '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;align-items:center">'+
-    '<span>應評：<b>'+st.applicable+'</b></span>'+
-    '<span style="color:var(--success)">符合：<b>'+st.compliant+'</b></span>'+
-    '<span style="color:var(--warning)">部分符合：<b>'+st.partial+'</b></span>'+
-    '<span style="color:var(--danger)">未符合：<b>'+st.nonCompliant+'</b></span>'+
-    '<span style="color:#9e9e9e">待評：<b>'+st.pending+'</b></span>'+
-    '<span>完成率：<b>'+pct+'%</b></span></div>'+
+    '<div class="assess-kpi-row">'+
+    '<div class="assess-kpi"><div class="label">應評項目</div><div class="value">'+st.applicable+'</div><div class="sub">依目前系統等級應完成</div></div>'+
+    '<div class="assess-kpi ok"><div class="label">符合</div><div class="value">'+st.compliant+'</div><div class="sub">已達要求</div></div>'+
+    '<div class="assess-kpi partial"><div class="label">部分符合</div><div class="value">'+st.partial+'</div><div class="sub">仍需補強</div></div>'+
+    '<div class="assess-kpi fail"><div class="label">未符合</div><div class="value">'+st.nonCompliant+'</div><div class="sub">優先處理</div></div>'+
+    '<div class="assess-kpi pending"><div class="label">待評估</div><div class="value">'+st.pending+'</div><div class="sub">尚未填寫狀態</div></div>'+
+    '<div class="assess-kpi"><div class="label">完成率</div><div class="value">'+pct+'%</div><div class="sub">目前整體進度</div></div>'+
+    '</div>'+
     '<div class="progress-bar"><div class="fill '+bc+'" style="width:'+pct+'%"></div></div>';
 
   renderAssessmentRows(items);
+}
+
+function renderAssessmentDetail(item, idx, applicable, naLabel) {
+  var html = '<div class="assess-detail-panel">';
+  html += '<div class="assess-detail-head">';
+  html += '<div><h3>' + escH(item.dimension + ' / ' + item.category) + '</h3><p>' + escH('項次 ' + item.index + '｜' + item.description) + '</p></div>';
+  html += '<div class="assess-meta-row">';
+  html += '<span class="assess-meta-pill">最低要求等級：' + escH(item.level) + '</span>';
+  html += '<span class="assess-meta-pill">' + (applicable ? '應評項目' : escH(naLabel)) + '</span>';
+  html += '</div></div>';
+  if (applicable) {
+    html += '<div class="assess-editor-grid">';
+    html += '<div class="assess-field"><label>符合性</label><select class="assess-status-select" data-field="compliance" onchange="markDirty(this)">';
+    html += '<option value="">-- 請選擇 --</option>';
+    ['符合','部分符合','未符合',naLabel].forEach(function(v){
+      html += '<option value="'+v+'"'+(item.compliance===v?' selected':'')+'>'+v+'</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="assess-field"><label>目標日期</label><input type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)"></div>';
+    html += '<div class="assess-field full"><label>現況說明</label><textarea data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></div>';
+    html += '<div class="assess-field full"><label>佐證資料</label><textarea data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></div>';
+    html += '<div class="assess-field full"><label>矯正作為</label><textarea data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></div>';
+    html += '</div>';
+  } else {
+    html += '<div class="assess-na-note">' + escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目')) + '</div>';
+  }
+  html += '</div>';
+  return html;
 }
 
 function renderAssessmentRows(items) {
@@ -1190,7 +1276,7 @@ function renderAssessmentRows(items) {
   var filterApplicable=document.getElementById('filter-applicable').checked;
   var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
 
-  var html='',prevDim='',prevCat='';
+  var html='',prevDim='',prevCat='',visibleCount=0;
   items.forEach(function(item,idx){
     var applicable=isAssessmentApplicable(item.level, sysLevel);
 
@@ -1202,39 +1288,51 @@ function renderAssessmentRows(items) {
       else if(filterStatus!=='pending' && item.compliance!==filterStatus) return;
     }
 
+    visibleCount++;
     var rowClass=applicable?'applicable':'not-applicable';
-    html+='<tr class="'+rowClass+'" data-idx="'+idx+'">';
-    html+='<td style="text-align:center">'+item.index+'</td>';
+    var statusValue = item.compliance || (applicable ? '待評估' : naLabel);
+    var expanded = expandedAssessmentIndex === idx;
+    html+='<tr class="assess-summary-row '+rowClass+'" data-idx="'+idx+'" data-kind="summary">';
+    html+='<td class="assess-index">'+item.index+'</td>';
     html+='<td class="'+(item.dimension!==prevDim?'dim-cell':'')+'">'+escH(item.dimension!==prevDim?item.dimension:'')+'</td>';
-    html+='<td style="font-weight:'+(item.category!==prevCat?'500':'normal')+'">'+escH(item.category!==prevCat?item.category:'')+'</td>';
-    html+='<td style="text-align:center">'+item.level+'</td>';
-    html+='<td style="font-size:11px">'+escH(item.description)+'</td>';
-
-    if(applicable){
-      html+='<td><select data-field="compliance" onchange="markDirty(this)">';
-      html+='<option value="">--</option>';
+    html+='<td style="font-weight:'+(item.category!==prevCat?'600':'normal')+'">'+escH(item.category!==prevCat?item.category:'')+'</td>';
+    html+='<td><span class="assess-level-pill">'+escH(item.level)+'</span></td>';
+    html+='<td><div class="assess-control-text"><div class="assess-control-title">'+escH(item.category)+'</div><div class="assess-control-desc">'+escH(item.description)+'</div></div></td>';
+    html+='<td>';
+    if (applicable) {
+      html+='<select class="assess-status-select" data-field="compliance" onchange="markDirty(this)">';
+      html+='<option value="">-- 請選擇 --</option>';
       ['符合','部分符合','未符合',naLabel].forEach(function(v){
         html+='<option value="'+v+'"'+(item.compliance===v?' selected':'')+'>'+v+'</option>';
       });
-      html+='</select></td>';
-      html+='<td><textarea data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></td>';
-      html+='<td><textarea data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></td>';
-      html+='<td><textarea data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></td>';
-      html+='<td><input type="date" data-field="targetDate" value="'+(item.targetDate||'')+'" onchange="markDirty(this)"></td>';
+      html+='</select>';
     } else {
-      html+='<td style="color:#9e9e9e;font-size:11px">'+escH(naLabel)+'</td><td colspan="4" style="color:#bbb;font-size:11px">'+escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目'))+'</td>';
+      html+='<span class="assess-level-pill">'+escH(naLabel)+'</span>';
     }
+    html+='</td>';
+    html+='<td><button class="assess-expand-btn'+(expanded?' open':'')+'" onclick="toggleAssessmentDetail('+idx+')"><span class="arrow">▶</span>'+(expanded?'收合':'展開編輯')+'</button></td>';
     html+='</tr>';
+    if (expanded) {
+      html+='<tr class="assess-detail-row '+rowClass+'" data-idx="'+idx+'" data-kind="detail"><td colspan="7">'+renderAssessmentDetail(item, idx, applicable, naLabel)+'</td></tr>';
+    }
     prevDim=item.dimension;prevCat=item.category;
   });
-  tbody.innerHTML=html||'<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text2)">無符合篩選條件的項目</td></tr>';
+  tbody.innerHTML=html||'<tr><td colspan="7"><div class="assess-empty-note">無符合篩選條件的項目。</div></td></tr>';
+  if (visibleCount === 0) expandedAssessmentIndex = null;
 }
 
 function applyFilters() { if(currentAssessment.length>0) renderAssessmentRows(currentAssessment); }
 
+function toggleAssessmentDetail(idx) {
+  expandedAssessmentIndex = expandedAssessmentIndex === idx ? null : idx;
+  renderAssessmentRows(currentAssessment);
+}
+
 function markDirty(el) {
   var row=el.closest('tr');
-  if(row) row.classList.add('dirty');
+  if(!row) return;
+  var idx=row.dataset.idx;
+  document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"]').forEach(function(tr){tr.classList.add('dirty');});
 }
 
 function initAssessment() {
@@ -1250,14 +1348,16 @@ function initAssessment() {
 }
 
 function saveAllAssessment() {
-  var dirtyRows=document.querySelectorAll('#assess-body tr.dirty');
+  var dirtyRows=document.querySelectorAll('#assess-body tr.assess-detail-row.dirty, #assess-body tr.assess-summary-row.dirty');
   if(dirtyRows.length===0){showToast('沒有變更需要儲存');return;}
 
-  var batch=[];
+  var batch=[],seen={};
   dirtyRows.forEach(function(row){
-    var idx=parseInt(row.dataset.idx);
+    var idx=parseInt(row.dataset.idx,10);
+    if(seen[idx]) return;
+    seen[idx]=true;
     var item=Object.assign({},currentAssessment[idx]);
-    row.querySelectorAll('[data-field]').forEach(function(f){
+    document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"] [data-field]').forEach(function(f){
       item[f.dataset.field]=f.value||'';
     });
     batch.push(item);
@@ -1272,7 +1372,9 @@ function saveAllAssessment() {
   showToast('儲存中 ('+batch.length+' 項)...');
   google.script.run.withSuccessHandler(function(r){
     showToast('已儲存 '+r.updated+' 項');
-    dirtyRows.forEach(function(row){row.classList.remove('dirty');});
+    Object.keys(seen).forEach(function(idx){
+      document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"]').forEach(function(row){row.classList.remove('dirty');});
+    });
     // Recalculate stats
     renderAssessment(currentAssessment);
     // Auto-calc non-compliance codes
