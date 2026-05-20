@@ -195,6 +195,60 @@
     .toast{position:fixed;bottom:20px;right:20px;background:#323232;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
     .toast.show{opacity:1}
     .code-tag{display:inline-block;padding:1px 6px;background:#fce4ec;color:var(--danger);border-radius:4px;font-size:11px;font-weight:600;margin:1px}
+
+    /* ===== Compare Page ===== */
+    .cmp-hero{position:relative;overflow:hidden;border-radius:18px;background:linear-gradient(135deg,#0c2d48 0%,#145374 40%,#2e8bc0 100%);color:#fff;padding:28px 32px;margin-bottom:18px}
+    .cmp-hero::before{content:'';position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06)}
+    .cmp-hero::after{content:'';position:absolute;right:80px;bottom:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.04)}
+    .cmp-hero h2{font-size:22px;font-weight:700;margin-bottom:6px;position:relative}
+    .cmp-hero p{font-size:13px;line-height:1.8;color:rgba(255,255,255,.82);max-width:700px;position:relative}
+    .cmp-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+    .cmp-kpi{background:var(--card);border-radius:14px;padding:16px 18px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1px solid var(--border)}
+    .cmp-kpi .num{font-size:32px;font-weight:800;line-height:1.1}
+    .cmp-kpi .num.old{color:var(--danger)} .cmp-kpi .num.new{color:var(--success)} .cmp-kpi .num.chg{color:var(--primary)}
+    .cmp-kpi .label{font-size:11px;color:var(--text2);margin-top:4px}
+    .cmp-kpi .sub{font-size:11px;color:var(--text2);margin-top:2px}
+    .cmp-section{background:var(--card);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px;overflow:hidden}
+    .cmp-section-hdr{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:.15s}
+    .cmp-section-hdr:hover{background:#f8f9fb}
+    .cmp-section.open .cmp-section-hdr{border-bottom-color:var(--border)}
+    .cmp-section-hdr .arrow{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#eef1f5;color:var(--text2);font-size:11px;transition:transform .2s;flex-shrink:0}
+    .cmp-section.open .cmp-section-hdr .arrow{transform:rotate(90deg);background:var(--primary);color:#fff}
+    .cmp-section-hdr .sec-title{font-size:14px;font-weight:700;flex:1}
+    .cmp-section-hdr .sec-count{font-size:11px;font-weight:700;padding:3px 12px;border-radius:999px;background:#eef4ff;color:var(--primary)}
+    .cmp-section-body{display:none;padding:14px 18px}
+    .cmp-section.open .cmp-section-body{display:block}
+    .cmp-item{border:1px solid #e8ecf1;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fafbfc;transition:.15s}
+    .cmp-item:last-child{margin-bottom:0}
+    .cmp-item:hover{background:#f4f6f9;border-color:#d4d9e2}
+    .cmp-item-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+    .cmp-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+    .cmp-pill.cat{background:#eeedfe;color:#534ab7}
+    .cmp-pill.dim{background:#e1f5ee;color:#0f6e56}
+    .cmp-pill.lv-old{background:#fce8e6;color:#c5221f}
+    .cmp-pill.lv-new{background:#e6f4ea;color:#137333}
+    .cmp-pill.lv{background:#fef7e0;color:#b06000}
+    .cmp-pill.added{background:#e6f4ea;color:#137333}
+    .cmp-pill.removed{background:#fce8e6;color:#c5221f}
+    .cmp-arrow{color:var(--text2);font-size:15px;font-weight:700;margin:0 2px}
+    .cmp-row{margin-bottom:6px}
+    .cmp-row-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+    .cmp-row-text{font-size:13px;line-height:1.8;color:var(--text)}
+    .cmp-hl{background:#fff3cd;color:#7a5900;padding:1px 5px;border-radius:4px;font-weight:600}
+    .cmp-desc{font-size:13px;line-height:1.7;color:#475467;margin-top:4px}
+    .cmp-note{font-size:12px;color:var(--text2);background:#f4f6f9;border-radius:8px;padding:8px 12px;margin-top:8px;border-left:3px solid var(--primary)}
+    .cmp-grid-table{width:100%;border-collapse:collapse;font-size:13px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+    .cmp-grid-table th,.cmp-grid-table td{padding:10px 14px;text-align:center;border-bottom:1px solid var(--border)}
+    .cmp-grid-table th{background:#f1f3f4;font-weight:700;color:var(--text2);font-size:11px}
+    .cmp-grid-table td:first-child{text-align:left;font-weight:600}
+    .cmp-grid-table .cmp-changed{background:#fff8e1;color:#b06000;font-weight:700}
+    .cmp-grid-table tr:last-child td{border-bottom:none}
+    .cmp-summary-insight{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:16px}
+    .cmp-insight-card{border-radius:14px;padding:16px 18px;border:1px solid}
+    .cmp-insight-card.up{background:#e6f4ea;border-color:#b7dfbf} .cmp-insight-card.down{background:#fce8e6;border-color:#f5c1bb} .cmp-insight-card.info{background:#eef4ff;border-color:#c8deff}
+    .cmp-insight-card h4{font-size:13px;font-weight:700;margin-bottom:4px}
+    .cmp-insight-card.up h4{color:#137333} .cmp-insight-card.down h4{color:#c5221f} .cmp-insight-card.info h4{color:#1a56db}
+    .cmp-insight-card p{font-size:12px;line-height:1.7;color:#475467;margin:0}
     .settings-shell{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
     .settings-stack{display:grid;gap:14px}
     .settings-hero{padding:20px;border-radius:18px;background:linear-gradient(135deg,#0f172a 0%,#16324f 45%,#24527a 100%);color:#fff;position:relative;overflow:hidden}
@@ -240,6 +294,12 @@
       .settings-shell{grid-template-columns:1fr}
       .settings-sidecard{position:static}
     }
+    @media (max-width:768px){
+      .cmp-kpi-row{grid-template-columns:repeat(3,1fr)}
+      .cmp-section-body > div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+      .cmp-hero{padding:20px 18px}
+      .cmp-hero h2{font-size:18px}
+    }
   </style>
 </head>
 <body>
@@ -249,6 +309,7 @@
   <div class="nav-btns">
     <button class="active" onclick="showPage('list')">系統總覽</button>
     <button onclick="showPage('dashboard')">儀表板</button>
+    <button onclick="showPage('compare')">新舊版比較</button>
     <button id="nav-init-btn" class="hidden" onclick="showPage('init')">系統設定</button>
   </div>
 </div>
@@ -348,6 +409,9 @@
       </aside>
     </div>
   </div>
+
+  <!-- ===== 新舊版比較 ===== -->
+  <div id="page-compare" class="hidden"></div>
 
   <!-- ===== 系統詳情 ===== -->
   <div id="page-detail" class="hidden">
@@ -613,11 +677,12 @@ function showPage(page) {
     showToast('僅管理者可查看系統設定');
     page = 'list';
   }
-  ['page-list','page-detail','page-init','page-dashboard'].forEach(function(p){document.getElementById(p).classList.add('hidden')});
+  ['page-list','page-detail','page-init','page-dashboard','page-compare'].forEach(function(p){document.getElementById(p).classList.add('hidden')});
   document.getElementById('page-'+page).classList.remove('hidden');
   document.querySelectorAll('.nav-btns button').forEach(function(b){b.classList.remove('active')});
   if(page==='list'){document.querySelectorAll('.nav-btns button')[0].classList.add('active');loadSystems();}
   else if(page==='dashboard'){document.querySelectorAll('.nav-btns button')[1].classList.add('active');loadDashboard();}
+  else if(page==='compare'){document.querySelectorAll('.nav-btns button')[2].classList.add('active');renderComparePage();}
   else if(page==='init'){document.getElementById('nav-init-btn').classList.add('active');loadRuleSettings();}
 }
 
@@ -1663,6 +1728,189 @@ function executeImportAction() {
 }
 
 function refreshData(){loadSystems();}
+
+// ===== Compare Page =====
+var comparePageRendered = false;
+function renderComparePage() {
+  if (comparePageRendered) return;
+  comparePageRendered = true;
+
+  var LEVEL_CHANGES = [
+    {loc:'存取控制 ▸ 帳號管理 #2',oldLv:'中',newLv:'普',desc:'已逾期之臨時或緊急帳號應刪除或禁用'},
+    {loc:'存取控制 ▸ 帳號管理 #3',oldLv:'中',newLv:'普',desc:'資通系統閒置帳號應禁用'},
+    {loc:'存取控制 ▸ 帳號管理 #4',oldLv:'中',newLv:'普',desc:'定期審核資通系統帳號之申請、建立、修改、啟用、停用及刪除'},
+    {loc:'存取控制 ▸ 帳號管理 #5',oldLv:'高',newLv:'中',desc:'機關應定義各系統之閒置時間或可使用期限與資通系統之使用情況及條件'},
+    {loc:'存取控制 ▸ 帳號管理 #6',oldLv:'高',newLv:'中',desc:'逾越機關所許可之閒置時間或可使用期限時，系統應自動將使用者登出'},
+    {loc:'存取控制 ▸ 最小權限 #9',oldLv:'中',newLv:'普',desc:'採最小權限原則，僅允許使用者（或代表使用者行為之程序）依機關任務及業務功能，完成指派任務所需之授權存取'},
+    {loc:'營運持續計畫 ▸ 系統備援 #33',oldLv:'中',newLv:'普',desc:'訂定資通系統從中斷後至重新恢復服務之可容忍時間要求'},
+    {loc:'系統與資訊完整性 ▸ 軟體及資訊完整性 #77',oldLv:'中',newLv:'普',desc:'使用者輸入資料合法性檢查應置放於應用系統伺服器端'}
+  ];
+
+  var CAT_RENAMES = [
+    {dim:'營運持續計畫',oldCat:'系統備份',newCat:'資料備份',note:'強調資料備份而非系統備份，源碼備份移至「部署與維運階段」'},
+    {dim:'識別與鑑別',oldCat:'內部使用者之識別與鑑別 ＋ 非內部使用者之識別與鑑別',newCat:'使用者之識別與鑑別',note:'合併內部/外部使用者為統一類別，不再區分內外部'},
+    {dim:'識別與鑑別',oldCat:'鑑別資訊回饋 ＋ 加密模組鑑別',newCat:'鑑別資訊保護',note:'將遮蔽鑑別資訊與密碼儲存安全合併為統一保護類別'},
+    {dim:'系統與服務獲得',oldCat:'資訊系統文件',newCat:'系統文件',note:'簡化名稱'},
+    {dim:'系統與資訊完整性',oldCat:'資訊系統監控',newCat:'資通系統監控',note:'用語調整，與法規一致'}
+  ];
+
+  var WORDING_CHANGES = [
+    {loc:'#28',cat:'營運持續計畫 ▸ 資料備份',oldT:'訂定<hl>系統可容忍資料損失</hl>之時間要求',newT:'訂定<hl>資料可容忍損失</hl>之時間要求'},
+    {loc:'#29',cat:'營運持續計畫 ▸ 資料備份',oldT:'執行<hl>系統源碼與資料</hl>備份',newT:'執行<hl>資料</hl>備份'},
+    {loc:'#30',cat:'營運持續計畫 ▸ 資料備份',oldT:'應定期測試備份<hl>資訊</hl>，以驗證備份媒體之可靠性及資訊之完整性',newT:'應定期測試備份<hl>資料</hl>，以驗證備份媒體之可靠性及資訊之完整性'},
+    {loc:'#31',cat:'營運持續計畫 ▸ 資料備份',oldT:'應將備份還原，作為營運持續計畫<hl>測試</hl>之一部分',newT:'應將備份還原，作為營運持續計畫<hl>演練</hl>之一部分'},
+    {loc:'#32',cat:'營運持續計畫 ▸ 資料備份',oldT:'應在與運作系統不同地點之獨立設施或防火櫃中，儲存重要資通系統軟體與其他安全相關資訊之備份',newT:'<hl>應建立資料異地備份機制</hl>（大幅簡化描述）'},
+    {loc:'#33',cat:'營運持續計畫 ▸ 系統備援',oldT:'訂定資通系統從中斷後至重新恢復服務之<hl>可容忍時間</hl>要求',newT:'訂定資通系統從中斷後至重新恢復服務之<hl>最大可容忍中斷時間</hl>要求'},
+    {loc:'#34',cat:'營運持續計畫 ▸ 系統備援',oldT:'原服務中斷時，於<hl>可容忍時間</hl>內，由備援設備或其他方式取代並提供服務',newT:'原服務中斷時，於<hl>最大可容忍中斷時間</hl>內，由備援設備或其他方式取代並提供服務'},
+    {loc:'#36',cat:'識別與鑑別 ▸ 使用者之識別與鑑別',oldT:'資通系統應具備唯一識別及鑑別<hl>機關使用者(或代表機關使用者行為之程序)之功能</hl>，禁止使用共用帳號',newT:'資通系統應<hl>識別及鑑別使用者</hl>，並禁止使用者使用共用帳號'},
+    {loc:'#37',cat:'識別與鑑別 ▸ 使用者之識別與鑑別',oldT:'對資通系統之存取採取<hl>多重認證</hl>技術',newT:'對資通系統之存取採取<hl>多因子鑑別</hl>技術'},
+    {loc:'#38',cat:'識別與鑑別 ▸ 身分驗證管理',oldT:'使用預設密碼登入系統時，應於登入後<hl>要求立即</hl>變更',newT:'使用預設密碼<hl>初次</hl>登入系統時，應於登入後<hl>立即</hl>變更'},
+    {loc:'#41',cat:'識別與鑑別 ▸ 身分驗證管理',oldT:'應強制最低密碼複雜度；<hl>強制密碼最短及最長之效期限制</hl>',newT:'應強制最低密碼複雜度；<hl>依機關密碼效期規定變更密碼</hl>'},
+    {loc:'#42',cat:'識別與鑑別 ▸ 身分驗證管理',oldT:'密碼變更時，至少不可以與前三次使用過之密碼相同<hl>（對非內部使用者，可依機關自行規範辦理）</hl>',newT:'密碼變更時，至少不可以與前三次使用過之密碼相同'},
+    {loc:'#43',cat:'識別與鑑別 ▸ 身分驗證管理',oldT:'<hl>上述兩點</hl>所定措施，對<hl>非內部使用者</hl>，可依機關自行規範辦理',newT:'<hl>第四點及第五點</hl>所定措施，對<hl>外部使用者</hl>，機關得自行規範辦理'},
+    {loc:'#47',cat:'識別與鑑別 ▸ 鑑別資訊保護',oldT:'該密碼應<hl>加密或經雜湊處理</hl>後儲存',newT:'該密碼應<hl>經雜湊或其他適當方式處理</hl>後儲存'},
+    {loc:'#58',cat:'系統與服務獲得 ▸ 部署與維運階段',oldT:'進行更新與修補<hl>，並關閉不必要服務及埠口</hl>',newT:'進行更新與修補（後半拆為獨立項 #59）'},
+    {loc:'#70',cat:'系統與通訊保護 ▸ 傳輸之機密性與完整性',oldT:'伺服器端之金鑰保管應<hl>製定管理規則</hl>及實施應有之安全防護措施',newT:'伺服器端之金鑰保管應<hl>訂定管理規範</hl>及實施應有之安全防護措施'}
+  ];
+
+  var NEW_ITEMS = [
+    {idx:'新版 #35',lv:'高',cat:'營運持續計畫 ▸ 系統備援',desc:'應將備援啟動作為營運持續計畫演練之一部分',note:'舊版無此項，系統備援原僅有中級 2 項，新增高級演練要求'},
+    {idx:'新版 #59',lv:'普',cat:'系統與服務獲得 ▸ 部署與維運階段',desc:'識別並關閉不必要服務及埠口',note:'從舊版 #58 拆出為獨立項目，強化埠口管理'},
+    {idx:'新版 #61',lv:'普',cat:'系統與服務獲得 ▸ 部署與維運階段',desc:'執行系統源碼備份',note:'從舊版 #29（資料備份類別）中的「系統源碼」部分移至此處'},
+    {idx:'新版 #64',lv:'普',cat:'系統與服務獲得 ▸ 獲得程序',desc:'識別資通系統使用之第三方軟體、服務、函式庫或其他元件',note:'全新項目，呼應軟體供應鏈安全趨勢（SCA / SBOM）'}
+  ];
+
+  var REMOVED_ITEMS = [
+    {idx:'舊版 #47',lv:'普',cat:'識別與鑑別 ▸ 非內部使用者之識別與鑑別',desc:'資通系統應識別及鑑非機關使用者（或代表機關使用者行為之程序）',note:'合併入新版 #36「使用者之識別與鑑別」，不再區分內外部'},
+    {idx:'舊版 #66',lv:'高',cat:'系統與通訊保護 ▸ 傳輸之機密性與完整性',desc:'支援演算法的最大長度金鑰',note:'新版刪除此項，不再強制要求最大長度金鑰'}
+  ];
+
+  var hl = function(s){ return s.replace(/<hl>/g,'<span class="cmp-hl">').replace(/<\/hl>/g,'</span>'); };
+
+  var html = '';
+  // Hero
+  html += '<div class="cmp-hero">';
+  html += '<h2>附表十 新舊版防護基準比對</h2>';
+  html += '<p>依據最新修正「資通安全管理法施行細則第十一條附表十」，與現行使用之自評表版本進行逐項比對，以下為所有差異彙整。</p>';
+  html += '</div>';
+
+  // KPI Row
+  html += '<div class="cmp-kpi-row">';
+  html += '<div class="cmp-kpi"><div class="num old">78</div><div class="label">舊版項目數</div></div>';
+  html += '<div class="cmp-kpi"><div class="num new">80</div><div class="label">新版項目數</div></div>';
+  html += '<div class="cmp-kpi"><div class="num chg">8</div><div class="label">等級變更</div></div>';
+  html += '<div class="cmp-kpi"><div class="num chg">16</div><div class="label">文字修改</div></div>';
+  html += '<div class="cmp-kpi"><div class="num new">4</div><div class="label">新增項目</div></div>';
+  html += '<div class="cmp-kpi"><div class="num old">2</div><div class="label">刪除項目</div></div>';
+  html += '</div>';
+
+  // Helper to build section
+  function sec(id, title, count, body, openDefault) {
+    return '<div class="cmp-section' + (openDefault ? ' open' : '') + '" id="cmp-sec-' + id + '">'
+      + '<div class="cmp-section-hdr" onclick="this.parentElement.classList.toggle(\'open\')">'
+      + '<div class="arrow">▶</div>'
+      + '<div class="sec-title">' + title + '</div>'
+      + '<div class="sec-count">' + count + '</div>'
+      + '</div><div class="cmp-section-body">' + body + '</div></div>';
+  }
+
+  // 1. Level changes
+  var b1 = '';
+  LEVEL_CHANGES.forEach(function(it){
+    b1 += '<div class="cmp-item"><div class="cmp-item-head">';
+    b1 += '<span class="cmp-pill cat">' + escH(it.loc) + '</span>';
+    b1 += '<span class="cmp-pill lv-old">' + it.oldLv + ' 級</span>';
+    b1 += '<span class="cmp-arrow">→</span>';
+    b1 += '<span class="cmp-pill lv-new">' + it.newLv + ' 級</span>';
+    b1 += '</div><div class="cmp-desc">' + escH(it.desc) + '</div></div>';
+  });
+  html += sec('lv','一、等級變更','8 項',b1,true);
+
+  // 2. Category renames
+  var b2 = '';
+  CAT_RENAMES.forEach(function(it){
+    b2 += '<div class="cmp-item">';
+    b2 += '<div class="cmp-item-head"><span class="cmp-pill dim">' + escH(it.dim) + '</span></div>';
+    b2 += '<div class="cmp-row"><div class="cmp-row-label">舊名稱</div><div class="cmp-row-text">' + escH(it.oldCat) + '</div></div>';
+    b2 += '<div class="cmp-row"><div class="cmp-row-label">新名稱</div><div class="cmp-row-text" style="font-weight:600">' + escH(it.newCat) + '</div></div>';
+    b2 += '<div class="cmp-note">' + escH(it.note) + '</div>';
+    b2 += '</div>';
+  });
+  html += sec('cat','二、類別名稱變更','5 項',b2,false);
+
+  // 3. Wording changes
+  var b3 = '';
+  WORDING_CHANGES.forEach(function(it){
+    b3 += '<div class="cmp-item">';
+    b3 += '<div class="cmp-item-head"><span class="cmp-pill cat">' + escH(it.loc) + '</span><span style="font-size:12px;color:var(--text2)">' + escH(it.cat) + '</span></div>';
+    b3 += '<div class="cmp-row"><div class="cmp-row-label">舊版</div><div class="cmp-row-text">' + hl(it.oldT) + '</div></div>';
+    b3 += '<div class="cmp-row"><div class="cmp-row-label">新版</div><div class="cmp-row-text">' + hl(it.newT) + '</div></div>';
+    b3 += '</div>';
+  });
+  html += sec('wording','三、控制措施文字修改','16 項',b3,false);
+
+  // 4. New items
+  var b4 = '';
+  NEW_ITEMS.forEach(function(it){
+    b4 += '<div class="cmp-item">';
+    b4 += '<div class="cmp-item-head"><span class="cmp-pill added">' + escH(it.idx) + '</span><span class="cmp-pill lv">' + it.lv + ' 級</span><span style="font-size:12px;color:var(--text2)">' + escH(it.cat) + '</span></div>';
+    b4 += '<div class="cmp-desc" style="font-weight:500">' + escH(it.desc) + '</div>';
+    b4 += '<div class="cmp-note">' + escH(it.note) + '</div>';
+    b4 += '</div>';
+  });
+  html += sec('added','四、新版新增項目','4 項',b4,false);
+
+  // 5. Removed items
+  var b5 = '';
+  REMOVED_ITEMS.forEach(function(it){
+    b5 += '<div class="cmp-item">';
+    b5 += '<div class="cmp-item-head"><span class="cmp-pill removed">' + escH(it.idx) + '</span><span class="cmp-pill lv">' + it.lv + ' 級</span><span style="font-size:12px;color:var(--text2)">' + escH(it.cat) + '</span></div>';
+    b5 += '<div class="cmp-desc" style="text-decoration:line-through;color:#999">' + escH(it.desc) + '</div>';
+    b5 += '<div class="cmp-note">' + escH(it.note) + '</div>';
+    b5 += '</div>';
+  });
+  html += sec('removed','五、舊版刪除項目','2 項',b5,false);
+
+  // 6. Structural summary
+  var b6 = '';
+  b6 += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+  // Dimension table
+  b6 += '<div><div class="cmp-row-label" style="margin-bottom:8px">各構面項目數比較</div>';
+  b6 += '<table class="cmp-grid-table"><thead><tr><th style="text-align:left">構面</th><th>舊版</th><th>新版</th><th>差異</th></tr></thead><tbody>';
+  var dims = [
+    ['存取控制',14,14],['事件日誌與可歸責性',13,13],['營運持續計畫',7,8],
+    ['識別與鑑別',13,12],['系統與服務獲得',16,19],['系統與通訊保護',6,5],['系統與資訊完整性',9,9]
+  ];
+  dims.forEach(function(d){
+    var diff = d[2]-d[1];
+    var cls = diff !== 0 ? ' class="cmp-changed"' : '';
+    var diffStr = diff > 0 ? '+'+diff : (diff < 0 ? ''+diff : '—');
+    b6 += '<tr><td>'+d[0]+'</td><td>'+d[1]+'</td><td>'+d[2]+'</td><td'+cls+'>'+diffStr+'</td></tr>';
+  });
+  b6 += '</tbody></table></div>';
+  // Level table
+  b6 += '<div><div class="cmp-row-label" style="margin-bottom:8px">各等級項目數比較</div>';
+  b6 += '<table class="cmp-grid-table"><thead><tr><th style="text-align:left">等級</th><th>舊版</th><th>新版</th><th>差異</th></tr></thead><tbody>';
+  var lvls = [['普級',35,43],['中級',23,19],['高級',20,18]];
+  lvls.forEach(function(l){
+    var diff = l[2]-l[1];
+    var cls = diff !== 0 ? ' class="cmp-changed"' : '';
+    var diffStr = diff > 0 ? '+'+diff : ''+diff;
+    b6 += '<tr><td>'+l[0]+'</td><td>'+l[1]+'</td><td>'+l[2]+'</td><td'+cls+'>'+diffStr+'</td></tr>';
+  });
+  b6 += '</tbody></table></div></div>';
+
+  // Insight cards
+  b6 += '<div class="cmp-summary-insight">';
+  b6 += '<div class="cmp-insight-card up"><h4>普級基線大幅提升</h4><p>普級項目由 35 項增至 43 項（+23%），帳號管理、最小權限、系統備援、輸入驗證等原本中級才要求的措施，全部下放為普級基本要求。</p></div>';
+  b6 += '<div class="cmp-insight-card info"><h4>軟體供應鏈安全入法</h4><p>新增「識別第三方軟體、函式庫或元件」為普級要求（新版 #64），回應 SCA / SBOM 國際趨勢，所有系統均須清點第三方元件。</p></div>';
+  b6 += '<div class="cmp-insight-card down"><h4>高級門檻微幅降低</h4><p>高級項目由 20 項降至 18 項（-10%），刪除「最大長度金鑰」要求，部分原高級措施調降為中級，但新增備援演練要求。</p></div>';
+  b6 += '</div>';
+
+  html += sec('struct','六、結構性變更統計','總覽',b6,false);
+
+  document.getElementById('page-compare').innerHTML = html;
+}
 
 // ===== Utils =====
 function escH(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
