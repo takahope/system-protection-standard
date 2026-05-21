@@ -561,7 +561,7 @@
               <p>每筆控制措施以單層列完整呈現，進入頁面即可同時檢視符合性、現況與佐證，並在需要補強時填寫矯正作為與目標日期。</p>
             </div>
             <div class="assess-actions">
-              <button class="btn btn-outline btn-sm" onclick="initAssessment()">初始化自評項目</button>
+              <button class="btn btn-outline btn-sm hidden" id="init-assessment-btn" onclick="initAssessment()">初始化自評項目</button>
               <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
               <button class="btn btn-primary btn-sm" onclick="saveAllAssessment()">儲存所有變更</button>
             </div>
@@ -1343,15 +1343,24 @@ function submitRating() {
 }
 
 // ===== Assessment =====
+function toggleAssessmentInitButton(show) {
+  var btn = document.getElementById('init-assessment-btn');
+  if (!btn) return;
+  btn.classList.toggle('hidden', !show);
+}
+
 function loadAssessment(sysId) {
   if (isPackageSystem()) {
     renderPackageExemption('assess');
     return;
   }
+  toggleAssessmentInitButton(false);
   document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
+    toggleAssessmentInitButton(!data || data.length === 0);
     currentAssessment=data; renderAssessment(data);
   }).withFailureHandler(function(e){
+    toggleAssessmentInitButton(false);
     document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="padding:20px">載入失敗：'+e.message+'</td></tr>';
   }).getAssessment(sysId);
 }
