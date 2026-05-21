@@ -38,10 +38,6 @@
     .sys-card-main{min-width:0}
     .sys-name{font-size:16px;font-weight:700;line-height:1.4;margin-bottom:4px}
     .sys-subline{font-size:11px;color:var(--text2);line-height:1.6}
-    .sys-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .sys-meta-item{padding:10px 12px;border-radius:12px;background:#f8fbff;border:1px solid #dbe7f5;min-width:0}
-    .sys-meta-item label{display:block;font-size:10px;color:#64748b;margin-bottom:4px}
-    .sys-meta-item div{font-size:12px;font-weight:700;line-height:1.5;color:#0f172a;overflow-wrap:anywhere}
     .sys-tags{display:flex;flex-wrap:wrap;gap:6px}
     .sys-tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
     .sys-tag.neutral{background:#edf2f7;color:#334155}
@@ -80,11 +76,6 @@
     .tab-btn:hover{color:var(--primary)} .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
 
     /* Detail info */
-    .detail-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
-    .detail-summary-card{padding:14px 16px;border-radius:16px;border:1px solid #dbe4ee;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
-    .detail-summary-card label{display:block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
-    .detail-summary-card .value{font-size:14px;font-weight:700;line-height:1.6;color:#0f172a}
-    .detail-summary-card .value.inline{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
     .detail-missing-alert{margin:12px 0 4px;padding:14px 16px;border-radius:16px;border:1px solid #f7d79a;background:#fff8e8}
     .detail-missing-alert.ok{border-color:#b7e0c0;background:#edf9f0}
     .detail-missing-alert strong{display:block;font-size:13px;margin-bottom:4px}
@@ -94,14 +85,10 @@
     .detail-chip.warn{background:#fff1cc;color:#9a5b00}
     .detail-chip.ok{background:#e8f6eb;color:#0d904f}
     .detail-chip.neutral{background:#edf2f7;color:#334155}
-    .detail-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0 10px}
-    .detail-section{border:1px solid #dbe4ee;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.04)}
-    .detail-section-head{padding:14px 16px;border-bottom:1px solid #e7edf5;background:linear-gradient(180deg,#f8fbff 0%,#f3f7fb 100%)}
-    .detail-section-head h3{font-size:14px;margin:0}
-    .detail-section-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px 16px}
-    .info-item{font-size:12px;padding:10px 12px;border:1px solid #eef2f7;border-radius:14px;background:#fbfdff;min-width:0}
-    .info-item label{color:var(--text2);font-size:10px;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
-    .info-item div{font-size:13px;font-weight:600;line-height:1.7;color:#111827;overflow-wrap:anywhere}
+    .detail-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:12px 0 10px}
+    .info-item{font-size:12px;padding:0;background:none;border:none;border-radius:0;min-width:0}
+    .info-item label{color:var(--text2);font-size:10px;display:block;margin-bottom:2px}
+    .info-item div{font-size:12px;font-weight:600;line-height:1.6;color:#111827;overflow-wrap:anywhere}
     .back-btn{background:none;border:1px solid var(--border);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2)}
 
     /* Rating wizard */
@@ -242,7 +229,7 @@
       .assess-actions .btn{flex:1}
     }
     @media (max-width:960px){
-      .detail-info,.detail-section-body,.sys-meta{grid-template-columns:1fr}
+      .detail-info{grid-template-columns:1fr}
     }
 
     /* Dashboard heatmap */
@@ -504,13 +491,12 @@
           <button class="back-btn" onclick="showPage('list')">← 返回總覽</button>
           <h2 style="margin-top:6px" id="detail-title"></h2>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div id="detail-level-badge"></div>
-          <div id="detail-status-badge"></div>
-          <button class="btn btn-outline btn-sm" onclick="openEditSystemModal()">編輯系統資料</button>
-        </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="detail-level-badge"></div>
+        <div id="detail-status-badge"></div>
+        <button class="btn btn-outline btn-sm" onclick="openEditSystemModal()">編輯系統資料</button>
       </div>
-      <div class="detail-summary" id="detail-summary"></div>
+    </div>
       <div id="detail-missing-alert"></div>
       <div class="detail-info" id="detail-info"></div>
       <div id="detail-fail-codes" style="margin-top:6px"></div>
@@ -860,14 +846,7 @@ function renderSystemCardTags(sys) {
 }
 
 function renderSystemDetailPanels(sys, missingFields) {
-  var summary = '';
   var failCodes = String(sys['不符合防護基準項目代碼'] || '').split('/').filter(function(code) { return code.trim(); });
-  summary += '<div class="detail-summary-card"><label>系統名稱</label><div class="value">' + escH(sys['系統名稱'] || '未命名') + '</div></div>';
-  summary += '<div class="detail-summary-card"><label>防護需求等級</label><div class="value inline"><span class="result-badge ' + (sys['防護需求等級'] === '高' ? 'high' : sys['防護需求等級'] === '中' ? 'mid' : sys['防護需求等級'] === '普' ? 'low' : 'na') + '" style="font-size:13px;padding:4px 14px">' + escH(sys['防護需求等級'] || '未設定') + '</span></div></div>';
-  summary += '<div class="detail-summary-card"><label>防護基準狀態</label><div class="value inline">' + getComplianceBadge(sys['是否符合防護基準']) + '</div></div>';
-  summary += '<div class="detail-summary-card"><label>不符合代碼</label><div class="value inline">' + (failCodes.length ? failCodes.map(function(code) { return '<span class="detail-chip warn">' + escH(code.trim()) + '</span>'; }).join('') : '<span class="detail-chip ok">目前無代碼</span>') + '</div></div>';
-  document.getElementById('detail-summary').innerHTML = summary;
-
   var missingHtml = '';
   if (missingFields.length > 0) {
     missingHtml += '<div class="detail-missing-alert">';
@@ -881,21 +860,13 @@ function renderSystemDetailPanels(sys, missingFields) {
   }
   document.getElementById('detail-missing-alert').innerHTML = missingHtml;
 
-  var sectionsHtml = '';
-  SYSTEM_DETAIL_GROUPS.forEach(function(groupName) {
-    var fields = SYSTEM_FIELD_SCHEMA.filter(function(field) {
-      return field.group === groupName;
-    });
-    sectionsHtml += '<section class="detail-section">';
-    sectionsHtml += '<div class="detail-section-head"><h3>' + escH(groupName) + '</h3></div>';
-    sectionsHtml += '<div class="detail-section-body">';
-    fields.forEach(function(field) {
-      var value = isFilledValue(sys[field.key]) ? sys[field.key] : '-';
-      sectionsHtml += '<div class="info-item"><label>' + escH(field.key) + '</label><div>' + escH(String(value)) + '</div></div>';
-    });
-    sectionsHtml += '</div></section>';
+  var detailHtml = '';
+  SYSTEM_FIELD_SCHEMA.forEach(function(field) {
+    if (field.hidden) return;
+    var value = isFilledValue(sys[field.key]) ? sys[field.key] : '-';
+    detailHtml += '<div class="info-item"><label>' + escH(field.key) + '</label><div>' + escH(String(value)) + '</div></div>';
   });
-  document.getElementById('detail-info').innerHTML = sectionsHtml;
+  document.getElementById('detail-info').innerHTML = detailHtml;
 
   var failHtml = '';
   if (failCodes.length) {
@@ -962,12 +933,6 @@ function renderSystems(systems) {
     html+='<div class="sys-subline">管理單位：'+escH(sys['系統管理者(部門/單位)']||'未填寫')+'</div>';
     html+='</div>';
     html+='<span class="sys-badge '+bc+'">'+lv+'</span></div>';
-    html+='<div class="sys-meta">';
-    html+='<div class="sys-meta-item"><label>系統屬性</label><div>'+escH(sys['系統屬性']||'-')+'</div></div>';
-    html+='<div class="sys-meta-item"><label>建置方式</label><div>'+escH(sys['建置方式']||'-')+'</div></div>';
-    html+='<div class="sys-meta-item"><label>對外服務</label><div>'+escH(sys['系統是否對外']||'-')+'</div></div>';
-    html+='<div class="sys-meta-item"><label>中斷時限</label><div>'+escH(sys['最大可容忍中斷時間']||'-')+'</div></div>';
-    html+='</div>';
     html+='<div class="sys-tags">'+renderSystemCardTags(sys)+'</div>';
     if (missingFields.length > 0) {
       html+='<div class="sys-completeness warn"><div><strong>尚有 ' + missingFields.length + ' 筆資料未填寫</strong><p>缺漏會影響詳細頁資訊完整性與後續評估判斷。</p></div><div class="sys-missing-count">' + missingFields.length + '</div></div>';
