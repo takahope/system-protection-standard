@@ -8,3 +8,5 @@ var HR_SPREADSHEET_ID = '';
 var HR_SHEET_NAME = '人員主檔';
 var HR_EMAIL_COLUMN = 1;
 var HR_NAME_COLUMN = 2;
+var HR_STATUS_COLUMN = 3;
+var HR_ACTIVE_VALUE = '在勤';

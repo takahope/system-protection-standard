@@ -641,6 +641,7 @@ var ruleAuditLogs = [];
 var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
+var hrEmployeeOptions = [];
 
 var RULE_GROUP_META = {
   rating_confidentiality: {title:'機密性建議規則', desc:'管理個資門檻、機敏資訊類別關鍵字與提示顯示。'},
@@ -688,7 +689,7 @@ var SYSTEM_FIELD_SCHEMA = [
   {key:'備妥靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'staticSite', options:['是','否']},
   {key:'10分鐘內切換至靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'switchStatic10m', options:['是','否']},
   {key:'提供之服務，是否含有人工智慧', group:'基本概況', countMissing:true, formKey:'aiService', type:'textarea', full:true},
-  {key:'系統負責人', group:'管理責任與供應商', countMissing:true, formKey:'owner'}
+  {key:'系統負責人', group:'管理責任與供應商', countMissing:true, formKey:'owner', type:'hr_select'}
 ];
 
 var SYSTEM_DETAIL_GROUPS = ['基本概況','管理責任與供應商','資安與資料特性','韌性與對外服務'];
@@ -836,6 +837,11 @@ function getComplianceBadge(status) {
   return '<span class="detail-chip neutral">' + escH(text) + '</span>';
 }
 
+function getOwnerDisplayValue(sys) {
+  if (!sys) return '';
+  return sys._ownerDisplayName || sys['系統負責人'] || '';
+}
+
 function renderSystemCardTags(sys) {
   var tags = [];
   tags.push('<span class="sys-tag neutral">' + escH(sys['系統屬性'] || '未設定屬性') + '</span>');
@@ -864,7 +870,8 @@ function renderSystemDetailPanels(sys, missingFields) {
   var detailHtml = '';
   SYSTEM_FIELD_SCHEMA.forEach(function(field) {
     if (field.hidden) return;
-    var value = isFilledValue(sys[field.key]) ? sys[field.key] : '-';
+    var rawValue = field.key === '系統負責人' ? getOwnerDisplayValue(sys) : sys[field.key];
+    var value = isFilledValue(rawValue) ? rawValue : '-';
     detailHtml += '<div class="info-item"><label>' + escH(field.key) + '</label><div>' + escH(String(value)) + '</div></div>';
   });
   document.getElementById('detail-info').innerHTML = detailHtml;
@@ -1544,42 +1551,34 @@ function exportReport() {
 }
 
 // ===== System CRUD Modal =====
-function openAddSystemModal() {
-  var fields = getSystemFormFields();
-  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
-  html += '<h2>新增系統</h2><div class="form-grid">';
-  fields.forEach(function(f){
-    html += '<div class="form-group'+(f.full?' full':'')+'">';
-    html += '<label>'+f.key+'</label>';
-    if(f.options){
-      html += '<select id="modal-'+f.formKey+'">';
-      html += '<option value="">請選擇</option>';
-      f.options.forEach(function(o){html+='<option value="'+o+'">'+o+'</option>';});
-      html += '</select>';
-    } else if (f.type === 'textarea') {
-      html += '<textarea id="modal-'+f.formKey+'"></textarea>';
-    } else {
-      html += '<input type="'+(f.type==='date'?'date':'text')+'" id="modal-'+f.formKey+'">';
-    }
-    html += '</div>';
+function buildHrOwnerOptions(currentValue) {
+  var html = '<option value="">請選擇</option>';
+  var seen = {};
+  (hrEmployeeOptions || []).forEach(function(person) {
+    var email = String(person.email || '');
+    if (!email || seen[email]) return;
+    seen[email] = true;
+    html += '<option value="' + escH(email) + '"' + (String(currentValue || '') === email ? ' selected' : '') + '>' + escH(person.name || email) + '</option>';
   });
-  html += '</div><div class="modal-actions">';
-  html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
-  html += '<button class="btn btn-primary" onclick="submitAddSystem()">新增</button>';
-  html += '</div></div></div>';
-  document.getElementById('modal-container').innerHTML=html;
+  if (currentValue && !seen[String(currentValue)]) {
+    html += '<option value="' + escH(String(currentValue)) + '" selected>' + escH(String(currentValue)) + '</option>';
+  }
+  return html;
 }
 
-function openEditSystemModal() {
-  if(!currentSystem) return;
+function renderSystemModal(title, currentData) {
   var fields = getSystemFormFields();
   var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
-  html += '<h2>編輯系統：'+escH(currentSystem['系統名稱'])+'</h2><div class="form-grid">';
+  html += '<h2>' + escH(title) + '</h2><div class="form-grid">';
   fields.forEach(function(f){
-    var val = currentSystem[f.key]||'';
+    var val = currentData && currentData[f.key] !== undefined ? currentData[f.key] : '';
     html += '<div class="form-group'+(f.full?' full':'')+'">';
     html += '<label>'+f.key+'</label>';
-    if(f.options){
+    if (f.type === 'hr_select') {
+      html += '<select id="modal-'+f.formKey+'">';
+      html += buildHrOwnerOptions(val);
+      html += '</select>';
+    } else if(f.options){
       html += '<select id="modal-'+f.formKey+'">';
       html += '<option value="">請選擇</option>';
       f.options.forEach(function(o){html+='<option value="'+o+'"'+(String(val)===o?' selected':'')+'>'+o+'</option>';});
@@ -1591,12 +1590,42 @@ function openEditSystemModal() {
     }
     html += '</div>';
   });
-  html += '</div><div class="modal-actions">';
-  html += '<button class="btn btn-danger" onclick="deleteCurrentSystem()" style="margin-right:auto">刪除系統</button>';
-  html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
-  html += '<button class="btn btn-primary" onclick="submitEditSystem()">儲存</button>';
-  html += '</div></div></div>';
-  document.getElementById('modal-container').innerHTML=html;
+  html += '</div>';
+  if (currentData && currentData._hrWarning) {
+    html += '<div style="font-size:12px;color:var(--warning);line-height:1.7;margin-top:12px">' + escH(currentData._hrWarning) + '</div>';
+  }
+  html += '<div class="modal-actions">';
+  return html;
+}
+
+function openAddSystemModal() {
+  google.script.run.withSuccessHandler(function(res){
+    hrEmployeeOptions = (res && res.employees) ? res.employees : [];
+    var html = renderSystemModal('新增系統', {_hrWarning: res && res.warning ? res.warning : ''});
+    html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
+    html += '<button class="btn btn-primary" onclick="submitAddSystem()">新增</button>';
+    html += '</div></div></div>';
+    document.getElementById('modal-container').innerHTML=html;
+  }).withFailureHandler(function(e){
+    showToast('載入人員名單失敗：'+e.message);
+  }).getActiveHrEmployees();
+}
+
+function openEditSystemModal() {
+  if(!currentSystem) return;
+  google.script.run.withSuccessHandler(function(res){
+    hrEmployeeOptions = (res && res.employees) ? res.employees : [];
+    var modalData = Object.assign({}, currentSystem);
+    modalData._hrWarning = res && res.warning ? res.warning : '';
+    var html = renderSystemModal('編輯系統：'+(currentSystem['系統名稱'] || ''), modalData);
+    html += '<button class="btn btn-danger" onclick="deleteCurrentSystem()" style="margin-right:auto">刪除系統</button>';
+    html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
+    html += '<button class="btn btn-primary" onclick="submitEditSystem()">儲存</button>';
+    html += '</div></div></div>';
+    document.getElementById('modal-container').innerHTML=html;
+  }).withFailureHandler(function(e){
+    showToast('載入人員名單失敗：'+e.message);
+  }).getActiveHrEmployees();
 }
 
 function getModalData() {
@@ -1625,6 +1654,10 @@ function submitEditSystem() {
     if(r.success){showToast('系統已更新');closeModal();
       // Update local
       Object.keys(data).forEach(function(k){currentSystem[k]=data[k];});
+      var ownerMatch = (hrEmployeeOptions || []).filter(function(person){
+        return String(person.email || '') === String(data['系統負責人'] || '');
+      })[0];
+      currentSystem._ownerDisplayName = ownerMatch ? (ownerMatch.name || ownerMatch.email) : (data['系統負責人'] || '');
       openSystem(currentSystem['系統ID']);
     }
   }).withFailureHandler(function(e){showToast('更新失敗：'+e.message);})

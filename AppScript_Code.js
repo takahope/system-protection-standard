@@ -22,13 +22,74 @@ function getHrConfig_() {
     spreadsheetId: typeof HR_SPREADSHEET_ID !== 'undefined' ? HR_SPREADSHEET_ID : '',
     sheetName: typeof HR_SHEET_NAME !== 'undefined' ? HR_SHEET_NAME : '人員主檔',
     emailColumn: typeof HR_EMAIL_COLUMN !== 'undefined' ? HR_EMAIL_COLUMN : 1,
-    nameColumn: typeof HR_NAME_COLUMN !== 'undefined' ? HR_NAME_COLUMN : 2
+    nameColumn: typeof HR_NAME_COLUMN !== 'undefined' ? HR_NAME_COLUMN : 2,
+    statusColumn: typeof HR_STATUS_COLUMN !== 'undefined' ? HR_STATUS_COLUMN : 3,
+    activeValue: typeof HR_ACTIVE_VALUE !== 'undefined' ? HR_ACTIVE_VALUE : '在勤'
   };
 }
 
 function formatEvaluatorDisplayName_(name, email) {
   if (name && email) return name + '（' + email + '）';
   return name || email || '';
+}
+
+function normalizeEmail_(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function loadHrDirectory_() {
+  var cfg = getHrConfig_();
+  var result = {
+    map: {},
+    activeEmployees: [],
+    warning: ''
+  };
+
+  if (!cfg.spreadsheetId) {
+    result.warning = '尚未設定 HR_SPREADSHEET_ID。';
+    return result;
+  }
+
+  try {
+    var ss = SpreadsheetApp.openById(cfg.spreadsheetId);
+    var sheet = ss.getSheetByName(cfg.sheetName);
+    if (!sheet) {
+      result.warning = '找不到 HR 工作表「' + cfg.sheetName + '」。';
+      return result;
+    }
+    if (sheet.getLastRow() <= 1) {
+      result.warning = 'HR 工作表沒有可用資料。';
+      return result;
+    }
+
+    var data = sheet.getDataRange().getDisplayValues();
+    for (var i = 1; i < data.length; i++) {
+      var email = normalizeEmail_(data[i][cfg.emailColumn - 1]);
+      if (!email) continue;
+      var name = String(data[i][cfg.nameColumn - 1] || '').trim();
+      var status = String(data[i][cfg.statusColumn - 1] || '').trim();
+      result.map[email] = {email: email, name: name, status: status};
+      if (status === cfg.activeValue) {
+        result.activeEmployees.push({
+          email: email,
+          name: name,
+          displayName: name || email
+        });
+      }
+    }
+    return result;
+  } catch (err) {
+    result.warning = '讀取 HR 人員主檔失敗：' + err.message;
+    return result;
+  }
+}
+
+function getActiveHrEmployees() {
+  var directory = loadHrDirectory_();
+  return {
+    employees: directory.activeEmployees || [],
+    warning: directory.warning || ''
+  };
 }
 
 function getCurrentEvaluator() {
@@ -56,35 +117,23 @@ function getCurrentEvaluator() {
     return result;
   }
 
-  try {
-    var ss = SpreadsheetApp.openById(cfg.spreadsheetId);
-    var sheet = ss.getSheetByName(cfg.sheetName);
-    if (!sheet) {
-      result.warning = '找不到 HR 工作表「' + cfg.sheetName + '」，暫時僅帶入帳號。';
-      return result;
-    }
-    if (sheet.getLastRow() <= 1) {
-      result.warning = 'HR 工作表沒有可用資料，暫時僅帶入帳號。';
-      return result;
-    }
-
-    var data = sheet.getDataRange().getDisplayValues();
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][cfg.emailColumn - 1] || '').trim().toLowerCase() === email.toLowerCase()) {
-        result.name = String(data[i][cfg.nameColumn - 1] || '').trim();
-        result.displayName = formatEvaluatorDisplayName_(result.name, email);
-        result.source = result.name ? 'hr' : 'session';
-        if (!result.name) result.warning = 'HR 人員主檔找到帳號，但姓名欄為空白。';
-        return result;
-      }
-    }
-
-    result.warning = 'HR 人員主檔查無此帳號對應姓名，暫時僅帶入帳號。';
-    return result;
-  } catch (err2) {
-    result.warning = '讀取 HR 人員主檔失敗：' + err2.message;
+  var directory = loadHrDirectory_();
+  if (directory.warning) {
+    result.warning = directory.warning + ' 暫時僅帶入帳號。';
     return result;
   }
+
+  var person = directory.map[normalizeEmail_(email)];
+  if (person) {
+    result.name = person.name || '';
+    result.displayName = formatEvaluatorDisplayName_(result.name, email);
+    result.source = result.name ? 'hr' : 'session';
+    if (!result.name) result.warning = 'HR 人員主檔找到帳號，但姓名欄為空白。';
+    return result;
+  }
+
+  result.warning = 'HR 人員主檔查無此帳號對應姓名，暫時僅帶入帳號。';
+  return result;
 }
 
 var RULE_SETTINGS_SHEET = '規則設定';
@@ -1003,6 +1052,7 @@ function getSystems() {
   var data = sheet.getDataRange().getDisplayValues();
   if (data.length <= 1) return [];
 
+  var hrDirectory = loadHrDirectory_();
   var headers = data[0];
   var systems = [];
   for (var i = 1; i < data.length; i++) {
@@ -1011,6 +1061,9 @@ function getSystems() {
     for (var j = 0; j < headers.length; j++) {
       obj[headers[j]] = data[i][j];
     }
+    var ownerEmail = normalizeEmail_(obj['系統負責人']);
+    var ownerInfo = hrDirectory.map[ownerEmail];
+    obj._ownerDisplayName = ownerInfo && ownerInfo.name ? ownerInfo.name : (obj['系統負責人'] || '');
     obj._row = i + 1;
     systems.push(obj);
   }
