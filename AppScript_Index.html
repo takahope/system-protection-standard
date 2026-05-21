@@ -1237,7 +1237,7 @@ function renderAssessmentRows(items) {
   var filterApplicable=document.getElementById('filter-applicable').checked;
   var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
 
-  var html='',prevDim='',prevCat='';
+  var html='';
   items.forEach(function(item,idx){
     var applicable=isAssessmentApplicable(item.level, sysLevel);
 
@@ -1252,8 +1252,8 @@ function renderAssessmentRows(items) {
     var rowClass=applicable?'applicable':'not-applicable';
     html+='<tr class="assess-entry-row '+rowClass+'" data-idx="'+idx+'">';
     html+='<td class="assess-index">'+item.index+'</td>';
-    html+='<td class="'+(item.dimension!==prevDim?'dim-cell':'')+'">'+escH(item.dimension!==prevDim?item.dimension:'')+'</td>';
-    html+='<td style="font-weight:'+(item.category!==prevCat?'600':'normal')+'">'+escH(item.category!==prevCat?item.category:'')+'</td>';
+    html+='<td class="dim-cell">'+escH(item.dimension)+'</td>';
+    html+='<td style="font-weight:600">'+escH(item.category)+'</td>';
     html+='<td><span class="assess-level-pill">'+escH(item.level)+'</span></td>';
     html+='<td><div class="assess-control-text"><div class="assess-control-title">'+escH(item.category)+'</div><div class="assess-control-desc">'+escH(item.description)+'</div></div></td>';
     html+='<td>';
@@ -1282,7 +1282,6 @@ function renderAssessmentRows(items) {
     }
     html+='</td>';
     html+='</tr>';
-    prevDim=item.dimension;prevCat=item.category;
   });
   tbody.innerHTML=html||'<tr><td colspan="7"><div class="assess-empty-note">無符合篩選條件的項目。</div></td></tr>';
 }
