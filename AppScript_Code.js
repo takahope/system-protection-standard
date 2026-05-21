@@ -1282,6 +1282,10 @@ function getAssessment(systemId) {
   return results;
 }
 
+function isAssessmentNonCompliant_(compliance) {
+  return compliance === '未符合' || compliance === '不符合';
+}
+
 function saveAssessmentItem(item) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
@@ -1333,7 +1337,7 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
         category: ctrl.category,
         level: ctrl.level,
         description: ctrl.description,
-        compliance: applicable ? '未符合' : appRule.naLabel,
+        compliance: applicable ? '不符合' : appRule.naLabel,
         currentStatus: '',
         evidence: '',
         corrective: '',
@@ -1359,6 +1363,7 @@ function getSystemStats(systemId) {
     switch (a.compliance) {
       case '符合': stats.compliant++; break;
       case '部分符合': stats.partial++; break;
+      case '不符合':
       case '未符合': stats.nonCompliant++; break;
       case naLabel: stats.na++; break;
       default: stats.pending++; break;
@@ -1399,14 +1404,14 @@ function getGlobalDashboard() {
       stats.applicable++;
       if (item.compliance === '符合') stats.compliant++;
       else if (item.compliance === '部分符合') { stats.partial++; collectFailCode(item, codeMap, failCodes); }
-      else if (item.compliance === '未符合') { stats.nonCompliant++; collectFailCode(item, codeMap, failCodes); }
+      else if (isAssessmentNonCompliant_(item.compliance)) { stats.nonCompliant++; collectFailCode(item, codeMap, failCodes); }
       else stats.pending++;
 
       // Per-dimension stats
       if (!dimStats[item.dimension]) dimStats[item.dimension] = {ok:0, fail:0, pending:0, total:0};
       dimStats[item.dimension].total++;
       if (item.compliance === '符合') dimStats[item.dimension].ok++;
-      else if (item.compliance === '未符合' || item.compliance === '部分符合') dimStats[item.dimension].fail++;
+      else if (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合') dimStats[item.dimension].fail++;
       else dimStats[item.dimension].pending++;
     });
 
@@ -1456,7 +1461,7 @@ function getNonComplianceCodes(systemId) {
   var failCodes = [];
 
   assessment.forEach(function(item) {
-    if (isAssessmentControlApplicable_(item.level, sys['防護需求等級']) && (item.compliance === '未符合' || item.compliance === '部分符合')) {
+    if (isAssessmentControlApplicable_(item.level, sys['防護需求等級']) && (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合')) {
       collectFailCode(item, codeMap, failCodes);
     }
   });
@@ -1474,10 +1479,10 @@ function getNonComplianceCodes(systemId) {
     }
     if (statusCol >= 0) {
       var status = failCodes.length === 0 ? '符合' : '部分符合';
-      // 檢查是否全部未符合
+      // 檢查是否全部不符合
       var allFail = assessment.filter(function(a) {
         return isAssessmentControlApplicable_(a.level, sys['防護需求等級']) && a.compliance !== getAssessmentApplicabilityConfig_().naLabel;
-      }).every(function(a) { return a.compliance === '未符合' || !a.compliance; });
+      }).every(function(a) { return isAssessmentNonCompliant_(a.compliance) || !a.compliance; });
       if (allFail && assessment.length > 0) status = '不符合';
       sysSheet.getRange(sys._row, statusCol + 1).setValue(status);
     }

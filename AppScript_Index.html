@@ -409,7 +409,7 @@
     </div>
     <div class="card">
       <h2>構面弱項熱區分析</h2>
-      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">顯示各系統在每個構面的符合情況，紅色代表有未符合項目需優先處理</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">顯示各系統在每個構面的符合情況，紅色代表有不符合項目需優先處理</p>
       <div style="overflow-x:auto"><div id="heatmap-container"></div></div>
     </div>
     <div class="card">
@@ -587,7 +587,7 @@
                   <option value="pending">待評估</option>
                   <option value="符合">符合</option>
                   <option value="部分符合">部分符合</option>
-                  <option value="未符合">未符合</option>
+                  <option value="不符合">不符合</option>
                   <option value="不適用">不適用</option>
                 </select>
               </label>
@@ -845,6 +845,10 @@ function getOwnerDisplayValue(sys) {
   return sys._ownerDisplayName || sys['系統負責人'] || '';
 }
 
+function isAssessmentNonCompliant(compliance) {
+  return compliance === '未符合' || compliance === '不符合';
+}
+
 function renderSystemCardTags(sys) {
   var tags = [];
   tags.push('<span class="sys-tag neutral">' + escH(sys['系統屬性'] || '未設定屬性') + '</span>');
@@ -984,7 +988,7 @@ function loadDashboard() {
 
 function renderDashboard(data) {
   // 1. Per-system compliance chart
-  var chartHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統名稱</th><th>等級</th><th>應評</th><th>符合</th><th>部分符合</th><th>未符合</th><th>待評</th><th>符合率</th><th>進度</th></tr>';
+  var chartHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統名稱</th><th>等級</th><th>應評</th><th>符合</th><th>部分符合</th><th>不符合</th><th>待評</th><th>符合率</th><th>進度</th></tr>';
   data.forEach(function(d){
     if(!d.hasAssessment||d.packageExempt) return;
     var s=d.stats, pct=s.applicable>0?Math.round(s.compliant/s.applicable*100):0;
@@ -1015,7 +1019,7 @@ function renderDashboard(data) {
     dims.forEach(function(dim){
       var ds=d.dimStats[dim];
       if(!ds||ds.total===0){hmHtml+='<td class="heat-gray">-</td>';return;}
-      if(ds.fail>0) hmHtml+='<td class="heat-red">'+ds.fail+' 未符合</td>';
+      if(ds.fail>0) hmHtml+='<td class="heat-red">'+ds.fail+' 不符合</td>';
       else if(ds.pending>0) hmHtml+='<td class="heat-yellow">'+ds.pending+' 待評</td>';
       else hmHtml+='<td class="heat-green">全符合</td>';
     });
@@ -1381,7 +1385,7 @@ function renderAssessment(items) {
       st.applicable++;
       if(item.compliance==='符合')st.compliant++;
       else if(item.compliance==='部分符合')st.partial++;
-      else if(item.compliance==='未符合')st.nonCompliant++;
+      else if(isAssessmentNonCompliant(item.compliance))st.nonCompliant++;
       else if(item.compliance!==getPersistedRuleValue('assessment_applicability', 'na_label', '不適用'))st.pending++;
     }
   });
@@ -1392,7 +1396,7 @@ function renderAssessment(items) {
     '<div class="assess-kpi"><div class="label">應評項目</div><div class="value">'+st.applicable+'</div><div class="sub">依目前系統等級應完成</div></div>'+
     '<div class="assess-kpi ok"><div class="label">符合</div><div class="value">'+st.compliant+'</div><div class="sub">已達要求</div></div>'+
     '<div class="assess-kpi partial"><div class="label">部分符合</div><div class="value">'+st.partial+'</div><div class="sub">仍需補強</div></div>'+
-    '<div class="assess-kpi fail"><div class="label">未符合</div><div class="value">'+st.nonCompliant+'</div><div class="sub">優先處理</div></div>'+
+    '<div class="assess-kpi fail"><div class="label">不符合</div><div class="value">'+st.nonCompliant+'</div><div class="sub">優先處理</div></div>'+
     '<div class="assess-kpi pending"><div class="label">待評估</div><div class="value">'+st.pending+'</div><div class="sub">尚未填寫狀態</div></div>'+
     '<div class="assess-kpi"><div class="label">完成率</div><div class="value">'+pct+'%</div><div class="sub">目前整體進度</div></div>'+
     '</div>'+
@@ -1418,7 +1422,8 @@ function renderAssessmentRows(items) {
     if(filterApplicable && !applicable) return;
     if(filterStatus){
       if(filterStatus==='pending' && (item.compliance && item.compliance!=='')) return;
-      else if(filterStatus!=='pending' && item.compliance!==filterStatus) return;
+      else if(filterStatus==='不符合' && !isAssessmentNonCompliant(item.compliance)) return;
+      else if(filterStatus!=='pending' && filterStatus!=='不符合' && item.compliance!==filterStatus) return;
     }
 
     var rowClass=applicable?'applicable':'not-applicable';
@@ -1434,8 +1439,9 @@ function renderAssessmentRows(items) {
     if (applicable) {
       html+='<select class="assess-status-select" data-field="compliance" onchange="handleAssessmentComplianceChange(this)">';
       html+='<option value="">-- 請選擇 --</option>';
-      ['符合','部分符合','未符合',naLabel].forEach(function(v){
-        html+='<option value="'+v+'"'+(item.compliance===v?' selected':'')+'>'+v+'</option>';
+      ['符合','部分符合','不符合',naLabel].forEach(function(v){
+        var selected = item.compliance===v || (v==='不符合' && isAssessmentNonCompliant(item.compliance));
+        html+='<option value="'+v+'"'+(selected?' selected':'')+'>'+v+'</option>';
       });
       html+='</select>';
     } else {
@@ -1461,7 +1467,7 @@ function renderAssessmentRows(items) {
 }
 
 function shouldShowAssessmentRemediationFields(compliance, naLabel) {
-  return compliance === '部分符合' || compliance === '未符合';
+  return compliance === '部分符合' || isAssessmentNonCompliant(compliance);
 }
 
 function toggleAssessmentRemediationFields(row, compliance, naLabel) {
