@@ -690,7 +690,8 @@ var SYSTEM_FIELD_SCHEMA = [
   {key:'備妥CDN啟用作業程序', group:'韌性與對外服務', countMissing:true, formKey:'cdnReady', options:['是','否']},
   {key:'備妥靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'staticSite', options:['是','否']},
   {key:'10分鐘內切換至靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'switchStatic10m', options:['是','否']},
-  {key:'提供之服務，是否含有人工智慧', group:'基本概況', countMissing:true, formKey:'aiService', type:'textarea', full:true},
+  {key:'備註', group:'基本概況', countMissing:false, formKey:'note', type:'textarea', full:true},
+  {key:'提供之服務，是否含有人工智慧', group:'基本概況', countMissing:true, formKey:'aiService', options:['是','否']},
   {key:'系統負責人', group:'管理責任與供應商', countMissing:true, formKey:'owner', type:'hr_select'}
 ];
 

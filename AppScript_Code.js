@@ -492,7 +492,7 @@ function initializeSheetsCore_() {
     '系統是否對外', '系統日誌保存時間是否超過6個月',
     '有無開放遠端連線維護', '是否禁用弱密碼', '系統是否備份',
     '備妥流量清洗機制', '備妥CDN啟用作業程序', '備妥靜態網頁',
-    '10分鐘內切換至靜態網頁', '提供之服務，是否含有人工智慧', '系統負責人'
+    '10分鐘內切換至靜態網頁', '備註', '提供之服務，是否含有人工智慧', '系統負責人'
   ];
 
   ensureRuleSettingsSheet_();
@@ -507,16 +507,42 @@ function initializeSheetsCore_() {
     sysSheet.setFrozenRows(1);
   } else {
     var currentHeaders = sysSheet.getRange(1, 1, 1, sysSheet.getLastColumn()).getValues()[0];
-    var legacyNoteIndex = currentHeaders.indexOf('備註');
-    if (legacyNoteIndex >= 0 && currentHeaders.indexOf('提供之服務，是否含有人工智慧') === -1) {
-      sysSheet.getRange(1, legacyNoteIndex + 1).setValue('提供之服務，是否含有人工智慧');
-      currentHeaders[legacyNoteIndex] = '提供之服務，是否含有人工智慧';
+    var currentData = sysSheet.getLastRow() > 1 ? sysSheet.getRange(2, 1, sysSheet.getLastRow() - 1, sysSheet.getLastColumn()).getValues() : [];
+    var migratedRows = [];
+    for (var rowIndex = 0; rowIndex < currentData.length; rowIndex++) {
+      var source = {};
+      for (var colIndex = 0; colIndex < currentHeaders.length; colIndex++) {
+        source[currentHeaders[colIndex]] = currentData[rowIndex][colIndex];
+      }
+
+      var legacyAiText = String(source['提供之服務，是否含有人工智慧'] || '').trim();
+      var legacyNoteText = String(source['備註'] || '').trim();
+      var migratedAiValue = '';
+      var noteParts = [];
+
+      if (legacyNoteText) noteParts.push(legacyNoteText);
+      if (legacyAiText === '是' || legacyAiText === '否') migratedAiValue = legacyAiText;
+      else if (legacyAiText) noteParts.push(legacyAiText);
+
+      migratedRows.push(sysHeaders.map(function(header) {
+        if (header === '備註') return noteParts.join('\n');
+        if (header === '提供之服務，是否含有人工智慧') return migratedAiValue;
+        return source[header] !== undefined ? source[header] : '';
+      }));
     }
-    if (currentHeaders.indexOf('系統負責人') === -1) {
-      sysSheet.insertColumnAfter(sysSheet.getLastColumn());
-      sysSheet.getRange(1, sysSheet.getLastColumn()).setValue('系統負責人');
+
+    if (sysSheet.getLastColumn() < sysHeaders.length) {
+      sysSheet.insertColumnsAfter(sysSheet.getLastColumn(), sysHeaders.length - sysSheet.getLastColumn());
+    } else if (sysSheet.getLastColumn() > sysHeaders.length) {
+      sysSheet.deleteColumns(sysHeaders.length + 1, sysSheet.getLastColumn() - sysHeaders.length);
     }
-    sysSheet.getRange(1, 1, 1, sysSheet.getLastColumn()).setFontWeight('bold');
+
+    sysSheet.clearContents();
+    sysSheet.getRange(1, 1, 1, sysHeaders.length).setValues([sysHeaders]);
+    if (migratedRows.length > 0) {
+      sysSheet.getRange(2, 1, migratedRows.length, sysHeaders.length).setValues(migratedRows);
+    }
+    sysSheet.getRange(1, 1, 1, sysHeaders.length).setFontWeight('bold');
     sysSheet.setFrozenRows(1);
   }
 
