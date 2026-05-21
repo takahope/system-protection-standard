@@ -1299,6 +1299,13 @@ function isAssessmentNonCompliant_(compliance) {
   return compliance === '未符合' || compliance === '不符合';
 }
 
+function isAssessmentNa_(item, sysLevel) {
+  var naLabel = getAssessmentApplicabilityConfig_().naLabel;
+  if (!item) return false;
+  if (item.compliance === naLabel) return true;
+  return !isAssessmentControlApplicable_(item.level, sysLevel);
+}
+
 function saveAssessmentItem(item) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
@@ -1369,18 +1376,16 @@ function getSystemStats(systemId) {
   var assessment = getAssessment(systemId);
   if (assessment.length === 0) return null;
 
-  var naLabel = getAssessmentApplicabilityConfig_().naLabel;
+  var sys = getSystems().filter(function(s) { return s['系統ID'] == systemId; })[0];
+  var sysLevel = sys ? (sys['防護需求等級'] || '') : '';
   var stats = {total: 0, compliant: 0, partial: 0, nonCompliant: 0, na: 0, pending: 0};
   assessment.forEach(function(a) {
     stats.total++;
-    switch (a.compliance) {
-      case '符合': stats.compliant++; break;
-      case '部分符合': stats.partial++; break;
-      case '不符合':
-      case '未符合': stats.nonCompliant++; break;
-      case naLabel: stats.na++; break;
-      default: stats.pending++; break;
-    }
+    if (isAssessmentNa_(a, sysLevel)) stats.na++;
+    else if (a.compliance === '符合') stats.compliant++;
+    else if (a.compliance === '部分符合') stats.partial++;
+    else if (isAssessmentNonCompliant_(a.compliance)) stats.nonCompliant++;
+    else stats.pending++;
   });
   return stats;
 }
@@ -1412,20 +1417,29 @@ function getGlobalDashboard() {
     var failCodes = [];
 
     items.forEach(function(item) {
-      var isApplicable = isAssessmentControlApplicable_(item.level, sysLevel);
-      if (!isApplicable) { stats.na++; return; }
+      var isNa = isAssessmentNa_(item, sysLevel);
+      var isApplicable = !isNa && isAssessmentControlApplicable_(item.level, sysLevel);
+      if (!dimStats[item.dimension]) dimStats[item.dimension] = {ok:0, fail:0, pending:0, na:0, total:0};
+      dimStats[item.dimension].total++;
+      if (isNa) {
+        stats.na++;
+        dimStats[item.dimension].na++;
+        return;
+      }
+
       stats.applicable++;
-      if (item.compliance === '符合') stats.compliant++;
+      if (item.compliance === '符合') {
+        stats.compliant++;
+        dimStats[item.dimension].ok++;
+      }
       else if (item.compliance === '部分符合') { stats.partial++; collectFailCode(item, codeMap, failCodes); }
       else if (isAssessmentNonCompliant_(item.compliance)) { stats.nonCompliant++; collectFailCode(item, codeMap, failCodes); }
-      else stats.pending++;
+      else {
+        stats.pending++;
+        dimStats[item.dimension].pending++;
+      }
 
-      // Per-dimension stats
-      if (!dimStats[item.dimension]) dimStats[item.dimension] = {ok:0, fail:0, pending:0, total:0};
-      dimStats[item.dimension].total++;
-      if (item.compliance === '符合') dimStats[item.dimension].ok++;
-      else if (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合') dimStats[item.dimension].fail++;
-      else dimStats[item.dimension].pending++;
+      if (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合') dimStats[item.dimension].fail++;
     });
 
     result.push({
@@ -1472,8 +1486,11 @@ function getNonComplianceCodes(systemId) {
 
   var codeMap = getCodeMap();
   var failCodes = [];
+  var applicableItems = [];
 
   assessment.forEach(function(item) {
+    if (isAssessmentNa_(item, sys['防護需求等級'])) return;
+    if (isAssessmentControlApplicable_(item.level, sys['防護需求等級'])) applicableItems.push(item);
     if (isAssessmentControlApplicable_(item.level, sys['防護需求等級']) && (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合')) {
       collectFailCode(item, codeMap, failCodes);
     }
@@ -1493,10 +1510,10 @@ function getNonComplianceCodes(systemId) {
     if (statusCol >= 0) {
       var status = failCodes.length === 0 ? '符合' : '部分符合';
       // 檢查是否全部不符合
-      var allFail = assessment.filter(function(a) {
-        return isAssessmentControlApplicable_(a.level, sys['防護需求等級']) && a.compliance !== getAssessmentApplicabilityConfig_().naLabel;
-      }).every(function(a) { return isAssessmentNonCompliant_(a.compliance) || !a.compliance; });
-      if (allFail && assessment.length > 0) status = '不符合';
+      var allFail = applicableItems.length > 0 && applicableItems.every(function(a) {
+        return isAssessmentNonCompliant_(a.compliance) || !a.compliance;
+      });
+      if (allFail) status = '不符合';
       sysSheet.getRange(sys._row, statusCol + 1).setValue(status);
     }
   }

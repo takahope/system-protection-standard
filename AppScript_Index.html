@@ -851,6 +851,13 @@ function isAssessmentNonCompliant(compliance) {
   return compliance === '未符合' || compliance === '不符合';
 }
 
+function isAssessmentNaItem(item, sysLevel) {
+  var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
+  if (!item) return false;
+  if (item.compliance === naLabel) return true;
+  return !isAssessmentApplicable(item.level, sysLevel);
+}
+
 function renderSystemCardTags(sys) {
   var tags = [];
   tags.push('<span class="sys-tag neutral">' + escH(sys['系統屬性'] || '未設定屬性') + '</span>');
@@ -993,7 +1000,7 @@ function loadDashboard() {
 
 function renderDashboard(data) {
   // 1. Per-system compliance chart
-  var chartHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統名稱</th><th>等級</th><th>應評</th><th>符合</th><th>部分符合</th><th>不符合</th><th>待評</th><th>符合率</th><th>進度</th></tr>';
+  var chartHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統名稱</th><th>等級</th><th>應評</th><th>符合</th><th>部分符合</th><th>不符合</th><th>不適用</th><th>待評</th><th>符合率</th><th>進度</th></tr>';
   data.forEach(function(d){
     if(!d.hasAssessment||d.packageExempt) return;
     var s=d.stats, pct=s.applicable>0?Math.round(s.compliant/s.applicable*100):0;
@@ -1005,6 +1012,7 @@ function renderDashboard(data) {
     chartHtml+='<td class="heat-green">'+s.compliant+'</td>';
     chartHtml+='<td class="'+(s.partial>0?'heat-yellow':'')+'">'+s.partial+'</td>';
     chartHtml+='<td class="'+(s.nonCompliant>0?'heat-red':'')+'">'+s.nonCompliant+'</td>';
+    chartHtml+='<td class="'+(s.na>0?'heat-gray':'')+'">'+s.na+'</td>';
     chartHtml+='<td class="'+(s.pending>0?'heat-gray':'')+'">'+s.pending+'</td>';
     chartHtml+='<td style="font-weight:700;color:'+(pct>=80?'var(--success)':pct>=50?'var(--warning)':'var(--danger)')+'">'+pct+'%</td>';
     chartHtml+='<td style="min-width:100px"><div class="mini-progress"><div class="fill '+bc+'" style="width:'+pct+'%"></div></div></td>';
@@ -1026,6 +1034,8 @@ function renderDashboard(data) {
       if(!ds||ds.total===0){hmHtml+='<td class="heat-gray">-</td>';return;}
       if(ds.fail>0) hmHtml+='<td class="heat-red">'+ds.fail+' 不符合</td>';
       else if(ds.pending>0) hmHtml+='<td class="heat-yellow">'+ds.pending+' 待評</td>';
+      else if(ds.na>0 && ds.ok>0) hmHtml+='<td class="heat-green">全符合/'+ds.na+'不適用</td>';
+      else if(ds.na>0) hmHtml+='<td class="heat-gray">'+ds.na+'不適用</td>';
       else hmHtml+='<td class="heat-green">全符合</td>';
     });
     hmHtml+='</tr>';
@@ -1384,14 +1394,15 @@ function renderAssessment(items) {
   var sysLevel=currentSystem['防護需求等級']||'普';
 
   // Stats
-  var st={applicable:0,compliant:0,partial:0,nonCompliant:0,pending:0};
+  var st={applicable:0,compliant:0,partial:0,nonCompliant:0,na:0,pending:0};
   items.forEach(function(item){
-    if(isAssessmentApplicable(item.level, sysLevel)){
+    if(isAssessmentNaItem(item, sysLevel)) st.na++;
+    else if(isAssessmentApplicable(item.level, sysLevel)){
       st.applicable++;
       if(item.compliance==='符合')st.compliant++;
       else if(item.compliance==='部分符合')st.partial++;
       else if(isAssessmentNonCompliant(item.compliance))st.nonCompliant++;
-      else if(item.compliance!==getPersistedRuleValue('assessment_applicability', 'na_label', '不適用'))st.pending++;
+      else st.pending++;
     }
   });
   var pct=st.applicable>0?Math.round(st.compliant/st.applicable*100):0;
@@ -1402,6 +1413,7 @@ function renderAssessment(items) {
     '<div class="assess-kpi ok"><div class="label">符合</div><div class="value">'+st.compliant+'</div><div class="sub">已達要求</div></div>'+
     '<div class="assess-kpi partial"><div class="label">部分符合</div><div class="value">'+st.partial+'</div><div class="sub">仍需補強</div></div>'+
     '<div class="assess-kpi fail"><div class="label">不符合</div><div class="value">'+st.nonCompliant+'</div><div class="sub">優先處理</div></div>'+
+    '<div class="assess-kpi"><div class="label">不適用</div><div class="value">'+st.na+'</div><div class="sub">已排除於應評之外</div></div>'+
     '<div class="assess-kpi pending"><div class="label">待評估</div><div class="value">'+st.pending+'</div><div class="sub">尚未填寫狀態</div></div>'+
     '<div class="assess-kpi"><div class="label">完成率</div><div class="value">'+pct+'%</div><div class="sub">目前整體進度</div></div>'+
     '</div>'+
