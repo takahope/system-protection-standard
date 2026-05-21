@@ -941,7 +941,7 @@ function renderSystems(systems) {
     html+='<div class="sys-card-head">';
     html+='<div class="sys-card-main">';
     html+='<div class="sys-name">'+escH(sys['系統名稱']||'未命名')+'</div>';
-    html+='<div class="sys-subline">管理單位：'+escH(sys['系統管理者(部門/單位)']||'未填寫')+'</div>';
+    html+='<div class="sys-subline">管理單位：'+escH(sys['系統管理者(部門/單位)']||'未填寫')+'｜系統負責人：'+escH(getOwnerDisplayValue(sys)||'未填寫')+'</div>';
     html+='</div>';
     html+='<span class="sys-badge '+bc+'">'+lv+'</span></div>';
     html+='<div class="sys-tags">'+renderSystemCardTags(sys)+'</div>';
