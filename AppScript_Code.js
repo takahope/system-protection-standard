@@ -432,6 +432,19 @@ function getRuleAuditLogs() {
 // ===== 初始化試算表結構 =====
 function initializeSheetsCore_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sysHeaders = [
+    '系統ID', '資產編號', '系統名稱', '系統屬性', '建置方式', '建置方式補充說明',
+    '系統管理者(部門/單位)', '系統使用者(部門/單位)', '系統建置日期',
+    '主機設置於機關內', '核心系統', '含機敏資訊', '個資數量',
+    '機敏資訊以非明文方式儲存', '機敏資訊類別', '是否與民生權益相關',
+    '防護需求等級', '是否包含於ISMS導入範圍', '建置廠商', '建置廠商統一編號',
+    '維運廠商', '維運廠商統一編號', '最大可容忍中斷時間',
+    '是否符合防護基準', '不符合防護基準項目代碼',
+    '系統是否對外', '系統日誌保存時間是否超過6個月',
+    '有無開放遠端連線維護', '是否禁用弱密碼', '系統是否備份',
+    '備妥流量清洗機制', '備妥CDN啟用作業程序', '備妥靜態網頁',
+    '10分鐘內切換至靜態網頁', '提供之服務，是否含有人工智慧', '系統負責人'
+  ];
 
   ensureRuleSettingsSheet_();
   ensureRuleAuditSheet_();
@@ -440,21 +453,21 @@ function initializeSheetsCore_() {
   var sysSheet = ss.getSheetByName('系統清冊');
   if (!sysSheet) {
     sysSheet = ss.insertSheet('系統清冊');
-    var sysHeaders = [
-      '系統ID', '資產編號', '系統名稱', '系統屬性', '建置方式', '建置方式補充說明',
-      '系統管理者(部門/單位)', '系統使用者(部門/單位)', '系統建置日期',
-      '主機設置於機關內', '核心系統', '含機敏資訊', '個資數量',
-      '機敏資訊以非明文方式儲存', '機敏資訊類別', '是否與民生權益相關',
-      '防護需求等級', '是否包含於ISMS導入範圍', '建置廠商', '建置廠商統一編號',
-      '維運廠商', '維運廠商統一編號', '最大可容忍中斷時間',
-      '是否符合防護基準', '不符合防護基準項目代碼',
-      '系統是否對外', '系統日誌保存時間是否超過6個月',
-      '有無開放遠端連線維護', '是否禁用弱密碼', '系統是否備份',
-      '備妥流量清洗機制', '備妥CDN啟用作業程序', '備妥靜態網頁',
-      '10分鐘內切換至靜態網頁', '備註'
-    ];
     sysSheet.getRange(1, 1, 1, sysHeaders.length).setValues([sysHeaders]);
     sysSheet.getRange(1, 1, 1, sysHeaders.length).setFontWeight('bold');
+    sysSheet.setFrozenRows(1);
+  } else {
+    var currentHeaders = sysSheet.getRange(1, 1, 1, sysSheet.getLastColumn()).getValues()[0];
+    var legacyNoteIndex = currentHeaders.indexOf('備註');
+    if (legacyNoteIndex >= 0 && currentHeaders.indexOf('提供之服務，是否含有人工智慧') === -1) {
+      sysSheet.getRange(1, legacyNoteIndex + 1).setValue('提供之服務，是否含有人工智慧');
+      currentHeaders[legacyNoteIndex] = '提供之服務，是否含有人工智慧';
+    }
+    if (currentHeaders.indexOf('系統負責人') === -1) {
+      sysSheet.insertColumnAfter(sysSheet.getLastColumn());
+      sysSheet.getRange(1, sysSheet.getLastColumn()).setValue('系統負責人');
+    }
+    sysSheet.getRange(1, 1, 1, sysSheet.getLastColumn()).setFontWeight('bold');
     sysSheet.setFrozenRows(1);
   }
 
