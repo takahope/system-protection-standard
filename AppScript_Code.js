@@ -1127,6 +1127,34 @@ function getRating(systemId) {
 }
 
 // ===== 防護基準自評 =====
+function getAssessmentCompareChangeMeta_(index) {
+  var normalized = String(index || '');
+  var colorMap = {
+    level_change: '#E8F3FF',
+    wording_change: '#FFF8D9',
+    new_item: '#EAF7EA'
+  };
+  var labelMap = {
+    level_change: '等級變更',
+    wording_change: '文字修改',
+    new_item: '新增項目'
+  };
+  var type = '';
+  var levelChanges = {'2':true,'3':true,'4':true,'5':true,'6':true,'9':true,'33':true,'77':true};
+  var wordingChanges = {'28':true,'29':true,'30':true,'31':true,'32':true,'33':true,'34':true,'36':true,'37':true,'38':true,'41':true,'42':true,'43':true,'47':true,'58':true,'70':true};
+  var newItems = {'35':true,'59':true,'61':true,'64':true};
+
+  if (newItems[normalized]) type = 'new_item';
+  else if (levelChanges[normalized]) type = 'level_change';
+  else if (wordingChanges[normalized]) type = 'wording_change';
+
+  return {
+    compareChangeType: type,
+    compareChangeLabel: labelMap[type] || '',
+    compareChangeColor: colorMap[type] || ''
+  };
+}
+
 function getAssessment(systemId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
@@ -1136,6 +1164,7 @@ function getAssessment(systemId) {
   var results = [];
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] == systemId) {
+      var meta = getAssessmentCompareChangeMeta_(data[i][2]);
       results.push({
         systemId: data[i][0],
         systemName: data[i][1],
@@ -1151,6 +1180,9 @@ function getAssessment(systemId) {
         targetDate: data[i][11],
         note: data[i][12],
         lastUpdate: data[i][13],
+        compareChangeType: meta.compareChangeType,
+        compareChangeLabel: meta.compareChangeLabel,
+        compareChangeColor: meta.compareChangeColor,
         _row: i + 1
       });
     }
@@ -1457,8 +1489,14 @@ function exportAssessmentReport(systemId) {
   // Color applicable/not-applicable rows
   for (var i = 0; i < assessment.length; i++) {
     var r = i + 6;
-    if (isAssessmentControlApplicable_(assessment[i].level, sys['防護需求等級'])) {
-      ws.getRange(r, 6, 1, 6).setBackground('#FFF2CC');
+    var meta = getAssessmentCompareChangeMeta_(assessment[i].index);
+    var applicable = isAssessmentControlApplicable_(assessment[i].level, sys['防護需求等級']);
+    if (meta.compareChangeColor) {
+      ws.getRange(r, 1, 1, 11).setBackground(meta.compareChangeColor);
+      if (!applicable) ws.getRange(r, 1, 1, 11).setFontColor('#7A7A7A');
+      else ws.getRange(r, 1, 1, 11).setFontColor('#000000');
+    } else if (applicable) {
+      ws.getRange(r, 1, 1, 11).setBackground('#FFFFFF').setFontColor('#000000');
     } else {
       ws.getRange(r, 1, 1, 11).setBackground('#F2F2F2').setFontColor('#999999');
     }

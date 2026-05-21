@@ -164,14 +164,23 @@
     .assess-filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
     .assess-filterbar select{padding:8px 10px;border:1px solid #d1d9e6;border-radius:10px;font-size:12px;background:#fff}
     .assess-filterbar label{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px}
+    .assess-legend{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+    .assess-legend-item{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #d9e2ec;background:#fff;font-size:11px;color:#334155;font-weight:600}
+    .assess-legend-swatch{width:12px;height:12px;border-radius:999px;border:1px solid rgba(15,23,42,.12)}
     .assess-table-wrap{overflow:visible}
     .assess-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;table-layout:fixed}
     .assess-table th{background:#0f5fa8;color:#fff;padding:10px 12px;text-align:left;font-weight:700;position:sticky;top:0;z-index:5;white-space:nowrap}
     .assess-table td{padding:10px 12px;border-bottom:1px solid #edf2f7;vertical-align:top;background:#fff;overflow-wrap:anywhere}
     .assess-table tr.assess-entry-row:hover td{background:#f8fbff}
     .assess-table tr.applicable td{background:#fff}
-    .assess-table tr.not-applicable td{background:#fafafa;color:#6b7280}
-    .assess-table tr.dirty td{box-shadow:inset 4px 0 0 #f59e0b;background:#fffaf0}
+    .assess-table tr.not-applicable td{color:#6b7280}
+    .assess-table tr.dirty td{box-shadow:inset 4px 0 0 #f59e0b}
+    .assess-table tr.cmp-level-change td{background:#E8F3FF}
+    .assess-table tr.cmp-wording-change td{background:#FFF8D9}
+    .assess-table tr.cmp-new-item td{background:#EAF7EA}
+    .assess-table tr.cmp-level-change:hover td{background:#DCEEFF}
+    .assess-table tr.cmp-wording-change:hover td{background:#FFF1BF}
+    .assess-table tr.cmp-new-item:hover td{background:#DDF2DD}
     .assess-table .dim-cell{font-weight:700;color:#1f3b57}
     .assess-index{font-weight:700;text-align:center;color:#334155}
     .assess-level-pill{display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#edf2f7;color:#334155}
@@ -552,6 +561,11 @@
                 </select>
               </label>
               <label><input type="checkbox" id="filter-applicable" onchange="applyFilters()"> 只顯示應評項目</label>
+              <div class="assess-legend">
+                <span class="assess-legend-item"><span class="assess-legend-swatch" style="background:#E8F3FF"></span>等級變更</span>
+                <span class="assess-legend-item"><span class="assess-legend-swatch" style="background:#FFF8D9"></span>文字修改</span>
+                <span class="assess-legend-item"><span class="assess-legend-swatch" style="background:#EAF7EA"></span>新增項目</span>
+              </div>
             </div>
             <div class="assess-table-wrap">
               <table class="assess-table" id="assess-table">
@@ -1250,7 +1264,8 @@ function renderAssessmentRows(items) {
     }
 
     var rowClass=applicable?'applicable':'not-applicable';
-    html+='<tr class="assess-entry-row '+rowClass+'" data-idx="'+idx+'">';
+    var compareClass = item.compareChangeType ? (' cmp-' + item.compareChangeType.replace(/_/g, '-')) : '';
+    html+='<tr class="assess-entry-row '+rowClass+compareClass+'" data-idx="'+idx+'">';
     html+='<td class="assess-index">'+item.index+'</td>';
     html+='<td class="dim-cell">'+escH(item.dimension)+'</td>';
     html+='<td style="font-weight:600">'+escH(item.category)+'</td>';
