@@ -556,7 +556,7 @@
           <div class="assess-topbar">
             <div>
               <h2>防護基準自評工作台</h2>
-              <p>每筆控制措施以單層列完整呈現，進入頁面即可同時檢視符合性、現況、佐證、矯正作為與目標日期。</p>
+              <p>每筆控制措施以單層列完整呈現，進入頁面即可同時檢視符合性、現況與佐證，並在需要補強時填寫矯正作為與目標日期。</p>
             </div>
             <div class="assess-actions">
               <button class="btn btn-outline btn-sm" onclick="initAssessment()">初始化自評項目</button>
@@ -1404,6 +1404,7 @@ function renderAssessmentRows(items) {
 
     var rowClass=applicable?'applicable':'not-applicable';
     var compareClass = item.compareChangeType ? (' cmp-' + item.compareChangeType.replace(/_/g, '-')) : '';
+    var showRemediation = shouldShowAssessmentRemediationFields(item.compliance || '', naLabel);
     html+='<tr class="assess-entry-row '+rowClass+compareClass+'" data-idx="'+idx+'">';
     html+='<td class="assess-index">'+item.index+'</td>';
     html+='<td class="dim-cell">'+escH(item.dimension)+'</td>';
@@ -1412,7 +1413,7 @@ function renderAssessmentRows(items) {
     html+='<td><div class="assess-control-text"><div class="assess-control-title">'+escH(item.category)+'</div><div class="assess-control-desc">'+escH(item.description)+'</div></div></td>';
     html+='<td>';
     if (applicable) {
-      html+='<select class="assess-status-select" data-field="compliance" onchange="markDirty(this)">';
+      html+='<select class="assess-status-select" data-field="compliance" onchange="handleAssessmentComplianceChange(this)">';
       html+='<option value="">-- 請選擇 --</option>';
       ['符合','部分符合','未符合',naLabel].forEach(function(v){
         html+='<option value="'+v+'"'+(item.compliance===v?' selected':'')+'>'+v+'</option>';
@@ -1427,8 +1428,8 @@ function renderAssessmentRows(items) {
       html+='<div class="assess-workgrid">';
       html+='<div class="assess-subfield"><span class="assess-cell-label">現況說明</span><textarea class="assess-inline-textarea" data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></div>';
       html+='<div class="assess-subfield"><span class="assess-cell-label">佐證資料</span><textarea class="assess-inline-textarea" data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></div>';
-      html+='<div class="assess-subfield"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></div>';
-      html+='<div class="assess-subfield"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)"></div>';
+      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></div>';
+      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)"></div>';
       html+='</div>';
     } else {
       var naText = escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目'));
@@ -1438,6 +1439,31 @@ function renderAssessmentRows(items) {
     html+='</tr>';
   });
   tbody.innerHTML=html||'<tr><td colspan="7"><div class="assess-empty-note">無符合篩選條件的項目。</div></td></tr>';
+}
+
+function shouldShowAssessmentRemediationFields(compliance, naLabel) {
+  return compliance === '部分符合' || compliance === '未符合';
+}
+
+function toggleAssessmentRemediationFields(row, compliance, naLabel) {
+  if (!row) return;
+  var show = shouldShowAssessmentRemediationFields(compliance, naLabel);
+  row.querySelectorAll('.assess-remediation-field').forEach(function(el) {
+    el.style.display = show ? 'grid' : 'none';
+  });
+}
+
+function handleAssessmentComplianceChange(el) {
+  if (!el) return;
+  markDirty(el);
+  var row = el.closest('tr');
+  var compliance = el.value || '';
+  var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
+  if (row && currentAssessment.length > 0) {
+    var idx = parseInt(row.dataset.idx, 10);
+    if (!isNaN(idx) && currentAssessment[idx]) currentAssessment[idx].compliance = compliance;
+  }
+  toggleAssessmentRemediationFields(row, compliance, naLabel);
 }
 
 function applyFilters() { if(currentAssessment.length>0) renderAssessmentRows(currentAssessment); }
