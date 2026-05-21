@@ -251,6 +251,8 @@
     .modal label{font-size:11px;color:var(--text2);font-weight:600}
     .modal input,.modal select,.modal textarea{border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
     .modal textarea{min-height:60px;resize:vertical}
+    .modal .field-help{font-size:11px;color:var(--text2);line-height:1.5}
+    .modal .hr-owner-select{min-height:140px}
     .modal .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 
     /* Progress bar */
@@ -1551,19 +1553,51 @@ function exportReport() {
 }
 
 // ===== System CRUD Modal =====
-function buildHrOwnerOptions(currentValue) {
+function getHrOwnerOptionLabel(person) {
+  if (!person) return '';
+  return person.name ? (person.name + '（' + person.email + '）') : String(person.email || '');
+}
+
+function buildHrOwnerOptions(currentValue, keyword) {
   var html = '<option value="">請選擇</option>';
   var seen = {};
+  var kw = String(keyword || '').trim().toLowerCase();
   (hrEmployeeOptions || []).forEach(function(person) {
     var email = String(person.email || '');
     if (!email || seen[email]) return;
+    var label = getHrOwnerOptionLabel(person);
+    var haystack = (label + ' ' + email + ' ' + String(person.name || '')).toLowerCase();
+    if (kw && haystack.indexOf(kw) === -1) return;
     seen[email] = true;
-    html += '<option value="' + escH(email) + '"' + (String(currentValue || '') === email ? ' selected' : '') + '>' + escH(person.name || email) + '</option>';
+    html += '<option value="' + escH(email) + '"' + (String(currentValue || '') === email ? ' selected' : '') + '>' + escH(label) + '</option>';
   });
   if (currentValue && !seen[String(currentValue)]) {
     html += '<option value="' + escH(String(currentValue)) + '" selected>' + escH(String(currentValue)) + '</option>';
   }
   return html;
+}
+
+function syncHrOwnerSearchLabel(selectEl) {
+  if (!selectEl) return;
+  var searchEl = document.getElementById(selectEl.id + '-search');
+  if (!searchEl) return;
+  var opt = selectEl.options[selectEl.selectedIndex];
+  if (opt && opt.value) searchEl.value = opt.text;
+}
+
+function filterHrOwnerOptions(formKey) {
+  var selectEl = document.getElementById('modal-' + formKey);
+  var searchEl = document.getElementById('modal-' + formKey + '-search');
+  if (!selectEl || !searchEl) return;
+  var currentValue = selectEl.value || '';
+  selectEl.innerHTML = buildHrOwnerOptions(currentValue, searchEl.value || '');
+  if (currentValue) selectEl.value = currentValue;
+}
+
+function handleHrOwnerChange(formKey) {
+  var selectEl = document.getElementById('modal-' + formKey);
+  if (!selectEl) return;
+  syncHrOwnerSearchLabel(selectEl);
 }
 
 function renderSystemModal(title, currentData) {
@@ -1575,9 +1609,12 @@ function renderSystemModal(title, currentData) {
     html += '<div class="form-group'+(f.full?' full':'')+'">';
     html += '<label>'+f.key+'</label>';
     if (f.type === 'hr_select') {
-      html += '<select id="modal-'+f.formKey+'">';
-      html += buildHrOwnerOptions(val);
+      var selectedLabel = val ? getOwnerDisplayValue({_ownerDisplayName: currentData ? currentData._ownerDisplayName : '', '系統負責人': val}) : '';
+      html += '<input type="text" id="modal-'+f.formKey+'-search" value="'+escH(selectedLabel)+'" placeholder="輸入姓名或 email 關鍵字" oninput="filterHrOwnerOptions(\''+f.formKey+'\')">';
+      html += '<select id="modal-'+f.formKey+'" class="hr-owner-select" size="6" onchange="handleHrOwnerChange(\''+f.formKey+'\')">';
+      html += buildHrOwnerOptions(val, '');
       html += '</select>';
+      html += '<div class="field-help">輸入關鍵字可篩選在勤人員，實際儲存值為 email。</div>';
     } else if(f.options){
       html += '<select id="modal-'+f.formKey+'">';
       html += '<option value="">請選擇</option>';
