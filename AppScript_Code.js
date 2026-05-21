@@ -1307,7 +1307,7 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
         category: ctrl.category,
         level: ctrl.level,
         description: ctrl.description,
-        compliance: applicable ? '' : appRule.naLabel,
+        compliance: applicable ? '未符合' : appRule.naLabel,
         currentStatus: '',
         evidence: '',
         corrective: '',
