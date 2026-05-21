@@ -165,43 +165,32 @@
     .assess-filterbar select{padding:8px 10px;border:1px solid #d1d9e6;border-radius:10px;font-size:12px;background:#fff}
     .assess-filterbar label{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px}
     .assess-table-wrap{overflow:auto}
-    .assess-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:960px}
+    .assess-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:1760px}
     .assess-table th{background:#0f5fa8;color:#fff;padding:10px 12px;text-align:left;font-weight:700;position:sticky;top:0;z-index:5;white-space:nowrap}
     .assess-table td{padding:10px 12px;border-bottom:1px solid #edf2f7;vertical-align:top;background:#fff}
-    .assess-table tr.assess-summary-row:hover td,
-    .assess-table tr.assess-detail-row:hover td{background:#f8fbff}
+    .assess-table tr.assess-entry-row:hover td{background:#f8fbff}
     .assess-table tr.applicable td{background:#fff}
     .assess-table tr.not-applicable td{background:#fafafa;color:#6b7280}
     .assess-table tr.dirty td{box-shadow:inset 4px 0 0 #f59e0b;background:#fffaf0}
     .assess-table .dim-cell{font-weight:700;color:#1f3b57}
     .assess-index{font-weight:700;text-align:center;color:#334155}
     .assess-level-pill{display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#edf2f7;color:#334155}
-    .assess-control-text{max-width:420px;line-height:1.7;color:#334155}
+    .assess-control-text{min-width:300px;max-width:380px;line-height:1.7;color:#334155}
     .assess-control-title{font-weight:700;color:#111827;margin-bottom:4px}
     .assess-control-desc{line-height:1.7;color:#475467}
-    .assess-status-select{min-width:110px;width:100%;border:1px solid #d1d9e6;border-radius:10px;padding:7px 9px;font-size:12px;background:#fff}
-    .assess-detail-row td{padding:0;border-bottom:1px solid #dbe4f0;background:#f8fbff}
-    .assess-detail-panel{padding:16px;border-top:1px solid #e1ebf7;background:linear-gradient(180deg,#f8fbff 0%,#fdfefe 100%)}
-    .assess-detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-    .assess-detail-head h3{font-size:14px;margin:0}
-    .assess-detail-head p{font-size:12px;color:var(--text2);margin:4px 0 0}
-    .assess-meta-row{display:flex;gap:8px;flex-wrap:wrap}
-    .assess-meta-pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#e8f1fb;color:#0f5fa8}
-    .assess-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .assess-field{display:grid;gap:6px}
-    .assess-field.full{grid-column:1/-1}
-    .assess-field label{font-size:11px;font-weight:700;color:#475467}
-    .assess-field textarea,.assess-field input,.assess-field select{width:100%;border:1px solid #d1d9e6;border-radius:12px;padding:10px 12px;font-size:12px;font-family:inherit;background:#fff}
-    .assess-field textarea{min-height:92px;resize:vertical}
-    .assess-inline-status{display:grid;gap:8px}
+    .assess-status-select{min-width:132px;width:100%;border:1px solid #d1d9e6;border-radius:10px;padding:8px 10px;font-size:12px;background:#fff}
+    .assess-cell-label{display:block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+    .assess-cell-stack{display:grid;gap:6px;min-width:160px}
+    .assess-inline-input,.assess-inline-textarea{width:100%;border:1px solid #d1d9e6;border-radius:12px;padding:10px 12px;font-size:12px;font-family:inherit;background:#fff;color:#111827}
+    .assess-inline-input{min-width:136px}
+    .assess-inline-textarea{min-width:220px;min-height:96px;resize:vertical;line-height:1.6}
     .assess-empty-note{font-size:12px;color:var(--text2);padding:20px;text-align:center}
     .assess-na-note{font-size:12px;color:#6b7280;line-height:1.7;background:#fff;border:1px dashed #d1d5db;border-radius:12px;padding:12px}
     @media (max-width:960px){
       .assess-topbar{flex-direction:column}
       .assess-actions{width:100%}
       .assess-actions .btn{flex:1}
-      .assess-editor-grid{grid-template-columns:1fr}
-      .assess-table{min-width:760px}
+      .assess-table{min-width:1360px}
     }
 
     /* Dashboard heatmap */
@@ -526,7 +515,7 @@
           <div class="assess-topbar">
             <div>
               <h2>防護基準自評工作台</h2>
-              <p>先在主表快速掌握控制措施與符合性，再展開單筆項目補充現況、佐證與矯正作為，避免欄位互相擠壓。</p>
+              <p>每筆控制措施以單層列完整呈現，進入頁面即可同時檢視符合性、現況、佐證、矯正作為與目標日期。</p>
             </div>
             <div class="assess-actions">
               <button class="btn btn-outline btn-sm" onclick="initAssessment()">初始化自評項目</button>
@@ -568,8 +557,12 @@
                   <th style="width:110px">構面</th>
                   <th style="width:140px">類別</th>
                   <th style="width:72px">等級</th>
-                  <th>安全控制措施</th>
-                  <th style="width:130px">符合性</th>
+                  <th style="width:340px">安全控制措施</th>
+                  <th style="width:150px">符合性</th>
+                  <th style="width:240px">現況說明</th>
+                  <th style="width:240px">佐證資料</th>
+                  <th style="width:240px">矯正作為</th>
+                  <th style="width:160px">目標日期</th>
                 </tr></thead>
                 <tbody id="assess-body"></tbody>
               </table>
@@ -1192,18 +1185,18 @@ function loadAssessment(sysId) {
     renderPackageExemption('assess');
     return;
   }
-  document.getElementById('assess-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
+  document.getElementById('assess-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
     currentAssessment=data; renderAssessment(data);
   }).withFailureHandler(function(e){
-    document.getElementById('assess-body').innerHTML='<tr><td colspan="6" style="padding:20px">載入失敗：'+e.message+'</td></tr>';
+    document.getElementById('assess-body').innerHTML='<tr><td colspan="10" style="padding:20px">載入失敗：'+e.message+'</td></tr>';
   }).getAssessment(sysId);
 }
 
 function renderAssessment(items) {
   var tbody=document.getElementById('assess-body');
   if(!items||items.length===0){
-    tbody.innerHTML='<tr><td colspan="6"><div class="assess-empty-note">尚無自評資料，請點擊「初始化自評項目」。</div></td></tr>';
+    tbody.innerHTML='<tr><td colspan="10"><div class="assess-empty-note">尚無自評資料，請點擊「初始化自評項目」。</div></td></tr>';
     document.getElementById('assess-stats').innerHTML='';return;
   }
 
@@ -1236,29 +1229,6 @@ function renderAssessment(items) {
   renderAssessmentRows(items);
 }
 
-function renderAssessmentDetail(item, idx, applicable, naLabel) {
-  var html = '<div class="assess-detail-panel">';
-  html += '<div class="assess-detail-head">';
-  html += '<div><h3>' + escH(item.dimension + ' / ' + item.category) + '</h3><p>' + escH('項次 ' + item.index + '｜' + item.description) + '</p></div>';
-  html += '<div class="assess-meta-row">';
-  html += '<span class="assess-meta-pill">最低要求等級：' + escH(item.level) + '</span>';
-  html += '<span class="assess-meta-pill">' + (applicable ? '應評項目' : escH(naLabel)) + '</span>';
-  html += '</div></div>';
-  if (applicable) {
-    html += '<div class="assess-editor-grid">';
-    html += '<div class="assess-field"><label>目標日期</label><input type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)"></div>';
-    html += '<div class="assess-field"><label>符合性備註</label><div class="assess-na-note">目前符合性狀態：' + escH(item.compliance || '待評估') + '</div></div>';
-    html += '<div class="assess-field full"><label>現況說明</label><textarea data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></div>';
-    html += '<div class="assess-field full"><label>佐證資料</label><textarea data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></div>';
-    html += '<div class="assess-field full"><label>矯正作為</label><textarea data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></div>';
-    html += '</div>';
-  } else {
-    html += '<div class="assess-na-note">' + escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目')) + '</div>';
-  }
-  html += '</div>';
-  return html;
-}
-
 function renderAssessmentRows(items) {
   var tbody=document.getElementById('assess-body');
   var sysLevel=currentSystem['防護需求等級']||'普';
@@ -1280,7 +1250,7 @@ function renderAssessmentRows(items) {
     }
 
     var rowClass=applicable?'applicable':'not-applicable';
-    html+='<tr class="assess-summary-row '+rowClass+'" data-idx="'+idx+'" data-kind="summary">';
+    html+='<tr class="assess-entry-row '+rowClass+'" data-idx="'+idx+'">';
     html+='<td class="assess-index">'+item.index+'</td>';
     html+='<td class="'+(item.dimension!==prevDim?'dim-cell':'')+'">'+escH(item.dimension!==prevDim?item.dimension:'')+'</td>';
     html+='<td style="font-weight:'+(item.category!==prevCat?'600':'normal')+'">'+escH(item.category!==prevCat?item.category:'')+'</td>';
@@ -1298,11 +1268,22 @@ function renderAssessmentRows(items) {
       html+='<span class="assess-level-pill">'+escH(naLabel)+'</span>';
     }
     html+='</td>';
+    if (applicable) {
+      html+='<td><div class="assess-cell-stack"><span class="assess-cell-label">現況說明</span><textarea class="assess-inline-textarea" data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></div></td>';
+      html+='<td><div class="assess-cell-stack"><span class="assess-cell-label">佐證資料</span><textarea class="assess-inline-textarea" data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></div></td>';
+      html+='<td><div class="assess-cell-stack"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></div></td>';
+      html+='<td><div class="assess-cell-stack"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)"></div></td>';
+    } else {
+      var naText = escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目'));
+      html+='<td><div class="assess-na-note">'+naText+'</div></td>';
+      html+='<td><div class="assess-na-note">'+naText+'</div></td>';
+      html+='<td><div class="assess-na-note">'+naText+'</div></td>';
+      html+='<td><div class="assess-na-note">'+naText+'</div></td>';
+    }
     html+='</tr>';
-    html+='<tr class="assess-detail-row '+rowClass+'" data-idx="'+idx+'" data-kind="detail"><td colspan="6">'+renderAssessmentDetail(item, idx, applicable, naLabel)+'</td></tr>';
     prevDim=item.dimension;prevCat=item.category;
   });
-  tbody.innerHTML=html||'<tr><td colspan="6"><div class="assess-empty-note">無符合篩選條件的項目。</div></td></tr>';
+  tbody.innerHTML=html||'<tr><td colspan="10"><div class="assess-empty-note">無符合篩選條件的項目。</div></td></tr>';
 }
 
 function applyFilters() { if(currentAssessment.length>0) renderAssessmentRows(currentAssessment); }
@@ -1327,7 +1308,7 @@ function initAssessment() {
 }
 
 function saveAllAssessment() {
-  var dirtyRows=document.querySelectorAll('#assess-body tr.assess-detail-row.dirty, #assess-body tr.assess-summary-row.dirty');
+  var dirtyRows=document.querySelectorAll('#assess-body tr.assess-entry-row.dirty');
   if(dirtyRows.length===0){showToast('沒有變更需要儲存');return;}
 
   var batch=[],seen={};
