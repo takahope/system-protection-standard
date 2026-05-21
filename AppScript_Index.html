@@ -36,6 +36,7 @@
     .sys-card.level-high{border-left-color:var(--high)} .sys-card.level-mid{border-left-color:var(--mid)} .sys-card.level-low{border-left-color:var(--low)}
     .sys-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
     .sys-card-main{min-width:0}
+    .sys-card-status{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
     .sys-name{font-size:16px;font-weight:700;line-height:1.4;margin-bottom:4px}
     .sys-subline{font-size:11px;color:var(--text2);line-height:1.6}
     .sys-tags{display:flex;flex-wrap:wrap;gap:6px}
@@ -44,6 +45,7 @@
     .sys-tag.high{background:#fdecec;color:var(--danger)}
     .sys-tag.mid{background:#fff4df;color:var(--warning)}
     .sys-tag.low{background:#e9f7ef;color:var(--success)}
+    .sys-tag.init-warn{background:#fff4db;color:#a15c00;border:1px solid #f3cb7a}
     .sys-completeness{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid}
     .sys-completeness.warn{background:#fff8e8;border-color:#f7d79a}
     .sys-completeness.ok{background:#edf9f0;border-color:#b7e0c0}
@@ -947,7 +949,10 @@ function renderSystems(systems) {
     html+='<div class="sys-name">'+escH(sys['系統名稱']||'未命名')+'</div>';
     html+='<div class="sys-subline">管理單位：'+escH(sys['系統管理者(部門/單位)']||'未填寫')+'｜系統負責人：'+escH(getOwnerDisplayValue(sys)||'未填寫')+'</div>';
     html+='</div>';
-    html+='<span class="sys-badge '+bc+'">'+lv+'</span></div>';
+    html+='<div class="sys-card-status">';
+    html+='<span class="sys-badge '+bc+'">'+lv+'</span>';
+    if (sys._showAssessmentInitWarning) html+='<span class="sys-tag init-warn">尚未初始化自評</span>';
+    html+='</div></div>';
     html+='<div class="sys-tags">'+renderSystemCardTags(sys)+'</div>';
     if (missingFields.length > 0) {
       html+='<div class="sys-completeness warn"><div><strong>尚有 ' + missingFields.length + ' 筆資料未填寫</strong><p>缺漏會影響詳細頁資訊完整性與後續評估判斷。</p></div><div class="sys-missing-count">' + missingFields.length + '</div></div>';

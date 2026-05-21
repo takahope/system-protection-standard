@@ -1079,6 +1079,14 @@ function getSystems() {
   if (data.length <= 1) return [];
 
   var hrDirectory = loadHrDirectory_();
+  var assessSheet = ss.getSheetByName('防護基準自評');
+  var assessmentMap = {};
+  if (assessSheet && assessSheet.getLastRow() > 1) {
+    var assessData = assessSheet.getRange(2, 1, assessSheet.getLastRow() - 1, 1).getDisplayValues();
+    for (var a = 0; a < assessData.length; a++) {
+      if (assessData[a][0]) assessmentMap[assessData[a][0]] = true;
+    }
+  }
   var headers = data[0];
   var systems = [];
   for (var i = 1; i < data.length; i++) {
@@ -1089,7 +1097,12 @@ function getSystems() {
     }
     var ownerEmail = normalizeEmail_(obj['系統負責人']);
     var ownerInfo = hrDirectory.map[ownerEmail];
+    var level = String(obj['防護需求等級'] || '').trim();
+    var needsAssessment = !!level && level !== '套裝軟體' && !isPackageExempt_(obj);
     obj._ownerDisplayName = ownerInfo && ownerInfo.name ? ownerInfo.name : (obj['系統負責人'] || '');
+    obj._hasAssessment = !!assessmentMap[obj['系統ID']];
+    obj._needsAssessment = needsAssessment;
+    obj._showAssessmentInitWarning = needsAssessment && !obj._hasAssessment;
     obj._row = i + 1;
     systems.push(obj);
   }
