@@ -30,13 +30,30 @@
     .stat-item .stat-label{font-size:11px;color:var(--text2)}
 
     /* System grid */
-    .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-    .sys-card{background:var(--card);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:14px;cursor:pointer;transition:.2s;border-left:4px solid var(--border)}
-    .sys-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateY(-1px)}
+    .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+    .sys-card{background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);border-radius:18px;box-shadow:0 12px 28px rgba(15,23,42,.06);padding:16px;cursor:pointer;transition:.2s;border:1px solid #dbe4ee;border-left:5px solid var(--border);display:grid;gap:12px}
+    .sys-card:hover{box-shadow:0 18px 36px rgba(15,23,42,.11);transform:translateY(-2px)}
     .sys-card.level-high{border-left-color:var(--high)} .sys-card.level-mid{border-left-color:var(--mid)} .sys-card.level-low{border-left-color:var(--low)}
-    .sys-name{font-size:14px;font-weight:600;margin-bottom:4px}
-    .sys-meta{font-size:11px;color:var(--text2);line-height:1.6}
-    .sys-meta span{display:inline-block;margin-right:10px}
+    .sys-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .sys-card-main{min-width:0}
+    .sys-name{font-size:16px;font-weight:700;line-height:1.4;margin-bottom:4px}
+    .sys-subline{font-size:11px;color:var(--text2);line-height:1.6}
+    .sys-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .sys-meta-item{padding:10px 12px;border-radius:12px;background:#f8fbff;border:1px solid #dbe7f5;min-width:0}
+    .sys-meta-item label{display:block;font-size:10px;color:#64748b;margin-bottom:4px}
+    .sys-meta-item div{font-size:12px;font-weight:700;line-height:1.5;color:#0f172a;overflow-wrap:anywhere}
+    .sys-tags{display:flex;flex-wrap:wrap;gap:6px}
+    .sys-tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+    .sys-tag.neutral{background:#edf2f7;color:#334155}
+    .sys-tag.high{background:#fdecec;color:var(--danger)}
+    .sys-tag.mid{background:#fff4df;color:var(--warning)}
+    .sys-tag.low{background:#e9f7ef;color:var(--success)}
+    .sys-completeness{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid}
+    .sys-completeness.warn{background:#fff8e8;border-color:#f7d79a}
+    .sys-completeness.ok{background:#edf9f0;border-color:#b7e0c0}
+    .sys-completeness strong{display:block;font-size:12px;margin-bottom:3px}
+    .sys-completeness p{font-size:11px;line-height:1.6;color:#475467}
+    .sys-missing-count{font-size:26px;font-weight:800;line-height:1;color:#0f172a;white-space:nowrap}
     .sys-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#fff}
     .sys-badge.high{background:var(--high)} .sys-badge.mid{background:var(--mid)} .sys-badge.low{background:var(--low)} .sys-badge.na{background:#9e9e9e}
 
@@ -63,8 +80,28 @@
     .tab-btn:hover{color:var(--primary)} .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
 
     /* Detail info */
-    .detail-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:10px 0}
-    .info-item{font-size:12px} .info-item label{color:var(--text2);font-size:10px;display:block}
+    .detail-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
+    .detail-summary-card{padding:14px 16px;border-radius:16px;border:1px solid #dbe4ee;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
+    .detail-summary-card label{display:block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+    .detail-summary-card .value{font-size:14px;font-weight:700;line-height:1.6;color:#0f172a}
+    .detail-summary-card .value.inline{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+    .detail-missing-alert{margin:12px 0 4px;padding:14px 16px;border-radius:16px;border:1px solid #f7d79a;background:#fff8e8}
+    .detail-missing-alert.ok{border-color:#b7e0c0;background:#edf9f0}
+    .detail-missing-alert strong{display:block;font-size:13px;margin-bottom:4px}
+    .detail-missing-alert p{font-size:12px;line-height:1.7;color:#475467}
+    .detail-missing-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .detail-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+    .detail-chip.warn{background:#fff1cc;color:#9a5b00}
+    .detail-chip.ok{background:#e8f6eb;color:#0d904f}
+    .detail-chip.neutral{background:#edf2f7;color:#334155}
+    .detail-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0 10px}
+    .detail-section{border:1px solid #dbe4ee;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.04)}
+    .detail-section-head{padding:14px 16px;border-bottom:1px solid #e7edf5;background:linear-gradient(180deg,#f8fbff 0%,#f3f7fb 100%)}
+    .detail-section-head h3{font-size:14px;margin:0}
+    .detail-section-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px 16px}
+    .info-item{font-size:12px;padding:10px 12px;border:1px solid #eef2f7;border-radius:14px;background:#fbfdff;min-width:0}
+    .info-item label{color:var(--text2);font-size:10px;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+    .info-item div{font-size:13px;font-weight:600;line-height:1.7;color:#111827;overflow-wrap:anywhere}
     .back-btn{background:none;border:1px solid var(--border);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2)}
 
     /* Rating wizard */
@@ -203,6 +240,9 @@
       .assess-topbar{flex-direction:column}
       .assess-actions{width:100%}
       .assess-actions .btn{flex:1}
+    }
+    @media (max-width:960px){
+      .detail-info,.detail-section-body,.sys-meta{grid-template-columns:1fr}
     }
 
     /* Dashboard heatmap */
@@ -466,9 +506,12 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div id="detail-level-badge"></div>
+          <div id="detail-status-badge"></div>
           <button class="btn btn-outline btn-sm" onclick="openEditSystemModal()">編輯系統資料</button>
         </div>
       </div>
+      <div class="detail-summary" id="detail-summary"></div>
+      <div id="detail-missing-alert"></div>
       <div class="detail-info" id="detail-info"></div>
       <div id="detail-fail-codes" style="margin-top:6px"></div>
     </div>
@@ -623,6 +666,46 @@ var RULE_GROUP_META = {
   code_map: {title:'不符合代碼對照', desc:'管理構面 / 類別與不符合代碼的映射表。'}
 };
 
+var SYSTEM_FIELD_SCHEMA = [
+  {key:'系統ID', hidden:true},
+  {key:'資產編號', hidden:true},
+  {key:'系統名稱', group:'基本概況', countMissing:true, formKey:'name'},
+  {key:'系統屬性', group:'基本概況', countMissing:true, formKey:'attr', options:['行政','業務','兼具行政/業務']},
+  {key:'建置方式', group:'基本概況', countMissing:true, formKey:'method', options:['本機關委外開發','本機關自行開發','本機關購置套裝軟體','本機關租用服務','其他']},
+  {key:'建置方式補充說明', group:'基本概況', countMissing:true, formKey:'methodNote', type:'textarea', full:true},
+  {key:'系統管理者(部門/單位)', group:'管理責任與供應商', countMissing:true, formKey:'mgr'},
+  {key:'系統使用者(部門/單位)', group:'管理責任與供應商', countMissing:true, formKey:'user'},
+  {key:'系統建置日期', group:'基本概況', countMissing:true, formKey:'date', type:'date'},
+  {key:'主機設置於機關內', group:'資安與資料特性', countMissing:true, formKey:'host', options:['是','否']},
+  {key:'核心系統', group:'資安與資料特性', countMissing:true, formKey:'core', options:['是','否']},
+  {key:'含機敏資訊', group:'資安與資料特性', countMissing:true, formKey:'sensitive', options:['是','否']},
+  {key:'個資數量', group:'資安與資料特性', countMissing:true, formKey:'pii'},
+  {key:'機敏資訊以非明文方式儲存', group:'資安與資料特性', countMissing:true, formKey:'encrypt', options:['是','否','無機敏資訊']},
+  {key:'機敏資訊類別', group:'資安與資料特性', countMissing:true, formKey:'sensitiveType'},
+  {key:'是否與民生權益相關', group:'資安與資料特性', countMissing:true, formKey:'civil', options:['是','否']},
+  {key:'防護需求等級', summary:true, formKey:'level', options:['普','中','高','套裝軟體']},
+  {key:'是否包含於ISMS導入範圍', group:'基本概況', countMissing:true, formKey:'isms', options:['是','否']},
+  {key:'建置廠商', group:'管理責任與供應商', countMissing:true, formKey:'builder'},
+  {key:'建置廠商統一編號', group:'管理責任與供應商', countMissing:true, formKey:'builderCode'},
+  {key:'維運廠商', group:'管理責任與供應商', countMissing:true, formKey:'operator'},
+  {key:'維運廠商統一編號', group:'管理責任與供應商', countMissing:true, formKey:'operatorCode'},
+  {key:'最大可容忍中斷時間', group:'韌性與對外服務', countMissing:true, formKey:'mto'},
+  {key:'是否符合防護基準', summary:true},
+  {key:'不符合防護基準項目代碼', summary:true},
+  {key:'系統是否對外', group:'韌性與對外服務', countMissing:true, formKey:'external', options:['是','否']},
+  {key:'系統日誌保存時間是否超過6個月', group:'韌性與對外服務', countMissing:true, formKey:'log6m', options:['是','否']},
+  {key:'有無開放遠端連線維護', group:'韌性與對外服務', countMissing:true, formKey:'remote', options:['有','無']},
+  {key:'是否禁用弱密碼', group:'資安與資料特性', countMissing:true, formKey:'weakpw', options:['是','否','不適用']},
+  {key:'系統是否備份', group:'韌性與對外服務', countMissing:true, formKey:'backup', options:['是','否']},
+  {key:'備妥流量清洗機制', group:'韌性與對外服務', countMissing:true, formKey:'trafficWash', options:['是','否']},
+  {key:'備妥CDN啟用作業程序', group:'韌性與對外服務', countMissing:true, formKey:'cdnReady', options:['是','否']},
+  {key:'備妥靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'staticSite', options:['是','否']},
+  {key:'10分鐘內切換至靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'switchStatic10m', options:['是','否']},
+  {key:'備註', group:'基本概況', countMissing:true, formKey:'note', type:'textarea', full:true}
+];
+
+var SYSTEM_DETAIL_GROUPS = ['基本概況','管理責任與供應商','資安與資料特性','韌性與對外服務'];
+
 function parseRuleBool(val) {
   return String(val).toLowerCase() === 'true' || String(val) === '1' || String(val) === '是';
 }
@@ -731,6 +814,98 @@ function restoreAssessmentTabs() {
   if (assessTabTemplate) document.getElementById('tab-assess').innerHTML = assessTabTemplate;
 }
 
+function getSystemFieldMeta(key) {
+  for (var i = 0; i < SYSTEM_FIELD_SCHEMA.length; i++) {
+    if (SYSTEM_FIELD_SCHEMA[i].key === key) return SYSTEM_FIELD_SCHEMA[i];
+  }
+  return null;
+}
+
+function getSystemFormFields() {
+  return SYSTEM_FIELD_SCHEMA.filter(function(field) {
+    return !!field.formKey;
+  });
+}
+
+function isFilledValue(val) {
+  if (val === 0 || val === '0') return true;
+  return String(val == null ? '' : val).trim() !== '';
+}
+
+function getMissingSystemFields(sys) {
+  var missing = [];
+  SYSTEM_FIELD_SCHEMA.forEach(function(field) {
+    if (!field.countMissing) return;
+    if (!isFilledValue(sys ? sys[field.key] : '')) missing.push(field.key);
+  });
+  return missing;
+}
+
+function getComplianceBadge(status) {
+  var text = status || '尚未判定';
+  if (text === '符合') return '<span class="detail-chip ok">' + escH(text) + '</span>';
+  if (text === '部分符合' || text === '尚未判定') return '<span class="detail-chip warn">' + escH(text) + '</span>';
+  if (text === '不符合') return '<span class="detail-chip warn">' + escH(text) + '</span>';
+  return '<span class="detail-chip neutral">' + escH(text) + '</span>';
+}
+
+function renderSystemCardTags(sys) {
+  var tags = [];
+  tags.push('<span class="sys-tag neutral">' + escH(sys['系統屬性'] || '未設定屬性') + '</span>');
+  tags.push('<span class="sys-tag neutral">' + escH(sys['建置方式'] || '未設定建置方式') + '</span>');
+  if (sys['核心系統'] === '是') tags.push('<span class="sys-tag high">核心系統</span>');
+  if (sys['含機敏資訊'] === '是') tags.push('<span class="sys-tag mid">含機敏資訊</span>');
+  if (sys['系統是否對外'] === '是') tags.push('<span class="sys-tag low">對外服務</span>');
+  return tags.join('');
+}
+
+function renderSystemDetailPanels(sys, missingFields) {
+  var summary = '';
+  var failCodes = String(sys['不符合防護基準項目代碼'] || '').split('/').filter(function(code) { return code.trim(); });
+  summary += '<div class="detail-summary-card"><label>系統名稱</label><div class="value">' + escH(sys['系統名稱'] || '未命名') + '</div></div>';
+  summary += '<div class="detail-summary-card"><label>防護需求等級</label><div class="value inline"><span class="result-badge ' + (sys['防護需求等級'] === '高' ? 'high' : sys['防護需求等級'] === '中' ? 'mid' : sys['防護需求等級'] === '普' ? 'low' : 'na') + '" style="font-size:13px;padding:4px 14px">' + escH(sys['防護需求等級'] || '未設定') + '</span></div></div>';
+  summary += '<div class="detail-summary-card"><label>防護基準狀態</label><div class="value inline">' + getComplianceBadge(sys['是否符合防護基準']) + '</div></div>';
+  summary += '<div class="detail-summary-card"><label>不符合代碼</label><div class="value inline">' + (failCodes.length ? failCodes.map(function(code) { return '<span class="detail-chip warn">' + escH(code.trim()) + '</span>'; }).join('') : '<span class="detail-chip ok">目前無代碼</span>') + '</div></div>';
+  document.getElementById('detail-summary').innerHTML = summary;
+
+  var missingHtml = '';
+  if (missingFields.length > 0) {
+    missingHtml += '<div class="detail-missing-alert">';
+    missingHtml += '<strong>尚有 ' + missingFields.length + ' 筆資料未填寫</strong>';
+    missingHtml += '<p>請優先補齊下列欄位，避免分級評估與自評判斷缺少必要背景資訊。</p>';
+    missingHtml += '<div class="detail-missing-list">';
+    missingFields.forEach(function(name) { missingHtml += '<span class="detail-chip warn">' + escH(name) + '</span>'; });
+    missingHtml += '</div></div>';
+  } else {
+    missingHtml += '<div class="detail-missing-alert ok"><strong>系統清冊資料已完整</strong><p>目前所有應填欄位都已填寫，可直接進行分級評估與防護基準自評。</p></div>';
+  }
+  document.getElementById('detail-missing-alert').innerHTML = missingHtml;
+
+  var sectionsHtml = '';
+  SYSTEM_DETAIL_GROUPS.forEach(function(groupName) {
+    var fields = SYSTEM_FIELD_SCHEMA.filter(function(field) {
+      return field.group === groupName;
+    });
+    sectionsHtml += '<section class="detail-section">';
+    sectionsHtml += '<div class="detail-section-head"><h3>' + escH(groupName) + '</h3></div>';
+    sectionsHtml += '<div class="detail-section-body">';
+    fields.forEach(function(field) {
+      var value = isFilledValue(sys[field.key]) ? sys[field.key] : '-';
+      sectionsHtml += '<div class="info-item"><label>' + escH(field.key) + '</label><div>' + escH(String(value)) + '</div></div>';
+    });
+    sectionsHtml += '</div></section>';
+  });
+  document.getElementById('detail-info').innerHTML = sectionsHtml;
+
+  var failHtml = '';
+  if (failCodes.length) {
+    failHtml = '<div style="font-size:12px;margin-top:4px"><b>不符合代碼：</b>';
+    failCodes.forEach(function(code) { failHtml += '<span class="code-tag">' + escH(code.trim()) + '</span> '; });
+    failHtml += '</div>';
+  }
+  document.getElementById('detail-fail-codes').innerHTML = failHtml;
+}
+
 // ===== Pages =====
 function showPage(page) {
   if (page === 'init' && !isRuleAdmin()) {
@@ -776,19 +951,30 @@ function renderSystems(systems) {
   if(!systems||systems.length===0){grid.innerHTML='<div class="card" style="grid-column:1/-1;text-align:center;padding:30px"><p>尚無系統資料，請至「系統設定」匯入。</p></div>';return;}
   var html='';
   systems.forEach(function(sys){
+    var missingFields = getMissingSystemFields(sys);
     var lv = sys['防護需求等級']||'未設定';
     var lc = lv==='高'?'level-high':lv==='中'?'level-mid':lv==='普'?'level-low':'';
     var bc = lv==='高'?'high':lv==='中'?'mid':lv==='普'?'low':'na';
     html+='<div class="sys-card '+lc+'" onclick="openSystem(\''+sys['系統ID']+'\')">';
-    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+    html+='<div class="sys-card-head">';
+    html+='<div class="sys-card-main">';
     html+='<div class="sys-name">'+escH(sys['系統名稱']||'未命名')+'</div>';
+    html+='<div class="sys-subline">管理單位：'+escH(sys['系統管理者(部門/單位)']||'未填寫')+'</div>';
+    html+='</div>';
     html+='<span class="sys-badge '+bc+'">'+lv+'</span></div>';
     html+='<div class="sys-meta">';
-    html+='<span>'+escH(sys['系統屬性']||'-')+'</span>';
-    html+='<span>'+escH(sys['建置方式']||'-')+'</span>';
-    if(sys['核心系統']==='是') html+='<span style="color:var(--danger)">核心系統</span>';
-    if(sys['含機敏資訊']==='是') html+='<span style="color:var(--warning)">含機敏資訊</span>';
-    html+='</div></div>';
+    html+='<div class="sys-meta-item"><label>系統屬性</label><div>'+escH(sys['系統屬性']||'-')+'</div></div>';
+    html+='<div class="sys-meta-item"><label>建置方式</label><div>'+escH(sys['建置方式']||'-')+'</div></div>';
+    html+='<div class="sys-meta-item"><label>對外服務</label><div>'+escH(sys['系統是否對外']||'-')+'</div></div>';
+    html+='<div class="sys-meta-item"><label>中斷時限</label><div>'+escH(sys['最大可容忍中斷時間']||'-')+'</div></div>';
+    html+='</div>';
+    html+='<div class="sys-tags">'+renderSystemCardTags(sys)+'</div>';
+    if (missingFields.length > 0) {
+      html+='<div class="sys-completeness warn"><div><strong>尚有 ' + missingFields.length + ' 筆資料未填寫</strong><p>缺漏會影響詳細頁資訊完整性與後續評估判斷。</p></div><div class="sys-missing-count">' + missingFields.length + '</div></div>';
+    } else {
+      html+='<div class="sys-completeness ok"><div><strong>資料已完整</strong><p>可直接進行分級評估與防護基準自評作業。</p></div><div class="sys-missing-count">0</div></div>';
+    }
+    html+='</div>';
   });
   grid.innerHTML=html;
 }
@@ -881,6 +1067,7 @@ function renderDashboard(data) {
 function openSystem(sysId) {
   currentSystem = allSystems.find(function(s){return s['系統ID']===sysId;});
   if(!currentSystem) return;
+  var missingFields = getMissingSystemFields(currentSystem);
   restoreAssessmentTabs();
   showPage('detail');
   document.getElementById('detail-title').textContent=currentSystem['系統名稱'];
@@ -888,23 +1075,8 @@ function openSystem(sysId) {
   var lv=currentSystem['防護需求等級']||'未設定';
   var bc=lv==='高'?'high':lv==='中'?'mid':lv==='普'?'low':'na';
   document.getElementById('detail-level-badge').innerHTML='<span class="result-badge '+bc+'" style="font-size:14px;padding:4px 14px">'+lv+'</span>';
-
-  var fields=['系統屬性','建置方式','系統管理者(部門/單位)','系統使用者(部門/單位)','系統建置日期','主機設置於機關內','核心系統','含機敏資訊','個資數量','機敏資訊以非明文方式儲存','機敏資訊類別','是否與民生權益相關','是否包含於ISMS導入範圍','建置廠商','維運廠商','最大可容忍中斷時間','系統是否對外','系統日誌保存時間是否超過6個月','有無開放遠端連線維護','是否禁用弱密碼','系統是否備份'];
-  var ih='';
-  fields.forEach(function(f){var v=currentSystem[f]||'-';ih+='<div class="info-item"><label>'+f+'</label><div>'+escH(String(v))+'</div></div>';});
-  document.getElementById('detail-info').innerHTML=ih;
-
-  // Show fail codes
-  var fc = currentSystem['不符合防護基準項目代碼'];
-  if(fc) {
-    var codes = String(fc).split('/').filter(function(c){return c.trim();});
-    var fch = '<div style="font-size:12px;margin-top:4px"><b>不符合代碼：</b>';
-    codes.forEach(function(c){fch+='<span class="code-tag">'+escH(c.trim())+'</span> ';});
-    fch+='</div>';
-    document.getElementById('detail-fail-codes').innerHTML=fch;
-  } else {
-    document.getElementById('detail-fail-codes').innerHTML='';
-  }
+  document.getElementById('detail-status-badge').innerHTML = getComplianceBadge(currentSystem['是否符合防護基準']);
+  renderSystemDetailPanels(currentSystem, missingFields);
 
   // Reset tabs
   document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',i===0);});
@@ -1187,6 +1359,7 @@ function submitRating() {
       syncRatingEvaluator();
       document.getElementById('detail-level-badge').innerHTML='<span class="result-badge '+cls+'" style="font-size:14px;padding:4px 14px">'+r.finalLevel+'</span>';
       currentSystem['防護需求等級']=r.finalLevel;
+      renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
       renderRatingWizard();
       showToast('評估結果已儲存');
     }
@@ -1385,13 +1558,16 @@ function openAddSystemModal() {
   html += '<h2>新增系統</h2><div class="form-grid">';
   fields.forEach(function(f){
     html += '<div class="form-group'+(f.full?' full':'')+'">';
-    html += '<label>'+f.label+'</label>';
+    html += '<label>'+f.key+'</label>';
     if(f.options){
-      html += '<select id="modal-'+f.key+'">';
+      html += '<select id="modal-'+f.formKey+'">';
+      html += '<option value="">請選擇</option>';
       f.options.forEach(function(o){html+='<option value="'+o+'">'+o+'</option>';});
       html += '</select>';
+    } else if (f.type === 'textarea') {
+      html += '<textarea id="modal-'+f.formKey+'"></textarea>';
     } else {
-      html += '<input type="text" id="modal-'+f.key+'">';
+      html += '<input type="'+(f.type==='date'?'date':'text')+'" id="modal-'+f.formKey+'">';
     }
     html += '</div>';
   });
@@ -1408,15 +1584,18 @@ function openEditSystemModal() {
   var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
   html += '<h2>編輯系統：'+escH(currentSystem['系統名稱'])+'</h2><div class="form-grid">';
   fields.forEach(function(f){
-    var val = currentSystem[f.label]||'';
+    var val = currentSystem[f.key]||'';
     html += '<div class="form-group'+(f.full?' full':'')+'">';
-    html += '<label>'+f.label+'</label>';
+    html += '<label>'+f.key+'</label>';
     if(f.options){
-      html += '<select id="modal-'+f.key+'">';
+      html += '<select id="modal-'+f.formKey+'">';
+      html += '<option value="">請選擇</option>';
       f.options.forEach(function(o){html+='<option value="'+o+'"'+(String(val)===o?' selected':'')+'>'+o+'</option>';});
       html += '</select>';
+    } else if (f.type === 'textarea') {
+      html += '<textarea id="modal-'+f.formKey+'">'+escH(String(val))+'</textarea>';
     } else {
-      html += '<input type="text" id="modal-'+f.key+'" value="'+escH(String(val))+'">';
+      html += '<input type="'+(f.type==='date'?'date':'text')+'" id="modal-'+f.formKey+'" value="'+escH(String(val))+'">';
     }
     html += '</div>';
   });
@@ -1428,43 +1607,12 @@ function openEditSystemModal() {
   document.getElementById('modal-container').innerHTML=html;
 }
 
-function getSystemFormFields() {
-  return [
-    {key:'name',label:'系統名稱'},
-    {key:'attr',label:'系統屬性',options:['行政','業務','兼具行政/業務']},
-    {key:'method',label:'建置方式',options:['本機關委外開發','本機關自行開發','本機關購置套裝軟體','本機關租用服務','其他']},
-    {key:'mgr',label:'系統管理者(部門/單位)'},
-    {key:'user',label:'系統使用者(部門/單位)'},
-    {key:'date',label:'系統建置日期'},
-    {key:'host',label:'主機設置於機關內',options:['是','否']},
-    {key:'core',label:'核心系統',options:['是','否']},
-    {key:'sensitive',label:'含機敏資訊',options:['是','否']},
-    {key:'pii',label:'個資數量'},
-    {key:'encrypt',label:'機敏資訊以非明文方式儲存',options:['是','否','無機敏資訊']},
-    {key:'sensitiveType',label:'機敏資訊類別'},
-    {key:'civil',label:'是否與民生權益相關',options:['是','否']},
-    {key:'level',label:'防護需求等級',options:['普','中','高','套裝軟體']},
-    {key:'isms',label:'是否包含於ISMS導入範圍',options:['是','否']},
-    {key:'builder',label:'建置廠商'},
-    {key:'builderCode',label:'建置廠商統一編號'},
-    {key:'operator',label:'維運廠商'},
-    {key:'operatorCode',label:'維運廠商統一編號'},
-    {key:'mto',label:'最大可容忍中斷時間'},
-    {key:'external',label:'系統是否對外',options:['是','否']},
-    {key:'log6m',label:'系統日誌保存時間是否超過6個月',options:['是','否']},
-    {key:'remote',label:'有無開放遠端連線維護',options:['有','無']},
-    {key:'weakpw',label:'是否禁用弱密碼',options:['是','否','不適用']},
-    {key:'backup',label:'系統是否備份',options:['是','否']},
-    {key:'note',label:'備註',full:true}
-  ];
-}
-
 function getModalData() {
   var fields = getSystemFormFields();
   var data = {};
   fields.forEach(function(f){
-    var el = document.getElementById('modal-'+f.key);
-    if(el) data[f.label] = el.value;
+    var el = document.getElementById('modal-'+f.formKey);
+    if(el) data[f.key] = el.value;
   });
   return data;
 }
