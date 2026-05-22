@@ -862,30 +862,23 @@ function syncAssessmentComplianceActions() {
   if (btn) btn.classList.toggle('hidden', !isCurrentSystemOwnerOrAdmin() || isPackageSystem());
 }
 
-function renderAssessmentComplianceMeta(snapshot) {
+function renderAssessmentComplianceMeta() {
   var el = document.getElementById('assessment-compliance-meta');
   if (!el) return;
   if (!currentSystem || isPackageSystem()) {
     el.textContent = '此系統不需進行防護基準自評。';
     return;
   }
-  if (!snapshot) {
-    el.textContent = '尚未手動更新符合性結果';
+  var status = String(currentSystem['是否符合防護基準'] || '').trim();
+  var codeString = String(currentSystem['不符合防護基準項目代碼'] || '').trim();
+  if (!status && !codeString) {
+    el.textContent = '目前正式結果以系統清冊欄位為準，尚未手動更新符合性結果。';
     return;
   }
-  var parts = ['最後更新：' + (snapshot.calculatedAt || '-')];
-  if (snapshot.calculatedBy) parts.push('更新人員：' + snapshot.calculatedBy);
+  var parts = ['目前正式結果：' + (status || '未設定')];
+  if (codeString) parts.push('不符合代碼：' + codeString);
+  else parts.push('不符合代碼：無');
   el.textContent = parts.join('｜');
-}
-
-function loadComplianceSnapshot(systemId) {
-  renderAssessmentComplianceMeta(null);
-  google.script.run.withSuccessHandler(function(snapshot) {
-    renderAssessmentComplianceMeta(snapshot || null);
-  }).withFailureHandler(function(err) {
-    var el = document.getElementById('assessment-compliance-meta');
-    if (el) el.textContent = '讀取符合性結果失敗：' + err.message;
-  }).getComplianceSnapshot(systemId);
 }
 
 function syncDashboardActions() {
@@ -1346,7 +1339,7 @@ function openSystem(sysId) {
   var missingFields = getMissingSystemFields(currentSystem);
   restoreAssessmentTabs();
   syncAssessmentComplianceActions();
-  renderAssessmentComplianceMeta(null);
+  renderAssessmentComplianceMeta();
   showPage('detail');
   document.getElementById('detail-title').textContent=currentSystem['系統名稱'];
 
@@ -1657,7 +1650,7 @@ function loadAssessment(sysId) {
     return;
   }
   syncAssessmentComplianceActions();
-  loadComplianceSnapshot(sysId);
+  renderAssessmentComplianceMeta();
   toggleAssessmentInitButton(false);
   document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
@@ -1859,10 +1852,6 @@ function recalculateCurrentSystemCompliance() {
     currentSystem['不符合防護基準項目代碼'] = result.codeString || '';
     document.getElementById('detail-status-badge').innerHTML = getComplianceBadge(result.status);
     updateFailCodesUI(result.codes || []);
-    renderAssessmentComplianceMeta({
-      calculatedAt: result.calculatedAt,
-      calculatedBy: result.calculatedBy
-    });
     if (allSystems && allSystems.length) {
       allSystems = allSystems.map(function(sys) {
         if (sys['系統ID'] !== currentSystem['系統ID']) return sys;
@@ -1871,6 +1860,7 @@ function recalculateCurrentSystemCompliance() {
         return sys;
       });
     }
+    renderAssessmentComplianceMeta();
     renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
     showToast('符合性結果已更新');
   }).withFailureHandler(function(err) {
