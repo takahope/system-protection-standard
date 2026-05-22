@@ -1992,7 +1992,8 @@ function getUserInitials(display) {
   display = String(display || '').trim();
   if (!display) return 'NA';
   if (/^[A-Za-z0-9]/.test(display)) return display.slice(0, 2).toUpperCase();
-  return display.slice(0, 2);
+  if (display.length <= 2) return display;
+  return display.slice(-2);
 }
 
 function renderTopbarUserInfo() {
