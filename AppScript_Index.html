@@ -2045,7 +2045,10 @@ function renderSystemModal(title, currentData) {
 
 function openAddSystemModal() {
   hrEmployeeOptions = [];
-  var modalData = {_hrWarning: ''};
+  var modalData = {
+    _hrWarning: '',
+    '系統管理者(部門/單位)': '臺灣人體生物資料庫'
+  };
   var requestId = openSystemModal('新增系統', modalData, {
     submitAction: 'submitAddSystem()',
     submitLabel: '新增'
