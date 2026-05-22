@@ -259,6 +259,11 @@
     .modal .form-group{display:flex;flex-direction:column;gap:3px}
     .modal .form-group.full{grid-column:1/-1}
     .modal label{font-size:11px;color:var(--text2);font-weight:600}
+    .modal .label-with-help{display:inline-flex;align-items:center;gap:6px;position:relative;width:max-content;max-width:100%}
+    .modal .label-help-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:none;background:#fff4df;color:var(--warning);font-size:12px;font-weight:800;line-height:1;cursor:help;padding:0;box-shadow:inset 0 0 0 1px rgba(227,116,0,.18)}
+    .modal .label-help-icon:focus{outline:2px solid rgba(15,95,168,.24);outline-offset:2px}
+    .modal .label-help-tooltip{position:absolute;top:calc(100% + 8px);left:0;z-index:20;display:none;width:min(360px,calc(100vw - 80px));padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #f3cb7a;box-shadow:0 12px 24px rgba(15,23,42,.12);font-size:12px;font-weight:400;line-height:1.7;color:#334155;white-space:pre-line}
+    .modal .label-with-help:hover .label-help-tooltip,.modal .label-with-help:focus-within .label-help-tooltip{display:block}
     .modal input,.modal select,.modal textarea{border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
     .modal textarea{min-height:60px;resize:vertical}
     .modal .field-help{font-size:11px;color:var(--text2);line-height:1.5}
@@ -387,7 +392,7 @@
 <body>
 
 <div class="topbar">
-  <h1>資通系統防護基準管理系統</h1>
+  <h1>資通系統防護基準管理</h1>
   <div class="nav-btns">
     <button class="active" onclick="showPage('list')">系統總覽</button>
     <button onclick="showPage('dashboard')">儀表板</button>
@@ -1940,6 +1945,20 @@ function hydrateSystemModalHrField(currentData, state) {
   container.innerHTML = renderHrOwnerFieldContent('owner', currentData, state);
 }
 
+function renderSystemFieldLabel(fieldKey) {
+  if (fieldKey !== '系統使用者(部門/單位)') return '<label>' + escH(fieldKey) + '</label>';
+  var helpText = [
+    '1.請填寫主要使用該系統的單位(可為多個單位)，如為機關全單位都有使用，則填寫全機關',
+    '2.若系統為跨機關使用，亦請填寫使用該系統之機關，例如：直轄市、縣市政府',
+    '3.若該系統亦提供民眾使用，請加註「…處，且供民眾使用」'
+  ].join('\n');
+  return '<label class="label-with-help">' +
+    '<span>' + escH(fieldKey) + '</span>' +
+    '<button type="button" class="label-help-icon" tabindex="0" aria-label="查看填寫說明">!</button>' +
+    '<span class="label-help-tooltip">' + escH(helpText) + '</span>' +
+    '</label>';
+}
+
 function openSystemModal(title, currentData, options) {
   options = options || {};
   activeSystemModalRequest = ++modalRequestSeq;
@@ -1973,7 +1992,7 @@ function renderSystemModal(title, currentData) {
   fields.forEach(function(f){
     var val = currentData && currentData[f.key] !== undefined ? currentData[f.key] : '';
     html += '<div class="form-group'+(f.full?' full':'')+'">';
-    html += '<label>'+f.key+'</label>';
+    html += renderSystemFieldLabel(f.key);
     if (f.type === 'hr_select') {
       html += '<div id="modal-owner-field">';
       html += renderHrOwnerFieldContent(f.formKey, currentData, {mode:'loading'});
