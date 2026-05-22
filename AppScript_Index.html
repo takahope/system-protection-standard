@@ -177,6 +177,11 @@
     .assess-topbar h2{margin:0}
     .assess-topbar p{font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px}
     .assess-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .assess-meta,.dashboard-meta{margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6}
+    .dashboard-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .dashboard-toolbar h2{margin:0 0 4px}
+    .dashboard-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .dashboard-placeholder{padding:18px;border:1px dashed var(--border);border-radius:12px;color:var(--text2);font-size:13px;background:#fafafa}
     .assess-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
     .assess-kpi{padding:12px 14px;border-radius:14px;border:1px solid #e5e7eb;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)}
     .assess-kpi .label{font-size:10px;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
@@ -406,7 +411,15 @@
   <!-- ===== 全域儀表板 ===== -->
   <div id="page-dashboard" class="hidden">
     <div class="card">
-      <h2>跨系統符合率總覽</h2>
+      <div class="dashboard-toolbar">
+        <div>
+          <h2>跨系統符合率總覽</h2>
+          <div id="dashboard-snapshot-meta" class="dashboard-meta">尚未計算儀表板</div>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-outline btn-sm hidden" id="dashboard-rebuild-btn" onclick="rebuildDashboardSnapshot()">計算儀表板</button>
+        </div>
+      </div>
       <div id="dashboard-chart"></div>
     </div>
     <div class="card">
@@ -561,9 +574,11 @@
             <div>
               <h2>防護基準自評工作台</h2>
               <p>每筆控制措施以單層列完整呈現，進入頁面即可同時檢視符合性、現況與佐證，並在需要補強時填寫矯正作為與目標日期。</p>
+              <div id="assessment-compliance-meta" class="assess-meta">尚未手動更新符合性結果</div>
             </div>
             <div class="assess-actions">
               <button class="btn btn-outline btn-sm hidden" id="init-assessment-btn" onclick="initAssessment()">初始化自評項目</button>
+              <button class="btn btn-outline btn-sm hidden" id="recalc-compliance-btn" onclick="recalculateCurrentSystemCompliance()">更新符合性結果</button>
               <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
               <button class="btn btn-primary btn-sm" onclick="saveAllAssessment()">儲存所有變更</button>
             </div>
@@ -777,10 +792,72 @@ function isRuleAdmin() {
   return !!(ruleState.adminStatus && ruleState.adminStatus.isAdmin);
 }
 
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function getCurrentEvaluatorEmail() {
+  return normalizeEmail(ruleState.adminStatus && ruleState.adminStatus.evaluator ? ruleState.adminStatus.evaluator.email : '');
+}
+
+function isCurrentSystemOwnerOrAdmin() {
+  if (!currentSystem) return false;
+  if (isRuleAdmin()) return true;
+  return getCurrentEvaluatorEmail() === normalizeEmail(currentSystem['系統負責人']);
+}
+
 function syncInitNavVisibility() {
   var btn = document.getElementById('nav-init-btn');
   if (!btn) return;
   btn.classList.toggle('hidden', !isRuleAdmin());
+}
+
+function syncAssessmentComplianceActions() {
+  var btn = document.getElementById('recalc-compliance-btn');
+  if (btn) btn.classList.toggle('hidden', !isCurrentSystemOwnerOrAdmin() || isPackageSystem());
+}
+
+function renderAssessmentComplianceMeta(snapshot) {
+  var el = document.getElementById('assessment-compliance-meta');
+  if (!el) return;
+  if (!currentSystem || isPackageSystem()) {
+    el.textContent = '此系統不需進行防護基準自評。';
+    return;
+  }
+  if (!snapshot) {
+    el.textContent = '尚未手動更新符合性結果';
+    return;
+  }
+  var parts = ['最後更新：' + (snapshot.calculatedAt || '-')];
+  if (snapshot.calculatedBy) parts.push('更新人員：' + snapshot.calculatedBy);
+  el.textContent = parts.join('｜');
+}
+
+function loadComplianceSnapshot(systemId) {
+  renderAssessmentComplianceMeta(null);
+  google.script.run.withSuccessHandler(function(snapshot) {
+    renderAssessmentComplianceMeta(snapshot || null);
+  }).withFailureHandler(function(err) {
+    var el = document.getElementById('assessment-compliance-meta');
+    if (el) el.textContent = '讀取符合性結果失敗：' + err.message;
+  }).getComplianceSnapshot(systemId);
+}
+
+function syncDashboardActions() {
+  var btn = document.getElementById('dashboard-rebuild-btn');
+  if (btn) btn.classList.toggle('hidden', !isRuleAdmin());
+}
+
+function renderDashboardSnapshotMeta(snapshot) {
+  var el = document.getElementById('dashboard-snapshot-meta');
+  if (!el) return;
+  if (!snapshot || !snapshot.hasSnapshot) {
+    el.textContent = '尚未計算儀表板';
+    return;
+  }
+  var parts = ['最後計算：' + (snapshot.updatedAt || '-')];
+  if (snapshot.updatedBy) parts.push('計算人員：' + snapshot.updatedBy);
+  el.textContent = parts.join('｜');
 }
 
 function renderPackageExemption(tabType) {
@@ -901,6 +978,22 @@ function renderSystemDetailPanels(sys, missingFields) {
   document.getElementById('detail-fail-codes').innerHTML = failHtml;
 }
 
+function updateFailCodesUI(codes) {
+  var el = document.getElementById('detail-fail-codes');
+  if (!el) return;
+  codes = Array.isArray(codes) ? codes : [];
+  if (!codes.length) {
+    el.innerHTML = '<div style="font-size:12px;margin-top:4px;color:var(--success)"><b>全部符合</b></div>';
+    return;
+  }
+  var html = '<div style="font-size:12px;margin-top:4px"><b>不符合代碼：</b>';
+  codes.forEach(function(code) {
+    html += '<span class="code-tag">' + escH(String(code || '').trim()) + '</span> ';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 // ===== Pages =====
 function showPage(page) {
   if (page === 'init' && !isRuleAdmin()) {
@@ -911,7 +1004,7 @@ function showPage(page) {
   document.getElementById('page-'+page).classList.remove('hidden');
   document.querySelectorAll('.nav-btns button').forEach(function(b){b.classList.remove('active')});
   if(page==='list'){document.querySelectorAll('.nav-btns button')[0].classList.add('active');loadSystems();}
-  else if(page==='dashboard'){document.querySelectorAll('.nav-btns button')[1].classList.add('active');loadDashboard();}
+  else if(page==='dashboard'){document.querySelectorAll('.nav-btns button')[1].classList.add('active');loadDashboardSnapshot();}
   else if(page==='compare'){document.querySelectorAll('.nav-btns button')[2].classList.add('active');renderComparePage();}
   else if(page==='init'){document.getElementById('nav-init-btn').classList.add('active');loadRuleSettings();}
 }
@@ -989,16 +1082,54 @@ function filterSystems(kw) {
 }
 
 // ===== Dashboard =====
-function loadDashboard() {
+function renderDashboardEmptyState(message) {
+  document.getElementById('dashboard-chart').innerHTML = '<div class="dashboard-placeholder">' + escH(message || '尚未計算儀表板') + '</div>';
+  document.getElementById('heatmap-container').innerHTML = '<div class="dashboard-placeholder">尚無熱區分析資料</div>';
+  document.getElementById('fail-codes-summary').innerHTML = '<div class="dashboard-placeholder">尚無不符合代碼彙總資料</div>';
+}
+
+function loadDashboardSnapshot() {
+  syncDashboardActions();
+  renderDashboardSnapshotMeta(null);
   document.getElementById('dashboard-chart').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('heatmap-container').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('fail-codes-summary').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   google.script.run.withSuccessHandler(function(data){
-    dashboardData=data; renderDashboard(data);
+    if (!data || !data.hasSnapshot) {
+      dashboardData = [];
+      renderDashboardSnapshotMeta(data || null);
+      renderDashboardEmptyState('尚未計算儀表板，請由管理者手動執行。');
+      return;
+    }
+    dashboardData = Array.isArray(data.data) ? data.data : [];
+    renderDashboardSnapshotMeta(data);
+    renderDashboard(dashboardData);
   }).withFailureHandler(function(err){
-    document.getElementById('dashboard-chart').innerHTML='<p>載入失敗：'+err.message+'</p>';
-  }).getGlobalDashboard();
+    renderDashboardEmptyState('載入失敗：' + err.message);
+  }).getDashboardSnapshot();
+}
+
+function rebuildDashboardSnapshot() {
+  if (!isRuleAdmin()) {
+    showToast('僅管理者可計算儀表板');
+    return;
+  }
+  showToast('儀表板計算中...');
+  google.script.run.withSuccessHandler(function(snapshot) {
+    dashboardData = Array.isArray(snapshot.data) ? snapshot.data : [];
+    renderDashboardSnapshotMeta(snapshot);
+    renderDashboard(dashboardData);
+    showToast('儀表板已更新');
+  }).withFailureHandler(function(err) {
+    showToast('計算失敗：' + err.message);
+  }).rebuildDashboardSnapshot();
 }
 
 function renderDashboard(data) {
+  if (!Array.isArray(data) || data.length === 0) {
+    renderDashboardEmptyState('目前快照沒有可顯示的系統自評資料。');
+    return;
+  }
   // 1. Per-system compliance chart
   var chartHtml='<table class="heatmap-table"><tr><th style="text-align:left">系統名稱</th><th>等級</th><th>應評</th><th>符合</th><th>部分符合</th><th>不符合</th><th>不適用</th><th>待評</th><th>符合率</th><th>進度</th></tr>';
   data.forEach(function(d){
@@ -1064,6 +1195,8 @@ function openSystem(sysId) {
   if(!currentSystem) return;
   var missingFields = getMissingSystemFields(currentSystem);
   restoreAssessmentTabs();
+  syncAssessmentComplianceActions();
+  renderAssessmentComplianceMeta(null);
   showPage('detail');
   document.getElementById('detail-title').textContent=currentSystem['系統名稱'];
 
@@ -1373,6 +1506,8 @@ function loadAssessment(sysId) {
     renderPackageExemption('assess');
     return;
   }
+  syncAssessmentComplianceActions();
+  loadComplianceSnapshot(sysId);
   toggleAssessmentInitButton(false);
   document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
@@ -1553,26 +1688,44 @@ function saveAllAssessment() {
 
   showToast('儲存中 ('+batch.length+' 項)...');
   google.script.run.withSuccessHandler(function(r){
-    showToast('已儲存 '+r.updated+' 項');
+    showToast('已儲存 '+r.updated+' 項，自評結果需手動更新符合性');
     Object.keys(seen).forEach(function(idx){
       document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"]').forEach(function(row){row.classList.remove('dirty');});
     });
-    // Recalculate stats
     renderAssessment(currentAssessment);
-    // Auto-calc non-compliance codes
-    google.script.run.withSuccessHandler(function(codes){
-      if(codes.codeString){
-        currentSystem['不符合防護基準項目代碼']=codes.codeString;
-        var fch='<div style="font-size:12px;margin-top:4px"><b>不符合代碼：</b>';
-        codes.codes.forEach(function(c){fch+='<span class="code-tag">'+c+'</span> ';});
-        fch+='</div>';
-        document.getElementById('detail-fail-codes').innerHTML=fch;
-      } else {
-        document.getElementById('detail-fail-codes').innerHTML='<div style="font-size:12px;margin-top:4px;color:var(--success)"><b>全部符合</b></div>';
-      }
-    }).getNonComplianceCodes(currentSystem['系統ID']);
   }).withFailureHandler(function(e){showToast('儲存失敗：'+e.message);})
   .batchSaveAssessment(batch);
+}
+
+function recalculateCurrentSystemCompliance() {
+  if (!currentSystem) return;
+  if (!isCurrentSystemOwnerOrAdmin()) {
+    showToast('僅系統負責人或管理者可更新符合性結果');
+    return;
+  }
+  showToast('符合性結果更新中...');
+  google.script.run.withSuccessHandler(function(result) {
+    currentSystem['是否符合防護基準'] = result.status || '';
+    currentSystem['不符合防護基準項目代碼'] = result.codeString || '';
+    document.getElementById('detail-status-badge').innerHTML = getComplianceBadge(result.status);
+    updateFailCodesUI(result.codes || []);
+    renderAssessmentComplianceMeta({
+      calculatedAt: result.calculatedAt,
+      calculatedBy: result.calculatedBy
+    });
+    if (allSystems && allSystems.length) {
+      allSystems = allSystems.map(function(sys) {
+        if (sys['系統ID'] !== currentSystem['系統ID']) return sys;
+        sys['是否符合防護基準'] = result.status || '';
+        sys['不符合防護基準項目代碼'] = result.codeString || '';
+        return sys;
+      });
+    }
+    renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
+    showToast('符合性結果已更新');
+  }).withFailureHandler(function(err) {
+    showToast('更新失敗：' + err.message);
+  }).recalculateSystemCompliance(currentSystem['系統ID']);
 }
 
 function exportReport() {
@@ -1921,6 +2074,9 @@ function loadRuleSettings(force) {
     ruleState.rows = ruleState.rows || [];
     ruleDraftRows = cloneRows(ruleState.rows);
     ruleLoaded = true;
+    syncInitNavVisibility();
+    syncAssessmentComplianceActions();
+    syncDashboardActions();
     renderRuleConsole();
     loadRuleAuditLogs();
   }).withFailureHandler(function(err) {

@@ -138,8 +138,12 @@ function getCurrentEvaluator() {
 
 var RULE_SETTINGS_SHEET = '規則設定';
 var RULE_AUDIT_SHEET = '規則變更紀錄';
+var COMPLIANCE_SNAPSHOT_SHEET = '符合性計算快照';
+var DASHBOARD_SNAPSHOT_SHEET = '儀表板快照';
 var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type', 'rule_value', 'description', 'enabled', 'sort_order'];
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
+var COMPLIANCE_SNAPSHOT_HEADERS = ['系統ID', '系統名稱', '是否符合防護基準', '不符合防護基準項目代碼', '最後計算時間', '最後計算人員', '最後計算人員Email'];
+var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
 
 function getDefaultRuleDefinitions_() {
   return [
@@ -224,6 +228,32 @@ function ensureRuleAuditSheet_() {
     sheet.getRange(1, 1, 1, RULE_AUDIT_HEADERS.length).setValues([RULE_AUDIT_HEADERS]);
     sheet.getRange(1, 1, 1, RULE_AUDIT_HEADERS.length).setFontWeight('bold');
     sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function ensureComplianceSnapshotSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(COMPLIANCE_SNAPSHOT_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(COMPLIANCE_SNAPSHOT_SHEET);
+    sheet.getRange(1, 1, 1, COMPLIANCE_SNAPSHOT_HEADERS.length).setValues([COMPLIANCE_SNAPSHOT_HEADERS]);
+    sheet.getRange(1, 1, 1, COMPLIANCE_SNAPSHOT_HEADERS.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.hideSheet();
+  }
+  return sheet;
+}
+
+function ensureDashboardSnapshotSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(DASHBOARD_SNAPSHOT_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(DASHBOARD_SNAPSHOT_SHEET);
+    sheet.getRange(1, 1, 1, DASHBOARD_SNAPSHOT_HEADERS.length).setValues([DASHBOARD_SNAPSHOT_HEADERS]);
+    sheet.getRange(1, 1, 1, DASHBOARD_SNAPSHOT_HEADERS.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.hideSheet();
   }
   return sheet;
 }
@@ -356,6 +386,25 @@ function assertRuleAdmin_() {
   var status = getRuleAdminStatus();
   if (!status.isAdmin) throw new Error('僅管理者可修改規則設定，請確認 Script Properties 的 RULE_ADMIN_EMAILS。');
   return status;
+}
+
+function isSystemOwnerOrAdmin_(system) {
+  var evaluator = getCurrentEvaluator();
+  var email = normalizeEmail_(evaluator.email);
+  if (!email) return false;
+  if (getRuleAdminStatus().isAdmin) return true;
+  return !!system && email === normalizeEmail_(system['系統負責人']);
+}
+
+function assertSystemOwnerOrAdmin_(systemId) {
+  var system = getSystemById_(systemId);
+  if (!system) throw new Error('找不到系統');
+  if (!isSystemOwnerOrAdmin_(system)) throw new Error('僅系統負責人或管理者可更新符合性結果');
+  return {
+    system: system,
+    evaluator: getCurrentEvaluator(),
+    adminStatus: getRuleAdminStatus()
+  };
 }
 
 function getRuleSettings() {
@@ -497,6 +546,8 @@ function initializeSheetsCore_() {
 
   ensureRuleSettingsSheet_();
   ensureRuleAuditSheet_();
+  ensureComplianceSnapshotSheet_();
+  ensureDashboardSnapshotSheet_();
 
   // 1. 系統清冊
   var sysSheet = ss.getSheetByName('系統清冊');
@@ -1392,6 +1443,10 @@ function getSystemStats(systemId) {
 
 // ===== 全域儀表板統計 =====
 function getGlobalDashboard() {
+  return buildGlobalDashboardPayload_();
+}
+
+function buildGlobalDashboardPayload_() {
   var systems = getSystems();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var assessSheet = ss.getSheetByName('防護基準自評');
@@ -1479,46 +1534,167 @@ function collectFailCode(item, codeMap, arr) {
   if (code && arr.indexOf(code) === -1) arr.push(code);
 }
 
-function getNonComplianceCodes(systemId) {
+function computeComplianceResult_(systemId) {
   var assessment = getAssessment(systemId);
-  var sys = getSystems().filter(function(s) { return s['系統ID'] == systemId; })[0];
-  if (!sys) return {codes: [], codeString: ''};
+  var sys = getSystemById_(systemId);
+  if (!sys) return {codes: [], codeString: '', status: '', systemId: systemId, systemName: ''};
 
   var codeMap = getCodeMap();
   var failCodes = [];
   var applicableItems = [];
+  var sysLevel = sys['防護需求等級'] || '';
 
   assessment.forEach(function(item) {
-    if (isAssessmentNa_(item, sys['防護需求等級'])) return;
-    if (isAssessmentControlApplicable_(item.level, sys['防護需求等級'])) applicableItems.push(item);
-    if (isAssessmentControlApplicable_(item.level, sys['防護需求等級']) && (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合')) {
+    if (isAssessmentNa_(item, sysLevel)) return;
+    if (isAssessmentControlApplicable_(item.level, sysLevel)) applicableItems.push(item);
+    if (isAssessmentControlApplicable_(item.level, sysLevel) && (isAssessmentNonCompliant_(item.compliance) || item.compliance === '部分符合')) {
       collectFailCode(item, codeMap, failCodes);
     }
   });
 
   failCodes.sort();
-  // 同步寫回系統清冊
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sysSheet = ss.getSheetByName('系統清冊');
-  if (sysSheet && sys._row) {
-    var headers = sysSheet.getRange(1,1,1,sysSheet.getLastColumn()).getValues()[0];
-    var codeCol = headers.indexOf('不符合防護基準項目代碼');
-    var statusCol = headers.indexOf('是否符合防護基準');
-    if (codeCol >= 0) {
-      sysSheet.getRange(sys._row, codeCol + 1).setValue(failCodes.join('/'));
-    }
-    if (statusCol >= 0) {
-      var status = failCodes.length === 0 ? '符合' : '部分符合';
-      // 檢查是否全部不符合
-      var allFail = applicableItems.length > 0 && applicableItems.every(function(a) {
-        return isAssessmentNonCompliant_(a.compliance) || !a.compliance;
-      });
-      if (allFail) status = '不符合';
-      sysSheet.getRange(sys._row, statusCol + 1).setValue(status);
+  var status = failCodes.length === 0 ? '符合' : '部分符合';
+  var allFail = applicableItems.length > 0 && applicableItems.every(function(a) {
+    return isAssessmentNonCompliant_(a.compliance) || !a.compliance;
+  });
+  if (allFail) status = '不符合';
+
+  var evaluator = getCurrentEvaluator();
+  var calculatedAt = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyy/MM/dd HH:mm:ss');
+  return {
+    systemId: systemId,
+    systemName: sys['系統名稱'] || '',
+    status: status,
+    codes: failCodes,
+    codeString: failCodes.join('/'),
+    calculatedAt: calculatedAt,
+    calculatedBy: evaluator.displayName || evaluator.email || '',
+    calculatedByEmail: evaluator.email || ''
+  };
+}
+
+function upsertComplianceSnapshot_(result) {
+  var sheet = ensureComplianceSnapshotSheet_();
+  var key = String(result.systemId || '');
+  if (!key) return;
+  var row = [
+    key,
+    result.systemName || '',
+    result.status || '',
+    result.codeString || '',
+    result.calculatedAt || '',
+    result.calculatedBy || '',
+    result.calculatedByEmail || ''
+  ];
+  var data = sheet.getDataRange().getDisplayValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] == key) {
+      sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
+      return;
     }
   }
+  sheet.appendRow(row);
+}
 
-  return {codes: failCodes, codeString: failCodes.join('/')};
+function getComplianceSnapshot(systemId) {
+  var sheet = ensureComplianceSnapshotSheet_();
+  if (sheet.getLastRow() <= 1) return null;
+  var data = sheet.getDataRange().getDisplayValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] == systemId) {
+      return {
+        systemId: data[i][0],
+        systemName: data[i][1],
+        status: data[i][2],
+        codeString: data[i][3],
+        calculatedAt: data[i][4],
+        calculatedBy: data[i][5],
+        calculatedByEmail: data[i][6]
+      };
+    }
+  }
+  return null;
+}
+
+function recalculateSystemCompliance(systemId) {
+  var auth = assertSystemOwnerOrAdmin_(systemId);
+  var result = computeComplianceResult_(systemId);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sysSheet = ss.getSheetByName('系統清冊');
+  if (!sysSheet || !auth.system || !auth.system._row) throw new Error('找不到系統清冊資料列');
+
+  var headers = sysSheet.getRange(1, 1, 1, sysSheet.getLastColumn()).getDisplayValues()[0];
+  var codeCol = headers.indexOf('不符合防護基準項目代碼');
+  var statusCol = headers.indexOf('是否符合防護基準');
+  if (codeCol >= 0) sysSheet.getRange(auth.system._row, codeCol + 1).setValue(result.codeString || '');
+  if (statusCol >= 0) sysSheet.getRange(auth.system._row, statusCol + 1).setValue(result.status || '');
+  SpreadsheetApp.flush();
+
+  upsertComplianceSnapshot_(result);
+  return result;
+}
+
+function getNonComplianceCodes(systemId) {
+  var result = computeComplianceResult_(systemId);
+  return {codes: result.codes || [], codeString: result.codeString || '', status: result.status || ''};
+}
+
+function upsertDashboardSnapshot_(payload, evaluator) {
+  var sheet = ensureDashboardSnapshotSheet_();
+  var updatedAt = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyy/MM/dd HH:mm:ss');
+  var row = [
+    'main',
+    updatedAt,
+    evaluator && (evaluator.displayName || evaluator.email) ? (evaluator.displayName || evaluator.email) : '',
+    evaluator && evaluator.email ? evaluator.email : '',
+    JSON.stringify(payload || [])
+  ];
+  var data = sheet.getDataRange().getDisplayValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === 'main') {
+      sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
+      return {
+        hasSnapshot: true,
+        updatedAt: row[1],
+        updatedBy: row[2],
+        updatedByEmail: row[3],
+        data: payload || []
+      };
+    }
+  }
+  sheet.appendRow(row);
+  return {
+    hasSnapshot: true,
+    updatedAt: row[1],
+    updatedBy: row[2],
+    updatedByEmail: row[3],
+    data: payload || []
+  };
+}
+
+function getDashboardSnapshot() {
+  var sheet = ensureDashboardSnapshotSheet_();
+  if (sheet.getLastRow() <= 1) return {hasSnapshot: false, data: []};
+  var data = sheet.getDataRange().getDisplayValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === 'main') {
+      return {
+        hasSnapshot: true,
+        updatedAt: data[i][1],
+        updatedBy: data[i][2],
+        updatedByEmail: data[i][3],
+        data: data[i][4] ? JSON.parse(data[i][4]) : []
+      };
+    }
+  }
+  return {hasSnapshot: false, data: []};
+}
+
+function rebuildDashboardSnapshot() {
+  assertRuleAdmin_();
+  var evaluator = getCurrentEvaluator();
+  var payload = buildGlobalDashboardPayload_();
+  return upsertDashboardSnapshot_(payload, evaluator);
 }
 
 // ===== 批次儲存自評 =====
