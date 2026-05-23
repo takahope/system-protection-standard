@@ -28,6 +28,18 @@ function getHrConfig_() {
   };
 }
 
+function getHrOrgTreeConfig_() {
+  return {
+    spreadsheetId: typeof HR_SPREADSHEET_ID !== 'undefined' ? HR_SPREADSHEET_ID : '',
+    sheetName: typeof HR_ORG_TREE_SHEET_NAME !== 'undefined' ? HR_ORG_TREE_SHEET_NAME : '組織架構樹',
+    typeColumn: typeof HR_ORG_TYPE_COLUMN !== 'undefined' ? HR_ORG_TYPE_COLUMN : 1,
+    levelColumn: typeof HR_ORG_LEVEL_COLUMN !== 'undefined' ? HR_ORG_LEVEL_COLUMN : 2,
+    nameColumn: typeof HR_ORG_NAME_COLUMN !== 'undefined' ? HR_ORG_NAME_COLUMN : 4,
+    adminEmailColumn: typeof HR_ORG_ADMIN_EMAIL_COLUMN !== 'undefined' ? HR_ORG_ADMIN_EMAIL_COLUMN : 7,
+    adminNameColumn: typeof HR_ORG_ADMIN_NAME_COLUMN !== 'undefined' ? HR_ORG_ADMIN_NAME_COLUMN : 8
+  };
+}
+
 function formatEvaluatorDisplayName_(name, email) {
   if (name && email) return name + '（' + email + '）';
   return name || email || '';
@@ -84,6 +96,62 @@ function loadHrDirectory_() {
   }
 }
 
+function parseOrgLevel_(raw) {
+  var str = String(raw || '').trim();
+  if (!str) return null;
+  var match = str.match(/\d+/);
+  if (!match) return null;
+  var level = parseInt(match[0], 10);
+  if (isNaN(level)) return null;
+  return level;
+}
+
+function loadOrgAdminDirectory_() {
+  var cfg = getHrOrgTreeConfig_();
+  var result = {
+    map: {},
+    warning: ''
+  };
+
+  if (!cfg.spreadsheetId) {
+    result.warning = '尚未設定 HR_SPREADSHEET_ID。';
+    return result;
+  }
+
+  try {
+    var ss = SpreadsheetApp.openById(cfg.spreadsheetId);
+    var sheet = ss.getSheetByName(cfg.sheetName);
+    if (!sheet) {
+      result.warning = '找不到 HR 工作表「' + cfg.sheetName + '」。';
+      return result;
+    }
+    if (sheet.getLastRow() <= 1) return result;
+
+    var data = sheet.getDataRange().getDisplayValues();
+    for (var i = 1; i < data.length; i++) {
+      var orgType = String(data[i][cfg.typeColumn - 1] || '').trim();
+      if (orgType !== '行政') continue;
+      var level = parseOrgLevel_(data[i][cfg.levelColumn - 1]);
+      if (level === null || level < 1 || level > 4) continue;
+      var email = normalizeEmail_(data[i][cfg.adminEmailColumn - 1]);
+      if (!email) continue;
+      var current = result.map[email];
+      if (current && current.level <= level) continue;
+      result.map[email] = {
+        email: email,
+        level: level,
+        orgType: orgType,
+        orgName: String(data[i][cfg.nameColumn - 1] || '').trim(),
+        name: String(data[i][cfg.adminNameColumn - 1] || '').trim()
+      };
+    }
+    return result;
+  } catch (err) {
+    result.warning = '讀取 HR 組織架構樹失敗：' + err.message;
+    return result;
+  }
+}
+
 function getActiveHrEmployees() {
   var directory = loadHrDirectory_();
   return {
@@ -112,8 +180,15 @@ function getCurrentEvaluator() {
   }
 
   var cfg = getHrConfig_();
+  var orgDirectory = loadOrgAdminDirectory_();
   if (!cfg.spreadsheetId) {
     result.warning = '尚未設定 HR_SPREADSHEET_ID，暫時僅帶入帳號。';
+    if (orgDirectory.map[normalizeEmail_(email)] && orgDirectory.map[normalizeEmail_(email)].name) {
+      result.name = orgDirectory.map[normalizeEmail_(email)].name;
+      result.displayName = formatEvaluatorDisplayName_(result.name, email);
+      result.source = 'org';
+      result.warning = '';
+    }
     return result;
   }
 
@@ -126,9 +201,22 @@ function getCurrentEvaluator() {
   var person = directory.map[normalizeEmail_(email)];
   if (person) {
     result.name = person.name || '';
+    if (!result.name && orgDirectory.map[normalizeEmail_(email)] && orgDirectory.map[normalizeEmail_(email)].name) {
+      result.name = orgDirectory.map[normalizeEmail_(email)].name;
+      result.source = 'org';
+    }
     result.displayName = formatEvaluatorDisplayName_(result.name, email);
-    result.source = result.name ? 'hr' : 'session';
+    result.source = result.source === 'org' ? 'org' : (result.name ? 'hr' : 'session');
     if (!result.name) result.warning = 'HR 人員主檔找到帳號，但姓名欄為空白。';
+    return result;
+  }
+
+  var orgPerson = orgDirectory.map[normalizeEmail_(email)];
+  if (orgPerson && orgPerson.name) {
+    result.name = orgPerson.name;
+    result.displayName = formatEvaluatorDisplayName_(result.name, email);
+    result.source = 'org';
+    result.warning = 'HR 人員主檔查無此帳號對應姓名，已改用組織架構樹姓名。';
     return result;
   }
 
@@ -360,10 +448,41 @@ function getRuleAdminStatus() {
   var prop = PropertiesService.getScriptProperties().getProperty('RULE_ADMIN_EMAILS') || '';
   var admins = prop.split(',').map(function(email) { return String(email || '').trim().toLowerCase(); }).filter(function(email) { return !!email; });
   var email = String(evaluator.email || '').trim().toLowerCase();
+  var orgDirectory = loadOrgAdminDirectory_();
+  var orgAdmin = orgDirectory.map[email] || null;
+  var ownerSystems = getOwnedSystemsByEmail_(email);
+  var isAdmin = !!email && admins.indexOf(email) !== -1;
+  var isOrgAdmin = !!orgAdmin;
+  var isSystemOwner = ownerSystems.length > 0;
+  var roleKey = 'viewer';
+  var roleLabel = '一般使用者';
+
+  if (isAdmin) {
+    roleKey = 'admin';
+    roleLabel = '管理者';
+  } else if (isOrgAdmin) {
+    roleKey = 'org_admin';
+    roleLabel = orgAdmin.orgName || '組織管理者';
+  } else if (isSystemOwner) {
+    roleKey = 'system_owner';
+    roleLabel = '系統負責人';
+  }
+
   return {
-    isAdmin: !!email && admins.indexOf(email) !== -1,
+    isAdmin: isAdmin,
+    isOrgAdmin: isOrgAdmin,
+    isSystemOwner: isSystemOwner,
+    roleKey: roleKey,
+    roleLabel: roleLabel,
     evaluator: evaluator,
-    adminEmailsConfigured: admins.length > 0
+    adminEmailsConfigured: admins.length > 0,
+    ownerSystemCount: ownerSystems.length,
+    ownerSystemIds: ownerSystems,
+    orgAdminInfo: orgAdmin,
+    canCreateSystem: isAdmin || isOrgAdmin || isSystemOwner,
+    canDeleteSystem: isAdmin,
+    canEditAnySystem: isAdmin || isOrgAdmin,
+    canAssignOwner: isAdmin || isOrgAdmin
   };
 }
 
@@ -374,11 +493,61 @@ function assertRuleAdmin_() {
 }
 
 function isSystemOwnerOrAdmin_(system) {
-  var evaluator = getCurrentEvaluator();
-  var email = normalizeEmail_(evaluator.email);
+  var status = getRuleAdminStatus();
+  var email = normalizeEmail_(status.evaluator.email);
   if (!email) return false;
-  if (getRuleAdminStatus().isAdmin) return true;
+  if (status.isAdmin) return true;
   return !!system && email === normalizeEmail_(system['系統負責人']);
+}
+
+function getOwnedSystemsByEmail_(email) {
+  var normalized = normalizeEmail_(email);
+  if (!normalized) return [];
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('系統清冊');
+  if (!sheet || sheet.getLastRow() <= 1) return [];
+  var data = sheet.getDataRange().getDisplayValues();
+  var headers = data[0];
+  var idIdx = headers.indexOf('系統ID');
+  var ownerIdx = headers.indexOf('系統負責人');
+  if (idIdx === -1 || ownerIdx === -1) return [];
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    if (normalizeEmail_(data[i][ownerIdx]) === normalized && data[i][idIdx]) {
+      result.push(String(data[i][idIdx]));
+    }
+  }
+  return result;
+}
+
+function canEditSystem_(system, status) {
+  status = status || getRuleAdminStatus();
+  if (!system) return false;
+  if (status.isAdmin || status.isOrgAdmin) return true;
+  return !!status.isSystemOwner && normalizeEmail_(status.evaluator.email) === normalizeEmail_(system['系統負責人']);
+}
+
+function assertCanCreateSystem_() {
+  var status = getRuleAdminStatus();
+  if (!status.canCreateSystem) throw new Error('目前帳號僅可檢視，無法新增系統');
+  return status;
+}
+
+function assertCanDeleteSystem_() {
+  var status = getRuleAdminStatus();
+  if (!status.canDeleteSystem) throw new Error('僅管理者可刪除系統');
+  return status;
+}
+
+function assertCanEditSystem_(systemId) {
+  var status = getRuleAdminStatus();
+  var system = getSystemById_(systemId);
+  if (!system) throw new Error('找不到系統');
+  if (!canEditSystem_(system, status)) throw new Error('目前帳號無法編輯此系統');
+  return {
+    status: status,
+    system: system
+  };
 }
 
 function assertSystemOwnerOrAdmin_(systemId) {
@@ -1145,6 +1314,7 @@ function getSystems() {
 }
 
 function addSystem(systemData) {
+  var status = assertCanCreateSystem_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('系統清冊'); }
@@ -1152,6 +1322,9 @@ function addSystem(systemData) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var id = 'SYS_' + new Date().getTime();
   systemData['系統ID'] = id;
+  if (!status.canAssignOwner) {
+    systemData['系統負責人'] = status.evaluator.email || '';
+  }
 
   var row = headers.map(function(h) { return systemData[h] || ''; });
   sheet.appendRow(row);
@@ -1159,17 +1332,24 @@ function addSystem(systemData) {
 }
 
 function updateSystem(rowNum, systemData) {
+  var systemId = systemData ? systemData['系統ID'] : '';
+  var auth = assertCanEditSystem_(systemId);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var targetRow = auth.system && auth.system._row ? auth.system._row : rowNum;
+  if (!auth.status.canAssignOwner) {
+    systemData['系統負責人'] = auth.system['系統負責人'] || '';
+  }
 
   var row = headers.map(function(h) { return systemData[h] !== undefined ? systemData[h] : ''; });
-  sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);
+  sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
   return {success: true};
 }
 
 // ===== 防護需求分級評估 =====
 function saveRating(ratingData) {
+  assertCanEditSystem_(ratingData.systemId);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護需求分級評估');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護需求分級評估'); }
@@ -1341,7 +1521,9 @@ function isAssessmentNa_(item, sysLevel) {
   return !isAssessmentControlApplicable_(item.level, sysLevel);
 }
 
-function saveAssessmentItem(item) {
+function saveAssessmentItem(item, opts) {
+  opts = opts || {};
+  if (!opts.skipAuth) assertCanEditSystem_(item.systemId);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
@@ -1375,6 +1557,7 @@ function saveAssessmentItem(item) {
 }
 
 function initAssessmentForSystem(systemId, systemName, systemLevel) {
+  assertCanEditSystem_(systemId);
   var controls = getControlMeasures();
   var existing = getAssessment(systemId);
   var existingIndexes = existing.map(function(e) { return e.index; });
@@ -1398,7 +1581,7 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
         corrective: '',
         targetDate: '',
         note: applicable ? '' : appRule.naNote
-      });
+      }, {skipAuth:true});
       count++;
     }
   });
@@ -1638,6 +1821,13 @@ function rebuildDashboardSnapshot() {
 
 // ===== 批次儲存自評 =====
 function batchSaveAssessment(items) {
+  var checked = {};
+  (items || []).forEach(function(item) {
+    var systemId = String(item && item.systemId || '');
+    if (!systemId || checked[systemId]) return;
+    checked[systemId] = true;
+    assertCanEditSystem_(systemId);
+  });
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
@@ -1756,6 +1946,7 @@ function exportAssessmentReport(systemId) {
 
 // ===== 刪除系統 =====
 function deleteSystem(systemId) {
+  assertCanDeleteSystem_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
   if (!sheet) return {success: false};

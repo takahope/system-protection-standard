@@ -430,7 +430,7 @@
     <div class="action-bar">
       <input type="text" id="system-search" class="search" placeholder="搜尋系統名稱..." oninput="filterSystems(this.value)">
       <div style="display:flex;gap:6px">
-        <button class="btn btn-primary" onclick="openAddSystemModal()">+ 新增系統</button>
+        <button class="btn btn-primary hidden" id="add-system-btn" onclick="openAddSystemModal()">+ 新增系統</button>
         <button class="btn btn-outline" id="system-refresh-btn" onclick="refreshData()">重新整理</button>
       </div>
     </div>
@@ -541,7 +541,7 @@
       <div style="display:flex;align-items:center;gap:8px">
         <div id="detail-level-badge"></div>
         <div id="detail-status-badge"></div>
-        <button class="btn btn-outline btn-sm" onclick="openEditSystemModal()">編輯系統資料</button>
+        <button class="btn btn-outline btn-sm hidden" id="edit-system-btn" onclick="openEditSystemModal()">編輯系統資料</button>
       </div>
     </div>
       <div id="detail-missing-alert"></div>
@@ -587,7 +587,7 @@
                   <input type="text" id="rating-assessor" readonly>
                 </div>
                 <button class="btn btn-outline" onclick="nextRatingStep()">下一步</button>
-                <button class="btn btn-primary" onclick="submitRating()">儲存評估結果</button>
+                <button class="btn btn-primary hidden" id="rating-save-btn" onclick="submitRating()">儲存評估結果</button>
               </div>
             </div>
             <div id="rating-result" class="rating-status"></div>
@@ -610,7 +610,7 @@
               <button class="btn btn-outline btn-sm hidden" id="init-assessment-btn" onclick="initAssessment()">初始化自評項目</button>
               <button class="btn btn-outline btn-sm hidden" id="recalc-compliance-btn" onclick="recalculateCurrentSystemCompliance()">更新符合性結果</button>
               <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
-              <button class="btn btn-primary btn-sm" onclick="saveAllAssessment()">儲存所有變更</button>
+              <button class="btn btn-primary btn-sm hidden" id="assessment-save-btn" onclick="saveAllAssessment()">儲存所有變更</button>
             </div>
           </div>
           <div id="assess-stats"></div>
@@ -858,6 +858,26 @@ function isRuleAdmin() {
   return !!(ruleState.adminStatus && ruleState.adminStatus.isAdmin);
 }
 
+function getAccessStatus() {
+  return ruleState.adminStatus || {};
+}
+
+function getCurrentRoleKey() {
+  return getAccessStatus().roleKey || 'viewer';
+}
+
+function canCreateSystems() {
+  return !!getAccessStatus().canCreateSystem;
+}
+
+function canDeleteSystems() {
+  return !!getAccessStatus().canDeleteSystem;
+}
+
+function canAssignOwner() {
+  return !!getAccessStatus().canAssignOwner;
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -866,10 +886,32 @@ function getCurrentEvaluatorEmail() {
   return normalizeEmail(ruleState.adminStatus && ruleState.adminStatus.evaluator ? ruleState.adminStatus.evaluator.email : '');
 }
 
+function isCurrentUserOwnerOfSystem(sys) {
+  if (!sys) return false;
+  return getCurrentEvaluatorEmail() === normalizeEmail(sys['系統負責人']);
+}
+
+function canEditSystemRecord(sys) {
+  var access = getAccessStatus();
+  if (!sys) return false;
+  if (access.isAdmin || access.isOrgAdmin) return true;
+  if (access.isSystemOwner) return isCurrentUserOwnerOfSystem(sys);
+  return false;
+}
+
+function canEditCurrentSystem() {
+  return canEditSystemRecord(currentSystem);
+}
+
 function isCurrentSystemOwnerOrAdmin() {
   if (!currentSystem) return false;
   if (isRuleAdmin()) return true;
   return getCurrentEvaluatorEmail() === normalizeEmail(currentSystem['系統負責人']);
+}
+
+function getRoleDisplayLabel() {
+  var access = getAccessStatus();
+  return access.roleLabel || (access.isAdmin ? '管理者' : '一般使用者');
 }
 
 function syncInitNavVisibility() {
@@ -878,9 +920,22 @@ function syncInitNavVisibility() {
   btn.classList.toggle('hidden', !isRuleAdmin());
 }
 
+function syncSystemCrudActions() {
+  var addBtn = document.getElementById('add-system-btn');
+  var editBtn = document.getElementById('edit-system-btn');
+  var ratingBtn = document.getElementById('rating-save-btn');
+  var assessBtn = document.getElementById('assessment-save-btn');
+  if (addBtn) addBtn.classList.toggle('hidden', !canCreateSystems());
+  if (editBtn) editBtn.classList.toggle('hidden', !canEditCurrentSystem());
+  if (ratingBtn) ratingBtn.classList.toggle('hidden', !canEditCurrentSystem());
+  if (assessBtn) assessBtn.classList.toggle('hidden', !canEditCurrentSystem());
+}
+
 function syncAssessmentComplianceActions() {
   var btn = document.getElementById('recalc-compliance-btn');
   if (btn) btn.classList.toggle('hidden', !isCurrentSystemOwnerOrAdmin() || isPackageSystem());
+  var initBtn = document.getElementById('init-assessment-btn');
+  if (initBtn && !canEditCurrentSystem()) initBtn.classList.add('hidden');
 }
 
 function renderAssessmentComplianceMeta() {
@@ -1359,6 +1414,7 @@ function openSystem(sysId) {
   if(!currentSystem) return;
   var missingFields = getMissingSystemFields(currentSystem);
   restoreAssessmentTabs();
+  syncSystemCrudActions();
   syncAssessmentComplianceActions();
   renderAssessmentComplianceMeta();
   showPage('detail');
@@ -1523,13 +1579,14 @@ function renderRatingOverview() {
 
 function renderRatingDimensionStep(field) {
   var detail = ratingState.details[field];
+  var readOnly = !canEditCurrentSystem();
   var html = '<h3>' + escH(detail.label) + '</h3>';
   html += '<p>請選擇最符合附表九描述的衝擊情境；若需要保留脈絡，可再補充本系統的判斷理由。</p>';
   html += '<div class="scenario-grid">';
   (detail.scenarioOptions || []).forEach(function(opt) {
     var cls = getLevelClass(opt.level);
     var selected = detail.scenarioLevel === opt.level ? ' selected' : '';
-    html += '<button class="scenario-card ' + cls + selected + '" onclick="chooseScenario(\'' + field + '\',\'' + opt.level + '\')">';
+    html += '<button class="scenario-card ' + cls + selected + '" ' + (readOnly ? 'disabled' : 'onclick="chooseScenario(\'' + field + '\',\'' + opt.level + '\')"') + '>';
     html += '<span class="level">' + escH(opt.level) + '</span>';
     html += '<div class="title">' + escH(detail.label + ' - ' + opt.level + '級') + '</div>';
     html += '<div class="body">' + escH(opt.text) + '</div></button>';
@@ -1541,14 +1598,14 @@ function renderRatingDimensionStep(field) {
   (detail.signals || []).forEach(function(sig) { html += '<div class="rating-signal">- ' + escH(sig) + '</div>'; });
   html += '</div></div>';
   html += '<div class="rating-form-grid">';
-  html += '<div class="rating-field"><label>人工最終判定</label><select id="rating-selected-' + field + '" onchange="updateSelectedLevel(\'' + field + '\', this.value)" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px">';
+  html += '<div class="rating-field"><label>人工最終判定</label><select id="rating-selected-' + field + '" onchange="updateSelectedLevel(\'' + field + '\', this.value)" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px" ' + (readOnly ? 'disabled' : '') + '>';
   ['普','中','高'].forEach(function(level) {
     html += '<option value="' + level + '"' + (detail.selectedLevel === level ? ' selected' : '') + '>' + level + '</option>';
   });
   html += '</select></div>';
   html += '<div class="rating-field"><label>附表九情境等級</label><input type="text" value="' + escH(detail.scenarioLevel || '') + '" readonly></div>';
-  html += '<div class="rating-field"><label>評估說明（選填）</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="可補充本構面為何判定為此等級。">' + escH(detail.note || '') + '</textarea></div>';
-  html += '<div class="rating-field"><label>覆核理由（選填）</label><textarea id="rating-override-' + field + '" oninput="updateRatingText(\'' + field + '\',\'overrideReason\',this.value)" placeholder="若人工判定低於系統建議，可補充覆核原因。">' + escH(detail.overrideReason || '') + '</textarea></div>';
+  html += '<div class="rating-field"><label>評估說明（選填）</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="可補充本構面為何判定為此等級。" ' + (readOnly ? 'disabled' : '') + '>' + escH(detail.note || '') + '</textarea></div>';
+  html += '<div class="rating-field"><label>覆核理由（選填）</label><textarea id="rating-override-' + field + '" oninput="updateRatingText(\'' + field + '\',\'overrideReason\',this.value)" placeholder="若人工判定低於系統建議，可補充覆核原因。" ' + (readOnly ? 'disabled' : '') + '>' + escH(detail.overrideReason || '') + '</textarea></div>';
   html += '</div>';
   if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1)) {
     html += '<div class="rating-warning">人工判定低於系統建議。若需要保留判斷脈絡，可補充覆核理由。</div>';
@@ -1631,6 +1688,7 @@ function validateRatingState() {
 
 function submitRating() {
   if (!currentSystem || !ratingState) return;
+  if (!canEditCurrentSystem()) { showToast('目前帳號無法編輯此系統的分級評估'); return; }
   var err = validateRatingState();
   if (err) { showToast(err); return; }
   ratingState.assessor = ratingState.currentEvaluator ? (ratingState.currentEvaluator.displayName || ratingState.currentEvaluator.email || '') : '';
@@ -1662,7 +1720,7 @@ function submitRating() {
 function toggleAssessmentInitButton(show) {
   var btn = document.getElementById('init-assessment-btn');
   if (!btn) return;
-  btn.classList.toggle('hidden', !show);
+  btn.classList.toggle('hidden', !show || !canEditCurrentSystem());
 }
 
 function loadAssessment(sysId) {
@@ -1724,6 +1782,7 @@ function renderAssessment(items) {
 function renderAssessmentRows(items) {
   var tbody=document.getElementById('assess-body');
   var sysLevel=currentSystem['防護需求等級']||'普';
+  var readOnly = !canEditCurrentSystem();
   var filterDim=document.getElementById('filter-dim').value;
   var filterStatus=document.getElementById('filter-status').value;
   var filterApplicable=document.getElementById('filter-applicable').checked;
@@ -1753,7 +1812,7 @@ function renderAssessmentRows(items) {
     html+='<td><div class="assess-control-text"><div class="assess-control-title">'+escH(item.category)+'</div><div class="assess-control-desc">'+escH(item.description)+'</div></div></td>';
     html+='<td>';
     if (applicable) {
-      html+='<select class="assess-status-select" data-field="compliance" onchange="handleAssessmentComplianceChange(this)">';
+      html+='<select class="assess-status-select" data-field="compliance" onchange="handleAssessmentComplianceChange(this)" ' + (readOnly ? 'disabled' : '') + '>';
       html+='<option value="">-- 請選擇 --</option>';
       ['符合','部分符合','不符合',naLabel].forEach(function(v){
         var selected = item.compliance===v || (v==='不符合' && isAssessmentNonCompliant(item.compliance));
@@ -1767,10 +1826,10 @@ function renderAssessmentRows(items) {
     html+='<td>';
     if (applicable) {
       html+='<div class="assess-workgrid">';
-      html+='<div class="assess-subfield"><span class="assess-cell-label">現況說明</span><textarea class="assess-inline-textarea" data-field="currentStatus" onchange="markDirty(this)">'+escH(item.currentStatus||'')+'</textarea></div>';
-      html+='<div class="assess-subfield"><span class="assess-cell-label">佐證資料</span><textarea class="assess-inline-textarea" data-field="evidence" onchange="markDirty(this)">'+escH(item.evidence||'')+'</textarea></div>';
-      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" onchange="markDirty(this)">'+escH(item.corrective||'')+'</textarea></div>';
-      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)"></div>';
+      html+='<div class="assess-subfield"><span class="assess-cell-label">現況說明</span><textarea class="assess-inline-textarea" data-field="currentStatus" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.currentStatus||'')+'</textarea></div>';
+      html+='<div class="assess-subfield"><span class="assess-cell-label">佐證資料</span><textarea class="assess-inline-textarea" data-field="evidence" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.evidence||'')+'</textarea></div>';
+      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.corrective||'')+'</textarea></div>';
+      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '></div>';
       html+='</div>';
     } else {
       var naText = escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目'));
@@ -1818,6 +1877,7 @@ function markDirty(el) {
 
 function initAssessment() {
   if(!currentSystem) return;
+  if(!canEditCurrentSystem()){showToast('目前帳號無法初始化此系統的自評項目');return;}
   var lv=currentSystem['防護需求等級'];
   if(!lv||isPackageSystem()){showToast('此系統依目前規則不需進行防護基準自評');return;}
   showToast('初始化中...');
@@ -1829,6 +1889,7 @@ function initAssessment() {
 }
 
 function saveAllAssessment() {
+  if(!canEditCurrentSystem()){showToast('目前帳號無法儲存此系統的自評結果');return;}
   var dirtyRows=document.querySelectorAll('#assess-body tr.assess-entry-row.dirty');
   if(dirtyRows.length===0){showToast('沒有變更需要儲存');return;}
 
@@ -1952,7 +2013,14 @@ function renderHrOwnerFieldContent(formKey, currentData, state) {
   var selectedLabel = val ? getOwnerDisplayValue({_ownerDisplayName: currentData ? currentData._ownerDisplayName : '', '系統負責人': val}) : '';
   var mode = state && state.mode ? state.mode : 'ready';
   var message = state && state.message ? state.message : '';
+  var readOnly = !!(currentData && currentData._ownerReadOnly);
   var html = '';
+  if (readOnly) {
+    html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
+    html += '<input type="text" id="modal-owner-search" value="' + escH(selectedLabel || String(val || '')) + '" disabled>';
+    html += '<div class="field-help">' + escH(message || '目前帳號不可調整系統負責人，儲存時會保留既有值。') + '</div>';
+    return html;
+  }
   if (mode === 'loading' || mode === 'error') {
     html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
     html += '<input type="text" id="modal-owner-search" value="' + escH(selectedLabel) + '" placeholder="輸入姓名或 email 關鍵字" disabled>';
@@ -2014,8 +2082,8 @@ function renderTopbarUserInfo() {
   var evaluator = admin.evaluator || {};
   var name = getTopbarUserPrimaryName(evaluator);
   var email = evaluator.email || '';
-  var roleClass = email ? (admin.isAdmin ? 'admin' : 'member') : 'unknown';
-  var roleText = email ? (admin.isAdmin ? '管理者' : '一般使用者') : '未連線';
+  var roleClass = email ? (admin.isAdmin ? 'admin' : (admin.roleKey === 'viewer' ? 'unknown' : 'member')) : 'unknown';
+  var roleText = email ? (admin.roleLabel || (admin.isAdmin ? '管理者' : '一般使用者')) : '未連線';
   var subText = email || (evaluator.warning || '請檢查 Web App 部署權限或網域設定');
   var primaryText = name || '未取得登入資訊';
   var avatarSource = name || email || primaryText;
@@ -2098,11 +2166,17 @@ function renderSystemModal(title, currentData) {
 }
 
 function openAddSystemModal() {
+  if (!canCreateSystems()) { showToast('目前帳號僅可檢視，無法新增系統'); return; }
   hrEmployeeOptions = [];
   var modalData = {
     _hrWarning: '',
     '系統管理者(部門/單位)': '臺灣人體生物資料庫'
   };
+  if (!canAssignOwner()) {
+    modalData['系統負責人'] = getCurrentEvaluatorEmail();
+    modalData._ownerDisplayName = (getAccessStatus().evaluator || {}).name || getCurrentEvaluatorEmail();
+    modalData._ownerReadOnly = true;
+  }
   var requestId = openSystemModal('新增系統', modalData, {
     submitAction: 'submitAddSystem()',
     submitLabel: '新增'
@@ -2112,11 +2186,13 @@ function openAddSystemModal() {
 
 function openEditSystemModal() {
   if(!currentSystem) return;
+  if(!canEditCurrentSystem()){showToast('目前帳號無法編輯此系統');return;}
   hrEmployeeOptions = [];
   var modalData = Object.assign({}, currentSystem);
   modalData._hrWarning = '';
+  modalData._ownerReadOnly = !canAssignOwner();
   var requestId = openSystemModal('編輯系統：'+(currentSystem['系統名稱'] || ''), modalData, {
-    extraActions: '<button class="btn btn-danger" onclick="deleteCurrentSystem()" style="margin-right:auto">刪除系統</button>',
+    extraActions: canDeleteSystems() ? '<button class="btn btn-danger" onclick="deleteCurrentSystem()" style="margin-right:auto">刪除系統</button>' : '',
     submitAction: 'submitEditSystem()',
     submitLabel: '儲存'
   });
@@ -2160,6 +2236,7 @@ function submitEditSystem() {
 }
 
 function deleteCurrentSystem() {
+  if(!canDeleteSystems()){showToast('僅管理者可刪除系統');return;}
   if(!confirm('確定要刪除「'+currentSystem['系統名稱']+'」及其所有評估資料？此操作無法復原。')) return;
   google.script.run.withSuccessHandler(function(r){
     allSystems = (allSystems || []).filter(function(sys){
@@ -2241,7 +2318,7 @@ function renderRuleStatus() {
   var propEl = document.getElementById('rule-property-status');
   if (adminEl) {
     adminEl.className = 'settings-kpi' + (admin.isAdmin ? '' : ' warn');
-    adminEl.innerHTML = '<label>管理權限</label><div>' + (admin.isAdmin ? '可編輯規則' : '僅可檢視') + '</div>';
+    adminEl.innerHTML = '<label>管理權限</label><div>' + escH(admin.isAdmin ? '可編輯規則' : (getRoleDisplayLabel() + '（規則唯讀）')) + '</div>';
   }
   if (userEl) {
     userEl.innerHTML = '<label>目前使用者</label><div>' + escH(evaluator.displayName || evaluator.email || '未取得帳號') + '</div>';
@@ -2252,6 +2329,7 @@ function renderRuleStatus() {
   }
   renderTopbarUserInfo();
   syncInitNavVisibility();
+  syncSystemCrudActions();
   if (!admin.isAdmin && !document.getElementById('page-init').classList.contains('hidden')) {
     showPage('list');
   }
@@ -2352,6 +2430,7 @@ function loadRuleSettings(force) {
     ruleState.rows = ruleState.rows || [];
     ruleDraftRows = cloneRows(ruleState.rows);
     ruleLoaded = true;
+    renderRuleStatus();
     syncInitNavVisibility();
     syncAssessmentComplianceActions();
     syncDashboardActions();
