@@ -1996,21 +1996,34 @@ function getUserInitials(display) {
   return display.slice(-2);
 }
 
+function getTopbarUserPrimaryName(evaluator) {
+  evaluator = evaluator || {};
+  var directName = String(evaluator.name || '').trim();
+  if (directName) return directName;
+  var displayName = String(evaluator.displayName || '').trim();
+  if (!displayName) return '';
+  return displayName
+    .replace(/\s*[（(][^）)]*@[^）)]*[）)]\s*$/, '')
+    .trim();
+}
+
 function renderTopbarUserInfo() {
   var container = document.getElementById('topbar-user');
   if (!container) return;
   var admin = ruleState && ruleState.adminStatus ? ruleState.adminStatus : {};
   var evaluator = admin.evaluator || {};
-  var name = evaluator.displayName || evaluator.name || evaluator.email || '未取得登入資訊';
+  var name = getTopbarUserPrimaryName(evaluator);
   var email = evaluator.email || '';
   var roleClass = email ? (admin.isAdmin ? 'admin' : 'member') : 'unknown';
   var roleText = email ? (admin.isAdmin ? '管理者' : '一般使用者') : '未連線';
   var subText = email || (evaluator.warning || '請檢查 Web App 部署權限或網域設定');
+  var primaryText = name || '未取得登入資訊';
+  var avatarSource = name || email || primaryText;
   var html = '';
   html += '<div class="topbar-user-card" aria-label="目前登入使用者資訊">';
-  html += '<div class="topbar-user-avatar">' + escH(getUserInitials(name)) + '</div>';
+  html += '<div class="topbar-user-avatar">' + escH(getUserInitials(avatarSource)) + '</div>';
   html += '<div class="topbar-user-copy">';
-  html += '<div class="topbar-user-name">' + escH(name) + '</div>';
+  html += '<div class="topbar-user-name">' + escH(primaryText) + '</div>';
   html += '<div class="topbar-user-email">' + escH(subText) + '</div>';
   html += '</div>';
   html += '<span class="topbar-user-role ' + roleClass + '">' + escH(roleText) + '</span>';
