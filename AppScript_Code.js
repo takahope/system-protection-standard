@@ -1342,7 +1342,10 @@ function updateSystem(rowNum, systemData) {
     systemData['系統負責人'] = auth.system['系統負責人'] || '';
   }
 
-  var row = headers.map(function(h) { return systemData[h] !== undefined ? systemData[h] : ''; });
+  var existingRow = sheet.getRange(targetRow, 1, 1, headers.length).getDisplayValues()[0];
+  var row = headers.map(function(h, idx) {
+    return systemData[h] !== undefined ? systemData[h] : existingRow[idx];
+  });
   sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
   return {success: true};
 }

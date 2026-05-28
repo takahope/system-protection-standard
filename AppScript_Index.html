@@ -273,8 +273,10 @@
 
     /* Modal */
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center}
-    .modal{background:#fff;border-radius:12px;padding:24px;max-width:700px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+    .modal{background:#fff;border-radius:20px;padding:0;max-width:980px;width:min(94vw,980px);max-height:88vh;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.24);display:flex;flex-direction:column}
     .modal h2{margin-bottom:16px;font-size:16px}
+    .modal>h2{padding:24px 24px 0}
+    .modal>p,.modal>.danger-copy{margin-left:24px;margin-right:24px}
     .modal .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .modal .form-group{display:flex;flex-direction:column;gap:3px}
     .modal .form-group.full{grid-column:1/-1}
@@ -288,7 +290,54 @@
     .modal textarea{min-height:60px;resize:vertical}
     .modal .field-help{font-size:11px;color:var(--text2);line-height:1.5}
     .modal .hr-owner-select{min-height:140px}
-    .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+    .system-modal-head{padding:22px 24px 18px;background:radial-gradient(circle at top right,#e9f3ff 0%,rgba(233,243,255,0) 46%),linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);border-bottom:1px solid #e3ebf6}
+    .system-modal-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .system-modal-title-row h2{margin:0;font-size:18px;line-height:1.4;color:#0f172a}
+    .system-modal-subtitle{margin-top:6px;font-size:12px;line-height:1.7;color:#64748b}
+    .system-modal-completeness{flex-shrink:0;min-width:180px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid #d9e6f7;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .system-modal-completeness .num{font-size:24px;font-weight:900;line-height:1;color:#174ea6}
+    .system-modal-completeness .label{margin-top:4px;font-size:11px;font-weight:700;color:#475467}
+    .system-modal-completeness.ok .num{color:var(--success)}
+    .system-modal-reminder{margin-top:14px;padding:11px 13px;border-radius:14px;background:#fff8e8;border:1px solid #f7d79a;color:#8a5100;font-size:12px;line-height:1.7}
+    .system-modal-reminder.ok{background:#edf9f0;border-color:#b7e0c0;color:#0d6b3d}
+    .system-auto-card{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:#0f172a;color:#fff;box-shadow:0 14px 30px rgba(15,23,42,.18)}
+    .system-auto-card label{display:block;font-size:10px;color:rgba(255,255,255,.68);margin-bottom:4px}
+    .system-auto-card strong{font-size:15px}
+    .system-auto-card span{font-size:11px;color:rgba(255,255,255,.72);line-height:1.5}
+    .system-modal-body{padding:18px 24px 8px;overflow-y:auto}
+    .system-form-section{margin-bottom:18px;border:1px solid #e5eaf2;border-radius:18px;background:linear-gradient(180deg,#fff 0%,#fbfcff 100%);overflow:visible}
+    .system-form-section-head{padding:14px 16px 12px;border-bottom:1px solid #e8eef6;background:#f8fafc}
+    .system-form-section-head h3{font-size:13px;margin:0 0 4px;color:#0f172a}
+    .system-form-section-head p{font-size:11px;line-height:1.6;color:#64748b;margin:0}
+    .system-form-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;padding:14px 16px}
+    .system-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+    .system-field.compact{grid-column:span 3}
+    .system-field.medium{grid-column:span 4}
+    .system-field.wide{grid-column:span 6}
+    .system-field.full{grid-column:1/-1}
+    .system-field.soft-missing input,.system-field.soft-missing select,.system-field.soft-missing textarea{border-color:#f1c36d;background:#fffdf7}
+    .system-field-label{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .field-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.03em}
+    .field-badge.recommended{background:#fff2cc;color:#8a5100}
+    .field-badge.optional{background:#edf2f7;color:#475467}
+    .field-badge.auto{background:#e8f0fe;color:#174ea6}
+    .modal .system-field textarea{min-height:42px}
+    .modal .system-field textarea.low{min-height:42px}
+    .owner-picker{position:relative;display:grid;gap:8px}
+    .owner-selected{display:none;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:#eef6ff;border:1px solid #cfe0ff}
+    .owner-selected.active{display:flex}
+    .owner-selected strong{display:block;font-size:12px;color:#0f172a}
+    .owner-selected span{display:block;margin-top:2px;font-size:11px;color:#64748b}
+    .owner-change-btn{border:none;background:#fff;color:#174ea6;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer}
+    .owner-results{display:none;border:1px solid #d9e3f0;border-radius:14px;background:#fff;box-shadow:0 14px 32px rgba(15,23,42,.12);max-height:236px;overflow-y:auto}
+    .owner-results.active{display:block}
+    .owner-option{width:100%;border:none;background:#fff;text-align:left;padding:10px 12px;border-bottom:1px solid #edf2f7;cursor:pointer;font-family:inherit}
+    .owner-option:last-child{border-bottom:none}
+    .owner-option:hover{background:#f5f9ff}
+    .owner-option strong{display:block;font-size:12px;color:#0f172a}
+    .owner-option span{display:block;margin-top:2px;font-size:11px;color:#64748b}
+    .owner-empty{padding:12px;color:#64748b;font-size:12px;line-height:1.6}
+    .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
     .system-submit-progress{display:none;flex:1;min-width:220px;max-width:360px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#f7fbff 0%,#eef5ff 100%);border:1px solid #d6e5fb;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
     .system-submit-progress.active{display:block}
@@ -305,8 +354,18 @@
     .modal.busy{cursor:progress}
     .modal.busy input,.modal.busy select,.modal.busy textarea{background:#f8fafc;color:#64748b}
     .modal.busy .btn{opacity:.72;cursor:not-allowed}
+    @media (max-width:920px){
+      .system-field.compact,.system-field.medium{grid-column:span 6}
+      .system-field.wide{grid-column:1/-1}
+      .system-modal-title-row{flex-direction:column}
+      .system-modal-completeness{width:100%}
+    }
     @media (max-width:720px){
-      .modal .modal-actions{align-items:stretch;flex-wrap:wrap}
+      .modal{width:96vw;max-height:92vh}
+      .system-modal-head,.system-modal-body{padding-left:16px;padding-right:16px}
+      .system-form-grid{grid-template-columns:1fr;padding:12px}
+      .system-field.compact,.system-field.medium,.system-field.wide,.system-field.full{grid-column:1/-1}
+      .modal .modal-actions{align-items:stretch;flex-wrap:wrap;padding-left:16px;padding-right:16px}
       .modal-action-left,.modal-action-right{width:100%;justify-content:flex-end}
       .modal-action-left{justify-content:flex-start}
       .system-submit-progress{order:-1;width:100%;max-width:none;min-width:0}
@@ -726,6 +785,49 @@ var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
+
+var SYSTEM_MODAL_GROUP_META = {
+  '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
+  '管理責任與供應商': {title:'管理責任與供應商', desc:'釐清負責人、管理單位與廠商資訊，方便後續追蹤。'},
+  '資安與資料特性': {title:'資安與資料特性', desc:'用於後續分級建議與防護基準自評判斷。'},
+  '韌性與對外服務': {title:'韌性與對外服務', desc:'描述對外、備份與營運持續相關條件。'}
+};
+
+var SYSTEM_FIELD_UI_META = {
+  '系統名稱': {size:'wide', placeholder:'例如：收案系統、庫存管理系統'},
+  '系統屬性': {size:'compact'},
+  '建置方式': {size:'wide'},
+  '建置方式補充說明': {size:'wide', optional:true, textareaClass:'low', placeholder:'選填；若選擇「其他」或需補充委外/租用脈絡，可在此說明。'},
+  '系統管理者(部門/單位)': {size:'medium', placeholder:'例如：Biobank'},
+  '系統使用者(部門/單位)': {size:'wide', placeholder:'例如：Biobank同仁、全機關或跨機關使用者'},
+  '系統建置日期': {size:'compact'},
+  '主機設置於機關內': {size:'compact'},
+  '核心系統': {size:'compact'},
+  '含機敏資訊': {size:'compact'},
+  '個資數量': {size:'compact', placeholder:'例如：0、150、203053'},
+  '機敏資訊以非明文方式儲存': {size:'medium'},
+  '機敏資訊類別': {size:'medium', placeholder:'例如：身分證字號；無則填無機敏資訊'},
+  '是否與民生權益相關': {size:'compact'},
+  '防護需求等級': {size:'medium', readonlyAuto:true},
+  '是否包含於ISMS導入範圍': {size:'compact'},
+  '建置廠商': {size:'medium'},
+  '建置廠商統一編號': {size:'compact'},
+  '維運廠商': {size:'medium'},
+  '維運廠商統一編號': {size:'compact'},
+  '最大可容忍中斷時間': {size:'compact', placeholder:'整數，單位小時'},
+  '系統是否對外': {size:'compact'},
+  '系統日誌保存時間是否超過6個月': {size:'medium'},
+  '有無開放遠端連線維護': {size:'compact'},
+  '是否禁用弱密碼': {size:'compact'},
+  '系統是否備份': {size:'compact'},
+  '備妥流量清洗機制': {size:'compact'},
+  '備妥CDN啟用作業程序': {size:'compact'},
+  '備妥靜態網頁': {size:'compact'},
+  '10分鐘內切換至靜態網頁': {size:'compact'},
+  '備註': {size:'wide', optional:true, textareaClass:'low', placeholder:'選填；補充盤點來源、例外情境或待確認事項。'},
+  '提供之服務，是否含有人工智慧': {size:'compact'},
+  '系統負責人': {size:'wide'}
+};
 
 var RULE_GROUP_META = {
   rating_confidentiality: {title:'機密性建議規則', desc:'管理個資門檻、機敏資訊類別關鍵字與提示顯示。'},
@@ -1997,46 +2099,84 @@ function getHrOwnerOptionLabel(person) {
   return person.name ? (person.name + '（' + person.email + '）') : String(person.email || '');
 }
 
-function buildHrOwnerOptions(currentValue, keyword) {
-  var html = '<option value="">請選擇</option>';
+function findHrOwnerByEmail(email) {
+  var target = String(email || '').toLowerCase();
+  if (!target) return null;
+  for (var i = 0; i < (hrEmployeeOptions || []).length; i++) {
+    var person = hrEmployeeOptions[i];
+    if (String(person.email || '').toLowerCase() === target) return person;
+  }
+  return null;
+}
+
+function getOwnerSelectedHtml(email, fallbackLabel) {
+  var person = findHrOwnerByEmail(email);
+  var label = person ? (person.name || person.email) : (fallbackLabel || email || '尚未選擇');
+  var sub = person ? person.email : (email || '可稍後再指定系統負責人');
+  return '<div class="owner-selected' + (email ? ' active' : '') + '" id="owner-selected-card">' +
+    '<div><strong>' + escH(label) + '</strong><span>' + escH(sub) + '</span></div>' +
+    '<button type="button" class="owner-change-btn" onclick="clearHrOwnerSelection()">更換</button>' +
+    '</div>';
+}
+
+function buildHrOwnerCards(currentValue, keyword) {
+  var html = '';
   var seen = {};
+  var shown = 0;
   var kw = String(keyword || '').trim().toLowerCase();
   (hrEmployeeOptions || []).forEach(function(person) {
+    if (shown >= 8) return;
     var email = String(person.email || '');
     if (!email || seen[email]) return;
     var label = getHrOwnerOptionLabel(person);
     var haystack = (label + ' ' + email + ' ' + String(person.name || '')).toLowerCase();
     if (kw && haystack.indexOf(kw) === -1) return;
     seen[email] = true;
-    html += '<option value="' + escH(email) + '"' + (String(currentValue || '') === email ? ' selected' : '') + '>' + escH(label) + '</option>';
+    shown++;
+    html += '<button type="button" class="owner-option" data-email="' + escH(email) + '" onclick="selectHrOwner(this.getAttribute(\'data-email\'))">';
+    html += '<strong>' + escH(person.name || email) + '</strong><span>' + escH(email) + '</span></button>';
   });
-  if (currentValue && !seen[String(currentValue)]) {
-    html += '<option value="' + escH(String(currentValue)) + '" selected>' + escH(String(currentValue)) + '</option>';
+  if (!html) {
+    html = '<div class="owner-empty">沒有符合的人員。請改用姓名或 email 關鍵字搜尋；若 HR 名單缺漏，可先儲存後稍後補齊。</div>';
   }
   return html;
 }
 
-function syncHrOwnerSearchLabel(selectEl) {
-  if (!selectEl) return;
-  var searchEl = document.getElementById(selectEl.id + '-search');
-  if (!searchEl) return;
-  var opt = selectEl.options[selectEl.selectedIndex];
-  if (opt && opt.value) searchEl.value = opt.text;
+function filterHrOwnerOptions(formKey) {
+  var searchEl = document.getElementById('modal-' + formKey + '-search');
+  var resultsEl = document.getElementById('modal-' + formKey + '-results');
+  if (!searchEl || !resultsEl) return;
+  resultsEl.innerHTML = buildHrOwnerCards(document.getElementById('modal-' + formKey).value, searchEl.value || '');
+  resultsEl.classList.add('active');
 }
 
-function filterHrOwnerOptions(formKey) {
-  var selectEl = document.getElementById('modal-' + formKey);
-  var searchEl = document.getElementById('modal-' + formKey + '-search');
-  if (!selectEl || !searchEl) return;
-  var currentValue = selectEl.value || '';
-  selectEl.innerHTML = buildHrOwnerOptions(currentValue, searchEl.value || '');
-  if (currentValue) selectEl.value = currentValue;
+function selectHrOwner(email) {
+  var input = document.getElementById('modal-owner');
+  var searchEl = document.getElementById('modal-owner-search');
+  var resultsEl = document.getElementById('modal-owner-results');
+  var selectedEl = document.getElementById('owner-selected-wrap');
+  if (input) input.value = email || '';
+  if (searchEl) searchEl.value = '';
+  if (resultsEl) resultsEl.classList.remove('active');
+  if (selectedEl) selectedEl.innerHTML = getOwnerSelectedHtml(email, '');
+}
+
+function clearHrOwnerSelection() {
+  var input = document.getElementById('modal-owner');
+  var searchEl = document.getElementById('modal-owner-search');
+  var resultsEl = document.getElementById('modal-owner-results');
+  var selectedEl = document.getElementById('owner-selected-wrap');
+  if (input) input.value = '';
+  if (searchEl) { searchEl.value = ''; searchEl.focus(); }
+  if (selectedEl) selectedEl.innerHTML = getOwnerSelectedHtml('', '');
+  if (resultsEl) {
+    resultsEl.innerHTML = buildHrOwnerCards('', '');
+    resultsEl.classList.add('active');
+  }
 }
 
 function handleHrOwnerChange(formKey) {
-  var selectEl = document.getElementById('modal-' + formKey);
-  if (!selectEl) return;
-  syncHrOwnerSearchLabel(selectEl);
+  filterHrOwnerOptions(formKey);
 }
 
 function renderHrOwnerFieldContent(formKey, currentData, state) {
@@ -2048,24 +2188,24 @@ function renderHrOwnerFieldContent(formKey, currentData, state) {
   var html = '';
   if (readOnly) {
     html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
-    html += '<input type="text" id="modal-owner-search" value="' + escH(selectedLabel || String(val || '')) + '" disabled>';
+    html += '<div class="owner-selected active"><div><strong>' + escH(selectedLabel || String(val || '目前帳號')) + '</strong><span>' + escH(String(val || '系統會保留既有負責人')) + '</span></div></div>';
     html += '<div class="field-help">' + escH(message || '目前帳號不可調整系統負責人，儲存時會保留既有值。') + '</div>';
     return html;
   }
   if (mode === 'loading' || mode === 'error') {
     html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
-    html += '<input type="text" id="modal-owner-search" value="' + escH(selectedLabel) + '" placeholder="輸入姓名或 email 關鍵字" disabled>';
-    html += '<select id="modal-owner-display" class="hr-owner-select" size="6" disabled>';
-    html += '<option value="">' + escH(mode === 'loading' ? '載入人員名單中...' : '人員名單載入失敗') + '</option>';
-    html += '</select>';
-    html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可選擇。' : '目前無法更新人員名單，若不調整此欄位，儲存時會保留原值。')) + '</div>';
+    html += getOwnerSelectedHtml(val, selectedLabel);
+    html += '<input type="text" id="modal-owner-search" value="" placeholder="' + escH(mode === 'loading' ? '正在載入人員名單...' : '人員名單載入失敗') + '" disabled>';
+    html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可搜尋選取。' : '目前無法更新人員名單，若不調整此欄位，儲存時會保留原值。')) + '</div>';
     return html;
   }
-  html += '<input type="text" id="modal-owner-search" value="' + escH(selectedLabel) + '" placeholder="輸入姓名或 email 關鍵字" oninput="filterHrOwnerOptions(\'owner\')">';
-  html += '<select id="modal-owner" class="hr-owner-select" size="6" onchange="handleHrOwnerChange(\'owner\')">';
-  html += buildHrOwnerOptions(val, '');
-  html += '</select>';
-  html += '<div class="field-help">' + escH(message || '輸入關鍵字可篩選在勤人員，實際儲存值為 email。') + '</div>';
+  html += '<div class="owner-picker">';
+  html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
+  html += '<div id="owner-selected-wrap">' + getOwnerSelectedHtml(val, selectedLabel) + '</div>';
+  html += "<input type=\"text\" id=\"modal-owner-search\" value=\"\" placeholder=\"搜尋姓名或 email，從在勤人員中選取\" onfocus=\"filterHrOwnerOptions('owner')\" oninput=\"filterHrOwnerOptions('owner')\">";
+  html += '<div id="modal-owner-results" class="owner-results">' + buildHrOwnerCards(val, '') + '</div>';
+  html += '</div>';
+  html += '<div class="field-help">' + escH(message || '可先不指定，稍後再回來補齊；實際儲存值為 email。') + '</div>';
   return html;
 }
 
@@ -2197,7 +2337,7 @@ function setSystemModalBusy(isBusy) {
   var modal = document.querySelector('#modal-container .modal');
   if (!modal) return;
   modal.classList.toggle('busy', !!isBusy);
-  var nodes = modal.querySelectorAll('.form-grid input,.form-grid select,.form-grid textarea,.modal-actions button');
+  var nodes = modal.querySelectorAll('.system-modal-body input,.system-modal-body select,.system-modal-body textarea,.modal-actions button');
   for (var i = 0; i < nodes.length; i++) {
     var el = nodes[i];
     if (isBusy) {
@@ -2267,33 +2407,121 @@ function requestHrEmployeesForModal(currentData, requestId) {
   }).getActiveHrEmployees();
 }
 
+function getSystemFieldUi(field) {
+  var meta = SYSTEM_FIELD_UI_META[field.key] || {};
+  var ui = {};
+  Object.keys(meta).forEach(function(k) { ui[k] = meta[k]; });
+  if (!ui.size) ui.size = field.full ? 'full' : (field.options && field.options.length <= 3 ? 'compact' : 'medium');
+  if (field.countMissing && !ui.optional) ui.recommended = true;
+  if (field.countMissing === false || ui.optional) ui.optional = true;
+  if (ui.readonlyAuto) ui.recommended = false;
+  return ui;
+}
+
+function getIncompleteRecommendedFields(data) {
+  var missing = [];
+  getSystemFormFields().forEach(function(field) {
+    var ui = getSystemFieldUi(field);
+    if (!ui.recommended || ui.readonlyAuto) return;
+    if (!isFilledValue(data ? data[field.key] : '')) missing.push(field.key);
+  });
+  return missing;
+}
+
+function renderRequirementBadge(field, ui) {
+  if (ui.readonlyAuto) return '<span class="field-badge auto">系統產生</span>';
+  if (ui.optional) return '<span class="field-badge optional">選填</span>';
+  if (ui.recommended) return '<span class="field-badge recommended">建議補齊</span>';
+  return '';
+}
+
+function renderSystemModalFieldLabel(field, ui) {
+  var helpText = SYSTEM_FIELD_HELP_TEXT[field.key];
+  var html = '<div class="system-field-label">';
+  if (helpText) {
+    html += '<label class="label-with-help"><span>' + escH(field.key) + '</span>' +
+      '<button type="button" class="label-help-icon" tabindex="0" aria-label="查看填寫說明">!</button>' +
+      '<span class="label-help-tooltip">' + escH(helpText) + '</span></label>';
+  } else {
+    html += '<label>' + escH(field.key) + '</label>';
+  }
+  html += renderRequirementBadge(field, ui);
+  html += '</div>';
+  return html;
+}
+
+function renderSystemModalHeader(title, currentData) {
+  var missing = getIncompleteRecommendedFields(currentData || {});
+  var level = currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '尚未評估';
+  var html = '<div class="system-modal-head">';
+  html += '<div class="system-modal-title-row"><div><h2>' + escH(title) + '</h2>';
+  html += '<div class="system-modal-subtitle">先保存已掌握的資訊即可；未完成欄位會持續提醒，方便分次補齊。</div></div>';
+  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項建議補齊資料</div></div></div>';
+  html += '<div class="system-modal-reminder' + (missing.length ? '' : ' ok') + '">';
+  html += missing.length ? ('尚有 ' + missing.length + ' 項資料建議補齊，但不影響本次新增或儲存。') : '目前建議補齊欄位都已填寫。';
+  html += '</div>';
+  html += '<input type="hidden" id="modal-level" value="' + escH(String(currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '')) + '">';
+  html += '<div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div><span>此欄位由分級評估流程自動更新，不需在系統資料表單中手動填寫。</span></div>';
+  html += '</div>';
+  return html;
+}
+
+function renderSystemField(field, currentData) {
+  var ui = getSystemFieldUi(field);
+  if (ui.readonlyAuto) return '';
+  var val = currentData && currentData[field.key] !== undefined ? currentData[field.key] : '';
+  var missingClass = ui.recommended && !isFilledValue(val) ? ' soft-missing' : '';
+  var html = '<div class="system-field ' + escH(ui.size || 'medium') + missingClass + '">';
+  html += renderSystemModalFieldLabel(field, ui);
+  var placeholder = ui.placeholder ? ' placeholder="' + escH(ui.placeholder) + '"' : '';
+  if (field.type === 'hr_select') {
+    html += '<div id="modal-owner-field">';
+    html += renderHrOwnerFieldContent(field.formKey, currentData, {mode:'loading'});
+    html += '</div>';
+  } else if(field.options){
+    html += '<select id="modal-'+field.formKey+'">';
+    html += '<option value="">請選擇</option>';
+    field.options.forEach(function(o){html+='<option value="'+escH(o)+'"'+(String(val)===o?' selected':'')+'>'+escH(o)+'</option>';});
+    html += '</select>';
+  } else if (field.type === 'textarea') {
+    html += '<textarea class="' + escH(ui.textareaClass || '') + '" id="modal-'+field.formKey+'"' + placeholder + '>'+escH(String(val))+'</textarea>';
+  } else {
+    html += '<input type="'+(field.type==='date'?'date':'text')+'" id="modal-'+field.formKey+'" value="'+escH(String(val))+'"' + placeholder + '>';
+  }
+  if (ui.helper) html += '<div class="field-help">' + escH(ui.helper) + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderSystemFormSection(groupName, fields, currentData) {
+  var meta = SYSTEM_MODAL_GROUP_META[groupName] || {title: groupName, desc: ''};
+  var html = '<section class="system-form-section">';
+  html += '<div class="system-form-section-head"><h3>' + escH(meta.title) + '</h3>';
+  if (meta.desc) html += '<p>' + escH(meta.desc) + '</p>';
+  html += '</div><div class="system-form-grid">';
+  fields.forEach(function(field) { html += renderSystemField(field, currentData); });
+  html += '</div></section>';
+  return html;
+}
+
 function renderSystemModal(title, currentData) {
   var fields = getSystemFormFields();
-  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
-  html += '<h2>' + escH(title) + '</h2><div class="form-grid">';
-  fields.forEach(function(f){
-    var val = currentData && currentData[f.key] !== undefined ? currentData[f.key] : '';
-    html += '<div class="form-group'+(f.full?' full':'')+'">';
-    html += renderSystemFieldLabel(f.key);
-    if (f.type === 'hr_select') {
-      html += '<div id="modal-owner-field">';
-      html += renderHrOwnerFieldContent(f.formKey, currentData, {mode:'loading'});
-      html += '</div>';
-    } else if(f.options){
-      html += '<select id="modal-'+f.formKey+'">';
-      html += '<option value="">請選擇</option>';
-      f.options.forEach(function(o){html+='<option value="'+o+'"'+(String(val)===o?' selected':'')+'>'+o+'</option>';});
-      html += '</select>';
-    } else if (f.type === 'textarea') {
-      html += '<textarea id="modal-'+f.formKey+'">'+escH(String(val))+'</textarea>';
-    } else {
-      html += '<input type="'+(f.type==='date'?'date':'text')+'" id="modal-'+f.formKey+'" value="'+escH(String(val))+'">';
-    }
-    html += '</div>';
+  var grouped = {};
+  var groupOrder = ['基本概況','管理責任與供應商','資安與資料特性','韌性與對外服務'];
+  fields.forEach(function(field) {
+    if (field.key === '防護需求等級') return;
+    var group = field.group || '基本概況';
+    if (!grouped[group]) grouped[group] = [];
+    grouped[group].push(field);
   });
-  html += '</div>';
-  html += '<div id="system-modal-hr-warning" style="font-size:12px;color:var(--warning);line-height:1.7;margin-top:12px;' + (currentData && currentData._hrWarning ? '' : 'display:none;') + '">' + escH(currentData && currentData._hrWarning ? currentData._hrWarning : '') + '</div>';
-  html += '<div class="modal-actions">';
+  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
+  html += renderSystemModalHeader(title, currentData || {});
+  html += '<div class="system-modal-body">';
+  groupOrder.forEach(function(groupName) {
+    if (grouped[groupName] && grouped[groupName].length) html += renderSystemFormSection(groupName, grouped[groupName], currentData || {});
+  });
+  html += '<div id="system-modal-hr-warning" style="font-size:12px;color:var(--warning);line-height:1.7;margin:0 0 12px;' + (currentData && currentData._hrWarning ? '' : 'display:none;') + '">' + escH(currentData && currentData._hrWarning ? currentData._hrWarning : '') + '</div>';
+  html += '</div><div class="modal-actions">';
   return html;
 }
 
@@ -2344,7 +2572,8 @@ function getModalData() {
 function submitAddSystem() {
   if (systemModalSubmitting) return;
   var data = getModalData();
-  if(!data['系統名稱']){showToast('請填寫系統名稱');return;}
+  var missing = getIncompleteRecommendedFields(data);
+  if (missing.length) showToast('尚有 ' + missing.length + ' 項資料待補齊，可稍後回來完成');
   if (!startSystemSubmitProgress('add')) return;
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
@@ -2367,6 +2596,8 @@ function submitEditSystem() {
   if (systemModalSubmitting) return;
   var data = getModalData();
   data['系統ID'] = currentSystem['系統ID'];
+  var missing = getIncompleteRecommendedFields(data);
+  if (missing.length) showToast('尚有 ' + missing.length + ' 項資料待補齊，可稍後回來完成');
   if (!startSystemSubmitProgress('edit')) return;
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
