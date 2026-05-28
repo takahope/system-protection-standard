@@ -801,20 +801,21 @@ var SYSTEM_MODAL_GROUP_META = {
   '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
   '管理責任與供應商': {title:'管理責任與供應商', desc:'釐清負責人、管理單位與廠商資訊，方便後續追蹤。'},
   '資安與資料特性': {title:'資安與資料特性', desc:'用於後續分級建議與防護基準自評判斷。'},
-  '韌性與對外服務': {title:'韌性與對外服務', desc:'描述對外、備份與營運持續相關條件。'}
+  '韌性與對外服務': {title:'韌性與對外服務', desc:'描述對外、備份與營運持續相關條件。'},
+  '系統負責人': {title:'系統負責人', desc:'此欄位會影響後續通知、追蹤與權限判斷，請優先指定正確負責人。'}
 };
 
 var SYSTEM_FIELD_UI_META = {
   '系統名稱': {order:10, span:2, placeholder:'例如：收案系統'},
   '系統屬性': {order:20, span:2},
-  '建置方式': {order:30, span:2},
-  '系統建置日期': {order:40, span:2},
+  '建置方式': {order:70, span:3},
+  '系統建置日期': {order:80, span:3},
   '是否包含於ISMS導入範圍': {order:50, span:2},
   '提供之服務，是否含有人工智慧': {order:60, span:2},
-  '建置方式補充說明': {order:70, span:6, optional:true, textareaClass:'low', placeholder:'選填；補充建置方式脈絡。'},
-  '備註': {order:100, span:9, optional:true, textareaClass:'low', placeholder:'選填；補充盤點來源或待確認事項。'},
+  '建置方式補充說明': {order:90, span:6, optional:true, placeholder:'選填；補充建置方式脈絡。'},
+  '備註': {order:100, span:9, optional:true, placeholder:'選填；補充盤點來源或待確認事項。'},
 
-  '系統負責人': {order:10, span:4},
+  '系統負責人': {order:10, span:12},
   '系統管理者(部門/單位)': {order:20, span:4, placeholder:'例如：Biobank'},
   '系統使用者(部門/單位)': {order:30, span:4, placeholder:'例如：Biobank同仁、全機關或跨機關使用者'},
   '建置廠商': {order:40, span:3},
@@ -859,7 +860,7 @@ var SYSTEM_FIELD_SCHEMA = [
   {key:'系統名稱', group:'基本概況', countMissing:true, formKey:'name'},
   {key:'系統屬性', group:'基本概況', countMissing:true, formKey:'attr', options:['行政','業務','兼具行政/業務']},
   {key:'建置方式', group:'基本概況', countMissing:true, formKey:'method', options:['本機關委外開發','本機關自行開發','本機關購置套裝軟體','本機關租用服務','其他']},
-  {key:'建置方式補充說明', group:'基本概況', countMissing:false, formKey:'methodNote', type:'textarea', full:true},
+  {key:'建置方式補充說明', group:'基本概況', countMissing:false, formKey:'methodNote'},
   {key:'系統管理者(部門/單位)', group:'管理責任與供應商', countMissing:true, formKey:'mgr'},
   {key:'系統使用者(部門/單位)', group:'管理責任與供應商', countMissing:true, formKey:'user'},
   {key:'系統建置日期', group:'基本概況', countMissing:true, formKey:'date', type:'date'},
@@ -888,9 +889,9 @@ var SYSTEM_FIELD_SCHEMA = [
   {key:'備妥CDN啟用作業程序', group:'韌性與對外服務', countMissing:true, formKey:'cdnReady', options:['是','否','非對外系統']},
   {key:'備妥靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'staticSite', options:['是','否','非對外系統']},
   {key:'10分鐘內切換至靜態網頁', group:'韌性與對外服務', countMissing:true, formKey:'switchStatic10m', options:['是','否','非對外系統']},
-  {key:'備註', group:'韌性與對外服務', countMissing:false, formKey:'note', type:'textarea', full:true},
+  {key:'備註', group:'韌性與對外服務', countMissing:false, formKey:'note'},
   {key:'提供之服務，是否含有人工智慧', group:'基本概況', countMissing:true, formKey:'aiService', options:['是','否']},
-  {key:'系統負責人', group:'管理責任與供應商', countMissing:true, formKey:'owner', type:'hr_select'}
+  {key:'系統負責人', group:'系統負責人', countMissing:true, formKey:'owner', type:'hr_select'}
 ];
 
 var SYSTEM_FIELD_HELP_TEXT = {
@@ -2517,7 +2518,7 @@ function renderSystemFormSection(groupName, fields, currentData) {
 function renderSystemModal(title, currentData) {
   var fields = getSystemFormFields();
   var grouped = {};
-  var groupOrder = ['基本概況','資安與資料特性','韌性與對外服務','管理責任與供應商'];
+  var groupOrder = ['基本概況','管理責任與供應商','資安與資料特性','韌性與對外服務','系統負責人'];
   fields.forEach(function(field) {
     if (field.key === '防護需求等級') return;
     var group = field.group || '基本概況';
