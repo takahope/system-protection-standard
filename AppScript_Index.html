@@ -2517,7 +2517,7 @@ function renderSystemFormSection(groupName, fields, currentData) {
 function renderSystemModal(title, currentData) {
   var fields = getSystemFormFields();
   var grouped = {};
-  var groupOrder = ['基本概況','管理責任與供應商','資安與資料特性','韌性與對外服務'];
+  var groupOrder = ['基本概況','資安與資料特性','韌性與對外服務','管理責任與供應商'];
   fields.forEach(function(field) {
     if (field.key === '防護需求等級') return;
     var group = field.group || '基本概況';
