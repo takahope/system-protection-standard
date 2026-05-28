@@ -315,6 +315,17 @@
     .system-field.medium{grid-column:span 4}
     .system-field.wide{grid-column:span 6}
     .system-field.full{grid-column:1/-1}
+    .system-field.span-2{grid-column:span 2}
+    .system-field.span-3{grid-column:span 3}
+    .system-field.span-4{grid-column:span 4}
+    .system-field.span-5{grid-column:span 5}
+    .system-field.span-6{grid-column:span 6}
+    .system-field.span-7{grid-column:span 7}
+    .system-field.span-8{grid-column:span 8}
+    .system-field.span-9{grid-column:span 9}
+    .system-field.span-10{grid-column:span 10}
+    .system-field.span-11{grid-column:span 11}
+    .system-field.span-12{grid-column:1/-1}
     .system-field.soft-missing input,.system-field.soft-missing select,.system-field.soft-missing textarea{border-color:#f1c36d;background:#fffdf7}
     .system-field-label{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
     .field-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.03em}
@@ -355,8 +366,8 @@
     .modal.busy input,.modal.busy select,.modal.busy textarea{background:#f8fafc;color:#64748b}
     .modal.busy .btn{opacity:.72;cursor:not-allowed}
     @media (max-width:920px){
-      .system-field.compact,.system-field.medium{grid-column:span 6}
-      .system-field.wide{grid-column:1/-1}
+      .system-field.compact,.system-field.medium,.system-field.wide,.system-field[class*='span-']{grid-column:span 6}
+      .system-field.span-8,.system-field.span-9,.system-field.span-10,.system-field.span-11,.system-field.span-12{grid-column:1/-1}
       .system-modal-title-row{flex-direction:column}
       .system-modal-completeness{width:100%}
     }
@@ -364,7 +375,7 @@
       .modal{width:96vw;max-height:92vh}
       .system-modal-head,.system-modal-body{padding-left:16px;padding-right:16px}
       .system-form-grid{grid-template-columns:1fr;padding:12px}
-      .system-field.compact,.system-field.medium,.system-field.wide,.system-field.full{grid-column:1/-1}
+      .system-field.compact,.system-field.medium,.system-field.wide,.system-field.full,.system-field[class*='span-']{grid-column:1/-1}
       .modal .modal-actions{align-items:stretch;flex-wrap:wrap;padding-left:16px;padding-right:16px}
       .modal-action-left,.modal-action-right{width:100%;justify-content:flex-end}
       .modal-action-left{justify-content:flex-start}
@@ -794,39 +805,42 @@ var SYSTEM_MODAL_GROUP_META = {
 };
 
 var SYSTEM_FIELD_UI_META = {
-  '系統名稱': {size:'wide', placeholder:'例如：收案系統、庫存管理系統'},
-  '系統屬性': {size:'compact'},
-  '建置方式': {size:'wide'},
-  '建置方式補充說明': {size:'wide', optional:true, textareaClass:'low', placeholder:'選填；若選擇「其他」或需補充委外/租用脈絡，可在此說明。'},
-  '系統管理者(部門/單位)': {size:'medium', placeholder:'例如：Biobank'},
-  '系統使用者(部門/單位)': {size:'wide', placeholder:'例如：Biobank同仁、全機關或跨機關使用者'},
-  '系統建置日期': {size:'compact'},
-  '主機設置於機關內': {size:'compact'},
-  '核心系統': {size:'compact'},
-  '含機敏資訊': {size:'compact'},
-  '個資數量': {size:'compact', placeholder:'例如：0、150、203053'},
-  '機敏資訊以非明文方式儲存': {size:'medium'},
-  '機敏資訊類別': {size:'medium', placeholder:'例如：身分證字號；無則填無機敏資訊'},
-  '是否與民生權益相關': {size:'compact'},
-  '防護需求等級': {size:'medium', readonlyAuto:true},
-  '是否包含於ISMS導入範圍': {size:'compact'},
-  '建置廠商': {size:'medium'},
-  '建置廠商統一編號': {size:'compact'},
-  '維運廠商': {size:'medium'},
-  '維運廠商統一編號': {size:'compact'},
-  '最大可容忍中斷時間': {size:'compact', placeholder:'整數，單位小時'},
-  '系統是否對外': {size:'compact'},
-  '系統日誌保存時間是否超過6個月': {size:'medium'},
-  '有無開放遠端連線維護': {size:'compact'},
-  '是否禁用弱密碼': {size:'compact'},
-  '系統是否備份': {size:'compact'},
-  '備妥流量清洗機制': {size:'compact'},
-  '備妥CDN啟用作業程序': {size:'compact'},
-  '備妥靜態網頁': {size:'compact'},
-  '10分鐘內切換至靜態網頁': {size:'compact'},
-  '備註': {size:'wide', optional:true, textareaClass:'low', placeholder:'選填；補充盤點來源、例外情境或待確認事項。'},
-  '提供之服務，是否含有人工智慧': {size:'compact'},
-  '系統負責人': {size:'wide'}
+  '系統名稱': {order:10, span:3, placeholder:'例如：收案系統'},
+  '系統屬性': {order:20, span:3},
+  '建置方式': {order:30, span:3},
+  '系統建置日期': {order:40, span:3},
+  '是否包含於ISMS導入範圍': {order:50, span:2},
+  '提供之服務，是否含有人工智慧': {order:60, span:2},
+  '建置方式補充說明': {order:70, span:4, optional:true, textareaClass:'low', placeholder:'選填；補充建置方式脈絡。'},
+  '備註': {order:80, span:4, optional:true, textareaClass:'low', placeholder:'選填；補充盤點來源或待確認事項。'},
+
+  '系統負責人': {order:10, span:4},
+  '系統管理者(部門/單位)': {order:20, span:4, placeholder:'例如：Biobank'},
+  '系統使用者(部門/單位)': {order:30, span:4, placeholder:'例如：Biobank同仁、全機關或跨機關使用者'},
+  '建置廠商': {order:40, span:3},
+  '建置廠商統一編號': {order:50, span:3},
+  '維運廠商': {order:60, span:3},
+  '維運廠商統一編號': {order:70, span:3},
+
+  '主機設置於機關內': {order:10, span:3},
+  '核心系統': {order:20, span:3},
+  '含機敏資訊': {order:30, span:3},
+  '是否與民生權益相關': {order:40, span:3},
+  '個資數量': {order:50, span:3, placeholder:'例如：0、150、203053'},
+  '機敏資訊以非明文方式儲存': {order:60, span:3},
+  '機敏資訊類別': {order:70, span:3, placeholder:'例如：身分證字號；無則填無機敏資訊'},
+  '是否禁用弱密碼': {order:80, span:3},
+  '防護需求等級': {order:90, span:3, readonlyAuto:true},
+
+  '最大可容忍中斷時間': {order:10, span:3, placeholder:'整數，單位小時'},
+  '系統是否對外': {order:20, span:3},
+  '系統日誌保存時間是否超過6個月': {order:30, span:3},
+  '有無開放遠端連線維護': {order:40, span:3},
+  '系統是否備份': {order:50, span:3},
+  '備妥流量清洗機制': {order:60, span:3},
+  '備妥CDN啟用作業程序': {order:70, span:3},
+  '備妥靜態網頁': {order:80, span:3},
+  '10分鐘內切換至靜態網頁': {order:90, span:3}
 };
 
 var RULE_GROUP_META = {
@@ -2431,7 +2445,7 @@ function getIncompleteRecommendedFields(data) {
 function renderRequirementBadge(field, ui) {
   if (ui.readonlyAuto) return '<span class="field-badge auto">系統產生</span>';
   if (ui.optional) return '<span class="field-badge optional">選填</span>';
-  if (ui.recommended) return '<span class="field-badge recommended">建議補齊</span>';
+  if (ui.recommended) return '<span class="field-badge recommended">必填</span>';
   return '';
 }
 
@@ -2456,9 +2470,9 @@ function renderSystemModalHeader(title, currentData) {
   var html = '<div class="system-modal-head">';
   html += '<div class="system-modal-title-row"><div><h2>' + escH(title) + '</h2>';
   html += '<div class="system-modal-subtitle">先保存已掌握的資訊即可；未完成欄位會持續提醒，方便分次補齊。</div></div>';
-  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項建議補齊資料</div></div></div>';
+  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div></div>';
   html += '<div class="system-modal-reminder' + (missing.length ? '' : ' ok') + '">';
-  html += missing.length ? ('尚有 ' + missing.length + ' 項資料建議補齊，但不影響本次新增或儲存。') : '目前建議補齊欄位都已填寫。';
+  html += missing.length ? ('尚有 ' + missing.length + ' 項必填資料待補，但不影響本次新增或儲存。') : '目前必填欄位都已填寫。';
   html += '</div>';
   html += '<input type="hidden" id="modal-level" value="' + escH(String(currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '')) + '">';
   html += '<div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div><span>此欄位由分級評估流程自動更新，不需在系統資料表單中手動填寫。</span></div>';
@@ -2471,7 +2485,8 @@ function renderSystemField(field, currentData) {
   if (ui.readonlyAuto) return '';
   var val = currentData && currentData[field.key] !== undefined ? currentData[field.key] : '';
   var missingClass = ui.recommended && !isFilledValue(val) ? ' soft-missing' : '';
-  var html = '<div class="system-field ' + escH(ui.size || 'medium') + missingClass + '">';
+  var spanClass = ui.span ? (' span-' + Math.max(2, Math.min(12, parseInt(ui.span, 10) || 3))) : '';
+  var html = '<div class="system-field ' + escH(ui.size || 'medium') + escH(spanClass) + missingClass + '">';
   html += renderSystemModalFieldLabel(field, ui);
   var placeholder = ui.placeholder ? ' placeholder="' + escH(ui.placeholder) + '"' : '';
   if (field.type === 'hr_select') {
@@ -2499,6 +2514,11 @@ function renderSystemFormSection(groupName, fields, currentData) {
   html += '<div class="system-form-section-head"><h3>' + escH(meta.title) + '</h3>';
   if (meta.desc) html += '<p>' + escH(meta.desc) + '</p>';
   html += '</div><div class="system-form-grid">';
+  fields.sort(function(a, b) {
+    var au = getSystemFieldUi(a);
+    var bu = getSystemFieldUi(b);
+    return (au.order || 999) - (bu.order || 999);
+  });
   fields.forEach(function(field) { html += renderSystemField(field, currentData); });
   html += '</div></section>';
   return html;
