@@ -288,7 +288,29 @@
     .modal textarea{min-height:60px;resize:vertical}
     .modal .field-help{font-size:11px;color:var(--text2);line-height:1.5}
     .modal .hr-owner-select{min-height:140px}
-    .modal .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+    .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .system-submit-progress{display:none;flex:1;min-width:220px;max-width:360px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#f7fbff 0%,#eef5ff 100%);border:1px solid #d6e5fb;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+    .system-submit-progress.active{display:block}
+    .system-submit-progress.error{background:#fff7f5;border-color:#f4c7c3}
+    .system-submit-progress.done{background:#f3fbf6;border-color:#c6ead5}
+    .system-submit-progress-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px;font-size:11px;font-weight:800;color:#174ea6;letter-spacing:.02em}
+    .system-submit-progress.error .system-submit-progress-head{color:var(--danger)}
+    .system-submit-progress.done .system-submit-progress-head{color:var(--success)}
+    .system-submit-track{position:relative;height:8px;border-radius:999px;overflow:hidden;background:#dfe8f7}
+    .system-submit-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#1a73e8 0%,#4f9af7 55%,#9cc6ff 100%);box-shadow:0 0 16px rgba(26,115,232,.35);transition:width .18s ease}
+    .system-submit-progress.error .system-submit-fill{background:linear-gradient(90deg,#d93025 0%,#f06d64 100%);box-shadow:0 0 14px rgba(217,48,37,.24)}
+    .system-submit-progress.done .system-submit-fill{background:linear-gradient(90deg,#0d904f 0%,#42be7d 100%);box-shadow:0 0 14px rgba(13,144,79,.28)}
+    .system-submit-message{margin-top:7px;font-size:11px;line-height:1.5;color:#475467}
+    .modal.busy{cursor:progress}
+    .modal.busy input,.modal.busy select,.modal.busy textarea{background:#f8fafc;color:#64748b}
+    .modal.busy .btn{opacity:.72;cursor:not-allowed}
+    @media (max-width:720px){
+      .modal .modal-actions{align-items:stretch;flex-wrap:wrap}
+      .modal-action-left,.modal-action-right{width:100%;justify-content:flex-end}
+      .modal-action-left{justify-content:flex-start}
+      .system-submit-progress{order:-1;width:100%;max-width:none;min-width:0}
+    }
 
     /* Progress bar */
     .progress-bar{background:#e0e0e0;border-radius:10px;height:8px;overflow:hidden;margin:6px 0}
@@ -676,6 +698,15 @@ var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
 var lastSystemQuery = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
+var systemSubmitTimer = null, systemSubmitProgress = 0, systemModalSubmitting = false;
+var SYSTEM_SUBMIT_MESSAGES = [
+  {pct:0, text:'檢查欄位資料'},
+  {pct:20, text:'整理系統清冊'},
+  {pct:40, text:'同步負責人資訊'},
+  {pct:60, text:'寫入試算表'},
+  {pct:80, text:'更新畫面資料'},
+  {pct:100, text:'完成作業'}
+];
 var LEVEL_ORDER = {'普':1,'中':2,'高':3};
 var RATING_STEPS = ['overview','confidentiality','integrity','availability','compliance','review'];
 var RATING_FIELDS = ['confidentiality','integrity','availability','compliance'];
@@ -2109,16 +2140,117 @@ function renderSystemFieldLabel(fieldKey) {
     '</label>';
 }
 
+function renderSystemSubmitProgress() {
+  var html = '<div id="system-submit-progress" class="system-submit-progress" aria-live="polite" aria-hidden="true">';
+  html += '<div class="system-submit-progress-head"><span id="system-submit-title">正在處理</span><span id="system-submit-percent">0%</span></div>';
+  html += '<div class="system-submit-track"><div id="system-submit-fill" class="system-submit-fill"></div></div>';
+  html += '<div id="system-submit-message" class="system-submit-message">檢查欄位資料</div>';
+  html += '</div>';
+  return html;
+}
+
 function openSystemModal(title, currentData, options) {
   options = options || {};
+  resetSystemSubmitProgress();
   activeSystemModalRequest = ++modalRequestSeq;
   var html = renderSystemModal(title, currentData, options);
-  html += options.extraActions || '';
-  html += '<button class="btn btn-outline" onclick="closeModal()">取消</button>';
-  html += '<button class="btn ' + escH(options.submitClass || 'btn-primary') + '" onclick="' + escH(options.submitAction || 'submitAddSystem()') + '">' + escH(options.submitLabel || '儲存') + '</button>';
-  html += '</div></div></div>';
+  html += '<div class="modal-action-left">' + (options.extraActions || '') + '</div>';
+  html += renderSystemSubmitProgress();
+  html += '<div class="modal-action-right">';
+  html += '<button id="system-modal-cancel-btn" class="btn btn-outline" onclick="closeModal()">取消</button>';
+  html += '<button id="system-modal-submit-btn" class="btn ' + escH(options.submitClass || 'btn-primary') + '" onclick="' + escH(options.submitAction || 'submitAddSystem()') + '">' + escH(options.submitLabel || '儲存') + '</button>';
+  html += '</div></div></div></div>';
   document.getElementById('modal-container').innerHTML=html;
   return activeSystemModalRequest;
+}
+
+function clearSystemSubmitTimer() {
+  if (systemSubmitTimer) {
+    clearInterval(systemSubmitTimer);
+    systemSubmitTimer = null;
+  }
+}
+
+function getSystemSubmitMessage(progress) {
+  var message = SYSTEM_SUBMIT_MESSAGES[0].text;
+  for (var i = 0; i < SYSTEM_SUBMIT_MESSAGES.length; i++) {
+    if (progress >= SYSTEM_SUBMIT_MESSAGES[i].pct) message = SYSTEM_SUBMIT_MESSAGES[i].text;
+  }
+  return message;
+}
+
+function updateSystemSubmitProgress(progress, state, message) {
+  var wrap = document.getElementById('system-submit-progress');
+  if (!wrap) return;
+  var pct = Math.max(0, Math.min(100, Math.round(progress || 0)));
+  var fill = document.getElementById('system-submit-fill');
+  var pctEl = document.getElementById('system-submit-percent');
+  var msgEl = document.getElementById('system-submit-message');
+  wrap.className = 'system-submit-progress active' + (state ? ' ' + state : '');
+  wrap.setAttribute('aria-hidden', 'false');
+  if (fill) fill.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (msgEl) msgEl.textContent = message || getSystemSubmitMessage(pct);
+}
+
+function setSystemModalBusy(isBusy) {
+  var modal = document.querySelector('#modal-container .modal');
+  if (!modal) return;
+  modal.classList.toggle('busy', !!isBusy);
+  var nodes = modal.querySelectorAll('.form-grid input,.form-grid select,.form-grid textarea,.modal-actions button');
+  for (var i = 0; i < nodes.length; i++) {
+    var el = nodes[i];
+    if (isBusy) {
+      if (!el.getAttribute('data-system-prev-disabled')) {
+        el.setAttribute('data-system-prev-disabled', el.disabled ? '1' : '0');
+      }
+      el.disabled = true;
+    } else {
+      var prev = el.getAttribute('data-system-prev-disabled');
+      if (prev) {
+        el.disabled = prev === '1';
+        el.removeAttribute('data-system-prev-disabled');
+      }
+    }
+  }
+}
+
+function startSystemSubmitProgress(mode) {
+  if (systemModalSubmitting) return false;
+  clearSystemSubmitTimer();
+  systemModalSubmitting = true;
+  systemSubmitProgress = 0;
+  setSystemModalBusy(true);
+  updateSystemSubmitProgress(0, '', mode === 'edit' ? '檢查更新內容' : '檢查欄位資料');
+  systemSubmitTimer = setInterval(function() {
+    if (systemSubmitProgress >= 90) return;
+    systemSubmitProgress = Math.min(90, systemSubmitProgress + 1.8);
+    updateSystemSubmitProgress(systemSubmitProgress, '', getSystemSubmitMessage(systemSubmitProgress));
+  }, 100);
+  return true;
+}
+
+function completeSystemSubmitProgress(success, message, callback) {
+  clearSystemSubmitTimer();
+  if (success) {
+    systemSubmitProgress = 100;
+    updateSystemSubmitProgress(100, 'done', message || '完成作業');
+    setTimeout(function() {
+      systemModalSubmitting = false;
+      setSystemModalBusy(false);
+      if (typeof callback === 'function') callback();
+    }, 280);
+    return;
+  }
+  updateSystemSubmitProgress(systemSubmitProgress || 0, 'error', message || '處理失敗，請修正後再試。');
+  systemModalSubmitting = false;
+  setSystemModalBusy(false);
+}
+
+function resetSystemSubmitProgress() {
+  clearSystemSubmitTimer();
+  systemSubmitProgress = 0;
+  systemModalSubmitting = false;
 }
 
 function requestHrEmployeesForModal(currentData, requestId) {
@@ -2192,7 +2324,7 @@ function openEditSystemModal() {
   modalData._hrWarning = '';
   modalData._ownerReadOnly = !canAssignOwner();
   var requestId = openSystemModal('編輯系統：'+(currentSystem['系統名稱'] || ''), modalData, {
-    extraActions: canDeleteSystems() ? '<button class="btn btn-danger" onclick="deleteCurrentSystem()" style="margin-right:auto">刪除系統</button>' : '',
+    extraActions: canDeleteSystems() ? '<button id="system-modal-delete-btn" class="btn btn-danger" onclick="deleteCurrentSystem()">刪除系統</button>' : '',
     submitAction: 'submitEditSystem()',
     submitLabel: '儲存'
   });
@@ -2210,32 +2342,57 @@ function getModalData() {
 }
 
 function submitAddSystem() {
+  if (systemModalSubmitting) return;
   var data = getModalData();
   if(!data['系統名稱']){showToast('請填寫系統名稱');return;}
+  if (!startSystemSubmitProgress('add')) return;
   google.script.run.withSuccessHandler(function(r){
-    if(r.success){showToast('系統已新增');closeModal();loadSystems({force:true,silent:systemsLoaded,preserveScroll:true});}
-  }).withFailureHandler(function(e){showToast('新增失敗：'+e.message);})
+    if(r.success){
+      completeSystemSubmitProgress(true, '完成作業', function(){
+        showToast('系統已新增');
+        closeModal(true);
+        loadSystems({force:true,silent:systemsLoaded,preserveScroll:true});
+      });
+    } else {
+      completeSystemSubmitProgress(false, '新增失敗，請稍後再試。');
+    }
+  }).withFailureHandler(function(e){
+    completeSystemSubmitProgress(false, '新增失敗：'+e.message);
+    showToast('新增失敗：'+e.message);
+  })
   .addSystem(data);
 }
 
 function submitEditSystem() {
+  if (systemModalSubmitting) return;
   var data = getModalData();
   data['系統ID'] = currentSystem['系統ID'];
+  if (!startSystemSubmitProgress('edit')) return;
   google.script.run.withSuccessHandler(function(r){
-    if(r.success){showToast('系統已更新');closeModal();
-      // Update local
-      Object.keys(data).forEach(function(k){currentSystem[k]=data[k];});
-      var ownerMatch = (hrEmployeeOptions || []).filter(function(person){
-        return String(person.email || '') === String(data['系統負責人'] || '');
-      })[0];
-      currentSystem._ownerDisplayName = ownerMatch ? (ownerMatch.name || ownerMatch.email) : (data['系統負責人'] || '');
-      openSystem(currentSystem['系統ID']);
+    if(r.success){
+      completeSystemSubmitProgress(true, '完成作業', function(){
+        showToast('系統已更新');
+        closeModal(true);
+        // Update local
+        Object.keys(data).forEach(function(k){currentSystem[k]=data[k];});
+        var ownerMatch = (hrEmployeeOptions || []).filter(function(person){
+          return String(person.email || '') === String(data['系統負責人'] || '');
+        })[0];
+        currentSystem._ownerDisplayName = ownerMatch ? (ownerMatch.name || ownerMatch.email) : (data['系統負責人'] || '');
+        openSystem(currentSystem['系統ID']);
+      });
+    } else {
+      completeSystemSubmitProgress(false, '更新失敗，請稍後再試。');
     }
-  }).withFailureHandler(function(e){showToast('更新失敗：'+e.message);})
+  }).withFailureHandler(function(e){
+    completeSystemSubmitProgress(false, '更新失敗：'+e.message);
+    showToast('更新失敗：'+e.message);
+  })
   .updateSystem(currentSystem._row, data);
 }
 
 function deleteCurrentSystem() {
+  if (systemModalSubmitting) { showToast('系統資料處理中，請稍候'); return; }
   if(!canDeleteSystems()){showToast('僅管理者可刪除系統');return;}
   if(!confirm('確定要刪除「'+currentSystem['系統名稱']+'」及其所有評估資料？此操作無法復原。')) return;
   google.script.run.withSuccessHandler(function(r){
@@ -2268,9 +2425,14 @@ function confirmPendingAction() {
   if (typeof action === 'function') action();
 }
 
-function closeModal() {
+function closeModal(force) {
+  if (systemModalSubmitting && !force) {
+    showToast('系統資料處理中，請稍候');
+    return;
+  }
   pendingConfirmAction = null;
   activeSystemModalRequest = 0;
+  resetSystemSubmitProgress();
   document.getElementById('modal-container').innerHTML='';
 }
 
