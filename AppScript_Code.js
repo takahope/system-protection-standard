@@ -1313,6 +1313,23 @@ function getSystems() {
   return systems;
 }
 
+function assertSystemOwnerHeader_(headers) {
+  var ownerIdx = headers.indexOf('系統負責人');
+  if (ownerIdx === -1) {
+    throw new Error('系統清冊缺少「系統負責人」欄位，請先至「系統設定」重新初始化表頭後再儲存。');
+  }
+  return ownerIdx;
+}
+
+function buildSystemRowObject_(headers, row, rowNum) {
+  var obj = {};
+  for (var i = 0; i < headers.length; i++) {
+    obj[headers[i]] = row[i] !== undefined ? row[i] : '';
+  }
+  obj._row = rowNum || '';
+  return obj;
+}
+
 function addSystem(systemData) {
   var status = assertCanCreateSystem_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1320,7 +1337,9 @@ function addSystem(systemData) {
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('系統清冊'); }
 
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  assertSystemOwnerHeader_(headers);
   var id = 'SYS_' + new Date().getTime();
+  var requestedOwner = systemData['系統負責人'] || '';
   systemData['系統ID'] = id;
   if (!status.canAssignOwner) {
     systemData['系統負責人'] = status.evaluator.email || '';
@@ -1328,7 +1347,18 @@ function addSystem(systemData) {
 
   var row = headers.map(function(h) { return systemData[h] || ''; });
   sheet.appendRow(row);
-  return {success: true, id: id};
+  SpreadsheetApp.flush();
+  var targetRow = sheet.getLastRow();
+  var persisted = buildSystemRowObject_(headers, row, targetRow);
+  return {
+    success: true,
+    id: id,
+    system: persisted,
+    persistedOwner: persisted['系統負責人'] || '',
+    canAssignOwner: status.canAssignOwner,
+    ownerChangeIgnored: !status.canAssignOwner && normalizeEmail_(requestedOwner) !== normalizeEmail_(persisted['系統負責人']),
+    message: !status.canAssignOwner ? '目前帳號不可指定系統負責人，已自動保留目前帳號。' : ''
+  };
 }
 
 function updateSystem(rowNum, systemData) {
@@ -1337,7 +1367,9 @@ function updateSystem(rowNum, systemData) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  assertSystemOwnerHeader_(headers);
   var targetRow = auth.system && auth.system._row ? auth.system._row : rowNum;
+  var requestedOwner = systemData['系統負責人'] || '';
   if (!auth.status.canAssignOwner) {
     systemData['系統負責人'] = auth.system['系統負責人'] || '';
   }
@@ -1347,7 +1379,16 @@ function updateSystem(rowNum, systemData) {
     return systemData[h] !== undefined ? systemData[h] : existingRow[idx];
   });
   sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
-  return {success: true};
+  SpreadsheetApp.flush();
+  var persisted = buildSystemRowObject_(headers, row, targetRow);
+  return {
+    success: true,
+    system: persisted,
+    persistedOwner: persisted['系統負責人'] || '',
+    canAssignOwner: auth.status.canAssignOwner,
+    ownerChangeIgnored: !auth.status.canAssignOwner && normalizeEmail_(requestedOwner) !== normalizeEmail_(persisted['系統負責人']),
+    message: !auth.status.canAssignOwner ? '目前帳號不可變更系統負責人，已保留原值。' : ''
+  };
 }
 
 // ===== 防護需求分級評估 =====

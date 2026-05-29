@@ -1371,6 +1371,23 @@ function loadSystems(opts) {
   }).getSystems();
 }
 
+function refreshSystemsAfterSystemSave(systemId, toastText) {
+  google.script.run.withSuccessHandler(function(data){
+    var systems = Array.isArray(data) ? data : [];
+    allSystems = systems;
+    systemsLoaded = true;
+    lastSystemsRefreshAt = formatRefreshTime(new Date());
+    renderSystems(getFilteredSystems());
+    renderGlobalStats(systems);
+    renderSystemRefreshHint('已更新 ' + lastSystemsRefreshAt, '');
+    if (systemId) openSystem(systemId);
+    if (toastText) showToast(toastText);
+  }).withFailureHandler(function(err){
+    showToast('已儲存，但重新載入資料失敗：' + err.message);
+    loadSystems({force:true,silent:systemsLoaded,preserveScroll:true});
+  }).getSystems();
+}
+
 function formatRefreshTime(date) {
   var hh = String(date.getHours());
   var mm = String(date.getMinutes());
@@ -2566,12 +2583,11 @@ function submitAddSystem() {
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
       completeSystemSubmitProgress(true, '完成作業', function(){
-        showToast('系統已新增');
         closeModal(true);
-        loadSystems({force:true,silent:systemsLoaded,preserveScroll:true});
+        refreshSystemsAfterSystemSave('', r.message || '系統已新增');
       });
     } else {
-      completeSystemSubmitProgress(false, '新增失敗，請稍後再試。');
+      completeSystemSubmitProgress(false, r.message || '新增失敗，請稍後再試。');
     }
   }).withFailureHandler(function(e){
     completeSystemSubmitProgress(false, '新增失敗：'+e.message);
@@ -2592,18 +2608,12 @@ function submitEditSystem() {
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
       completeSystemSubmitProgress(true, '完成作業', function(){
-        showToast('系統已更新');
+        var savedSystemId = currentSystem['系統ID'];
         closeModal(true);
-        // Update local
-        Object.keys(data).forEach(function(k){currentSystem[k]=data[k];});
-        var ownerMatch = (hrEmployeeOptions || []).filter(function(person){
-          return String(person.email || '') === String(data['系統負責人'] || '');
-        })[0];
-        currentSystem._ownerDisplayName = ownerMatch ? (ownerMatch.name || ownerMatch.email) : (data['系統負責人'] || '');
-        openSystem(currentSystem['系統ID']);
+        refreshSystemsAfterSystemSave(savedSystemId, r.message || '系統已更新');
       });
     } else {
-      completeSystemSubmitProgress(false, '更新失敗，請稍後再試。');
+      completeSystemSubmitProgress(false, r.message || '更新失敗，請稍後再試。');
     }
   }).withFailureHandler(function(e){
     completeSystemSubmitProgress(false, '更新失敗：'+e.message);
