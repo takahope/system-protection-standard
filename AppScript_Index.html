@@ -334,20 +334,15 @@
     .field-badge.auto{background:#e8f0fe;color:#174ea6}
     .modal .system-field textarea{min-height:42px}
     .modal .system-field textarea.low{min-height:42px}
-    .owner-picker{position:relative;display:grid;gap:8px}
-    .owner-selected{display:none;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:#eef6ff;border:1px solid #cfe0ff}
-    .owner-selected.active{display:flex}
-    .owner-selected strong{display:block;font-size:12px;color:#0f172a}
-    .owner-selected span{display:block;margin-top:2px;font-size:11px;color:#64748b}
-    .owner-change-btn{border:none;background:#fff;color:#174ea6;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer}
-    .owner-results{display:none;border:1px solid #d9e3f0;border-radius:14px;background:#fff;box-shadow:0 14px 32px rgba(15,23,42,.12);max-height:236px;overflow-y:auto}
-    .owner-results.active{display:block}
-    .owner-option{width:100%;border:none;background:#fff;text-align:left;padding:10px 12px;border-bottom:1px solid #edf2f7;cursor:pointer;font-family:inherit}
-    .owner-option:last-child{border-bottom:none}
-    .owner-option:hover{background:#f5f9ff}
-    .owner-option strong{display:block;font-size:12px;color:#0f172a}
-    .owner-option span{display:block;margin-top:2px;font-size:11px;color:#64748b}
-    .owner-empty{padding:12px;color:#64748b;font-size:12px;line-height:1.6}
+    .owner-input-wrap{display:grid;gap:8px}
+    .owner-input-row{position:relative}
+    .owner-input-row:after{content:'搜尋';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:800;letter-spacing:.08em;color:#174ea6;background:#eef6ff;border:1px solid #cfe0ff;border-radius:999px;padding:3px 7px;pointer-events:none}
+    .owner-input-row input{width:100%;padding-right:58px}
+    .owner-readonly-card{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:#eef6ff;border:1px solid #cfe0ff}
+    .owner-readonly-card strong{display:block;font-size:12px;color:#0f172a}
+    .owner-readonly-card span{display:block;margin-top:2px;font-size:11px;color:#64748b}
+    .owner-loading-input{background:#f8fafc;color:#64748b}
+    .owner-input-wrap datalist{display:none}
     .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
     .system-submit-progress{display:none;flex:1;min-width:220px;max-width:360px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#f7fbff 0%,#eef5ff 100%);border:1px solid #d6e5fb;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
@@ -2114,103 +2109,77 @@ function findHrOwnerByEmail(email) {
   return null;
 }
 
-function getOwnerSelectedHtml(email, fallbackLabel) {
-  var person = findHrOwnerByEmail(email);
-  var label = person ? (person.name || person.email) : (fallbackLabel || email || '尚未選擇');
-  var sub = person ? person.email : (email || '可稍後再指定系統負責人');
-  return '<div class="owner-selected' + (email ? ' active' : '') + '" id="owner-selected-card">' +
-    '<div><strong>' + escH(label) + '</strong><span>' + escH(sub) + '</span></div>' +
-    '<button type="button" class="owner-change-btn" onclick="clearHrOwnerSelection()">更換</button>' +
-    '</div>';
-}
-
-function buildHrOwnerCards(currentValue, keyword) {
-  var html = '';
-  var seen = {};
-  var shown = 0;
-  var kw = String(keyword || '').trim().toLowerCase();
-  (hrEmployeeOptions || []).forEach(function(person) {
-    if (shown >= 8) return;
-    var email = String(person.email || '');
-    if (!email || seen[email]) return;
+function findHrOwnerByLabel(value) {
+  var target = String(value || '').trim().toLowerCase();
+  if (!target) return null;
+  for (var i = 0; i < (hrEmployeeOptions || []).length; i++) {
+    var person = hrEmployeeOptions[i];
     var label = getHrOwnerOptionLabel(person);
-    var haystack = (label + ' ' + email + ' ' + String(person.name || '')).toLowerCase();
-    if (kw && haystack.indexOf(kw) === -1) return;
-    seen[email] = true;
-    shown++;
-    html += '<button type="button" class="owner-option" data-email="' + escH(email) + '" onclick="selectHrOwner(this.getAttribute(\'data-email\'))">';
-    html += '<strong>' + escH(person.name || email) + '</strong><span>' + escH(email) + '</span></button>';
+    if (String(label || '').toLowerCase() === target) return person;
+  }
+  return null;
+}
+
+function isEmailLike(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function resolveHrOwnerInput(value) {
+  var raw = String(value || '').trim();
+  if (!raw) return {value:'', matched:null, unresolved:false};
+  var byLabel = findHrOwnerByLabel(raw);
+  if (byLabel) return {value:byLabel.email || raw, matched:byLabel, unresolved:false};
+  var byEmail = findHrOwnerByEmail(raw);
+  if (byEmail) return {value:byEmail.email || raw, matched:byEmail, unresolved:false};
+  var emailMatch = raw.match(/[（(]([^()（）\s]+@[^()（）\s]+)[）)]/);
+  if (emailMatch) {
+    var email = emailMatch[1];
+    var matched = findHrOwnerByEmail(email);
+    return {value:matched ? matched.email : email, matched:matched, unresolved:!matched};
+  }
+  if (isEmailLike(raw)) return {value:raw.toLowerCase(), matched:null, unresolved:true};
+  return {value:raw, matched:null, unresolved:true};
+}
+
+function buildHrOwnerDatalist() {
+  var html = '<datalist id="modal-owner-list">';
+  var seen = {};
+  (hrEmployeeOptions || []).forEach(function(person) {
+    var label = getHrOwnerOptionLabel(person);
+    if (!label || seen[label]) return;
+    seen[label] = true;
+    html += '<option value="' + escH(label) + '"></option>';
   });
-  if (!html) {
-    html = '<div class="owner-empty">沒有符合的人員。請改用姓名或 email 關鍵字搜尋；若 HR 名單缺漏，可先儲存後稍後補齊。</div>';
-  }
+  html += '</datalist>';
   return html;
-}
-
-function filterHrOwnerOptions(formKey) {
-  var searchEl = document.getElementById('modal-' + formKey + '-search');
-  var resultsEl = document.getElementById('modal-' + formKey + '-results');
-  if (!searchEl || !resultsEl) return;
-  resultsEl.innerHTML = buildHrOwnerCards(document.getElementById('modal-' + formKey).value, searchEl.value || '');
-  resultsEl.classList.add('active');
-}
-
-function selectHrOwner(email) {
-  var input = document.getElementById('modal-owner');
-  var searchEl = document.getElementById('modal-owner-search');
-  var resultsEl = document.getElementById('modal-owner-results');
-  var selectedEl = document.getElementById('owner-selected-wrap');
-  if (input) input.value = email || '';
-  if (searchEl) searchEl.value = '';
-  if (resultsEl) resultsEl.classList.remove('active');
-  if (selectedEl) selectedEl.innerHTML = getOwnerSelectedHtml(email, '');
-}
-
-function clearHrOwnerSelection() {
-  var input = document.getElementById('modal-owner');
-  var searchEl = document.getElementById('modal-owner-search');
-  var resultsEl = document.getElementById('modal-owner-results');
-  var selectedEl = document.getElementById('owner-selected-wrap');
-  if (input) input.value = '';
-  if (searchEl) { searchEl.value = ''; searchEl.focus(); }
-  if (selectedEl) selectedEl.innerHTML = getOwnerSelectedHtml('', '');
-  if (resultsEl) {
-    resultsEl.innerHTML = buildHrOwnerCards('', '');
-    resultsEl.classList.add('active');
-  }
-}
-
-function handleHrOwnerChange(formKey) {
-  filterHrOwnerOptions(formKey);
 }
 
 function renderHrOwnerFieldContent(formKey, currentData, state) {
   var val = currentData && currentData['系統負責人'] !== undefined ? currentData['系統負責人'] : '';
   var selectedLabel = val ? getOwnerDisplayValue({_ownerDisplayName: currentData ? currentData._ownerDisplayName : '', '系統負責人': val}) : '';
+  var ownerPerson = findHrOwnerByEmail(val);
+  var displayValue = ownerPerson ? getHrOwnerOptionLabel(ownerPerson) : (selectedLabel || String(val || ''));
   var mode = state && state.mode ? state.mode : 'ready';
   var message = state && state.message ? state.message : '';
   var readOnly = !!(currentData && currentData._ownerReadOnly);
   var html = '';
   if (readOnly) {
     html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
-    html += '<div class="owner-selected active"><div><strong>' + escH(selectedLabel || String(val || '目前帳號')) + '</strong><span>' + escH(String(val || '系統會保留既有負責人')) + '</span></div></div>';
+    html += '<div class="owner-readonly-card"><div><strong>' + escH(displayValue || '目前帳號') + '</strong><span>' + escH(String(val || '系統會保留既有負責人')) + '</span></div></div>';
     html += '<div class="field-help">' + escH(message || '目前帳號不可調整系統負責人，儲存時會保留既有值。') + '</div>';
     return html;
   }
   if (mode === 'loading' || mode === 'error') {
     html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
-    html += getOwnerSelectedHtml(val, selectedLabel);
-    html += '<input type="text" id="modal-owner-search" value="" placeholder="' + escH(mode === 'loading' ? '正在載入人員名單...' : '人員名單載入失敗') + '" disabled>';
-    html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可搜尋選取。' : '目前無法更新人員名單，若不調整此欄位，儲存時會保留原值。')) + '</div>';
+    html += '<input type="text" class="owner-loading-input" value="' + escH(displayValue) + '" placeholder="' + escH(mode === 'loading' ? '正在載入人員名單...' : '人員名單載入失敗') + '" disabled>';
+    html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可輸入姓名或 email 搜尋。' : '目前無法更新人員名單，若不調整此欄位，儲存時會保留原值。')) + '</div>';
     return html;
   }
-  html += '<div class="owner-picker">';
-  html += '<input type="hidden" id="modal-owner" value="' + escH(String(val || '')) + '">';
-  html += '<div id="owner-selected-wrap">' + getOwnerSelectedHtml(val, selectedLabel) + '</div>';
-  html += "<input type=\"text\" id=\"modal-owner-search\" value=\"\" placeholder=\"搜尋姓名或 email，從在勤人員中選取\" onfocus=\"filterHrOwnerOptions('owner')\" oninput=\"filterHrOwnerOptions('owner')\">";
-  html += '<div id="modal-owner-results" class="owner-results">' + buildHrOwnerCards(val, '') + '</div>';
+  html += '<div class="owner-input-wrap">';
+  html += '<div class="owner-input-row"><input type="text" id="modal-owner" list="modal-owner-list" value="' + escH(displayValue) + '" placeholder="輸入姓名或 email，或從候選名單選取" autocomplete="off"></div>';
+  html += buildHrOwnerDatalist();
   html += '</div>';
-  html += '<div class="field-help">' + escH(message || '可先不指定，稍後再回來補齊；實際儲存值為 email。') + '</div>';
+  html += '<div class="field-help">' + escH(message || '可輸入姓名或 email 搜尋；建議選擇候選名單中的人員，系統會優先保存 email。') + '</div>';
   return html;
 }
 
@@ -2575,7 +2544,14 @@ function getModalData() {
   var data = {};
   fields.forEach(function(f){
     var el = document.getElementById('modal-'+f.formKey);
-    if(el) data[f.key] = el.value;
+    if(!el) return;
+    if (f.key === '系統負責人' && f.type === 'hr_select') {
+      var resolved = resolveHrOwnerInput(el.value);
+      data[f.key] = resolved.value;
+      data._ownerInputUnresolved = !!resolved.unresolved && !!resolved.value;
+    } else {
+      data[f.key] = el.value;
+    }
   });
   return data;
 }
@@ -2583,6 +2559,8 @@ function getModalData() {
 function submitAddSystem() {
   if (systemModalSubmitting) return;
   var data = getModalData();
+  if (data._ownerInputUnresolved) showToast('系統負責人尚未對應人員主檔，請稍後確認');
+  delete data._ownerInputUnresolved;
   var missing = getIncompleteRecommendedFields(data);
   if (missing.length) showToast('尚有 ' + missing.length + ' 項資料待補齊，可稍後回來完成');
   if (!startSystemSubmitProgress('add')) return;
@@ -2607,6 +2585,8 @@ function submitEditSystem() {
   if (systemModalSubmitting) return;
   var data = getModalData();
   data['系統ID'] = currentSystem['系統ID'];
+  if (data._ownerInputUnresolved) showToast('系統負責人尚未對應人員主檔，請稍後確認');
+  delete data._ownerInputUnresolved;
   var missing = getIncompleteRecommendedFields(data);
   if (missing.length) showToast('尚有 ' + missing.length + ' 項資料待補齊，可稍後回來完成');
   if (!startSystemSubmitProgress('edit')) return;
