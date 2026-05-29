@@ -345,19 +345,20 @@
     .owner-input-wrap datalist{display:none}
     .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-    .system-submit-progress{display:none;flex:1;align-items:center;gap:12px;min-width:280px;max-width:460px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9)}
+    .system-submit-progress{display:none;flex:1;flex-direction:column;align-items:stretch;gap:7px;min-width:280px;max-width:460px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9)}
     .system-submit-progress.active{display:flex}
     .system-submit-progress.error{background:#fff7f5;border-color:#f4c7c3;box-shadow:0 10px 24px rgba(217,48,37,.08)}
     .system-submit-progress.done{background:#f3fbf6;border-color:#c6ead5;box-shadow:0 10px 24px rgba(13,144,79,.08)}
-    .system-submit-copy{flex:1;min-width:0}
-    .system-submit-progress-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;font-size:11px;font-weight:800;color:#174ea6;letter-spacing:.02em}
+    .system-submit-copy{display:flex;flex-direction:column;gap:7px;min-width:0}
+    .system-submit-progress-head{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;color:#174ea6;letter-spacing:.02em}
     .system-submit-status-dot{width:8px;height:8px;border-radius:999px;background:#1a73e8;box-shadow:0 0 0 4px rgba(26,115,232,.12)}
-    .system-submit-percent{margin-left:auto;font-variant-numeric:tabular-nums;color:#174ea6}
+    .system-submit-bar-row{display:flex;align-items:center;gap:8px;width:100%}
+    .system-submit-percent{min-width:36px;text-align:right;font-variant-numeric:tabular-nums;color:#174ea6;font-size:11px;font-weight:800}
     .system-submit-progress.error .system-submit-progress-head,.system-submit-progress.error .system-submit-percent{color:var(--danger)}
     .system-submit-progress.error .system-submit-status-dot{background:var(--danger);box-shadow:0 0 0 4px rgba(217,48,37,.12)}
     .system-submit-progress.done .system-submit-progress-head,.system-submit-progress.done .system-submit-percent{color:var(--success)}
     .system-submit-progress.done .system-submit-status-dot{background:var(--success);box-shadow:0 0 0 4px rgba(13,144,79,.12)}
-    .system-submit-track{position:relative;width:118px;height:6px;border-radius:999px;overflow:hidden;background:#dfe8f7;flex-shrink:0}
+    .system-submit-track{position:relative;flex:1;width:100%;height:6px;border-radius:999px;overflow:hidden;background:#dfe8f7;min-width:0}
     .system-submit-fill{position:relative;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#1a73e8 0%,#4f9af7 56%,#9cc6ff 100%);box-shadow:0 0 14px rgba(26,115,232,.28);transition:width .18s ease}
     .system-submit-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.75) 50%,transparent 100%);transform:translateX(-100%);animation:submitShimmer 1.2s ease-in-out infinite}
     .system-submit-progress.error .system-submit-fill{background:linear-gradient(90deg,#d93025 0%,#f06d64 100%);box-shadow:0 0 14px rgba(217,48,37,.22)}
@@ -2286,9 +2287,9 @@ function renderSystemFieldLabel(fieldKey) {
 
 function renderSystemSubmitProgress() {
   var html = '<div id="system-submit-progress" class="system-submit-progress" aria-live="polite" aria-hidden="true">';
-  html += '<div class="system-submit-copy"><div class="system-submit-progress-head"><span class="system-submit-status-dot"></span><span id="system-submit-title">處理中</span><span id="system-submit-percent" class="system-submit-percent">0%</span></div>';
+  html += '<div class="system-submit-copy"><div class="system-submit-progress-head"><span class="system-submit-status-dot"></span><span id="system-submit-title">處理中</span></div>';
+  html += '<div class="system-submit-bar-row"><div class="system-submit-track"><div id="system-submit-fill" class="system-submit-fill"></div></div><span id="system-submit-percent" class="system-submit-percent">0%</span></div>';
   html += '<div id="system-submit-message" class="system-submit-message">準備作業</div></div>';
-  html += '<div class="system-submit-track"><div id="system-submit-fill" class="system-submit-fill"></div></div>';
   html += '</div>';
   return html;
 }
@@ -2462,7 +2463,7 @@ function renderSystemModalHeader(title, currentData) {
   var html = '<div class="system-modal-head">';
   html += '<div class="system-modal-title-row"><div class="system-modal-title-copy"><h2>' + escH(title) + '</h2>';
   html += '<div class="system-modal-subtitle">先保存已掌握的資訊即可；未完成欄位會持續提醒，方便分次補齊。</div></div>';
-  html += '<div class="system-modal-status-group"><div class="system-modal-reminder">必填項目不影響新增或儲存，可漸進式的更新資料</div>';
+  html += '<div class="system-modal-status-group"><div class="system-modal-reminder">可隨時更新資料，必填不影響儲存或新增</div>';
   html += '<div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div></div>';
   html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div></div></div>';
   html += '<input type="hidden" id="modal-level" value="' + escH(String(currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '')) + '">';
