@@ -230,7 +230,9 @@ var DASHBOARD_SNAPSHOT_SHEET = '儀表板快照';
 var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type', 'rule_value', 'description', 'enabled', 'sort_order'];
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
 var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
-var SYSTEM_COLUMNS = [
+function getSystemColumns_() {
+  assertSystemColumnConstantsReady_();
+  return [
   {key:'系統ID', label:'系統ID', column:SYSTEM_ID_COLUMN},
   {key:'資產編號', label:'資產編號', column:SYSTEM_ASSET_NO_COLUMN},
   {key:'系統名稱', label:'系統名稱', column:SYSTEM_NAME_COLUMN},
@@ -268,18 +270,42 @@ var SYSTEM_COLUMNS = [
   {key:'備註', label:'備註', column:SYSTEM_NOTE_COLUMN},
   {key:'提供之服務，是否含有人工智慧', label:'提供之服務，是否含有人工智慧', column:SYSTEM_AI_SERVICE_COLUMN},
   {key:'系統負責人', label:'系統負責人', column:SYSTEM_OWNER_COLUMN}
-];
+  ];
+}
+
+function getSystemColumnConstantDebug_() {
+  return {
+    SYSTEM_ID_COLUMN: {exists: typeof SYSTEM_ID_COLUMN !== 'undefined', value: typeof SYSTEM_ID_COLUMN !== 'undefined' ? SYSTEM_ID_COLUMN : ''},
+    SYSTEM_NAME_COLUMN: {exists: typeof SYSTEM_NAME_COLUMN !== 'undefined', value: typeof SYSTEM_NAME_COLUMN !== 'undefined' ? SYSTEM_NAME_COLUMN : ''},
+    SYSTEM_LEVEL_COLUMN: {exists: typeof SYSTEM_LEVEL_COLUMN !== 'undefined', value: typeof SYSTEM_LEVEL_COLUMN !== 'undefined' ? SYSTEM_LEVEL_COLUMN : ''},
+    SYSTEM_COMPLIANCE_STATUS_COLUMN: {exists: typeof SYSTEM_COMPLIANCE_STATUS_COLUMN !== 'undefined', value: typeof SYSTEM_COMPLIANCE_STATUS_COLUMN !== 'undefined' ? SYSTEM_COMPLIANCE_STATUS_COLUMN : ''},
+    SYSTEM_NON_COMPLIANCE_CODES_COLUMN: {exists: typeof SYSTEM_NON_COMPLIANCE_CODES_COLUMN !== 'undefined', value: typeof SYSTEM_NON_COMPLIANCE_CODES_COLUMN !== 'undefined' ? SYSTEM_NON_COMPLIANCE_CODES_COLUMN : ''},
+    SYSTEM_OWNER_COLUMN: {exists: typeof SYSTEM_OWNER_COLUMN !== 'undefined', value: typeof SYSTEM_OWNER_COLUMN !== 'undefined' ? SYSTEM_OWNER_COLUMN : ''}
+  };
+}
+
+function assertSystemColumnConstantsReady_() {
+  var debug = getSystemColumnConstantDebug_();
+  var missing = [];
+  for (var name in debug) {
+    if (!debug.hasOwnProperty(name)) continue;
+    if (!debug[name].exists || typeof debug[name].value !== 'number' || debug[name].value < 1) missing.push(name);
+  }
+  if (missing.length) {
+    throw new Error('系統清冊欄位常數未正確載入，請確認 env.js 已同步部署：' + missing.join(', '));
+  }
+}
 
 function getSystemMaxColumnNumber_() {
   var maxColumn = 0;
-  SYSTEM_COLUMNS.forEach(function(col) {
+  getSystemColumns_().forEach(function(col) {
     if (col.column > maxColumn) maxColumn = col.column;
   });
   return maxColumn;
 }
 
 function getSystemColumnsByPosition_() {
-  return SYSTEM_COLUMNS.slice().sort(function(a, b) { return a.column - b.column; });
+  return getSystemColumns_().slice().sort(function(a, b) { return a.column - b.column; });
 }
 
 function getSystemHeaders_() {
@@ -291,8 +317,9 @@ function getSystemHeaders_() {
 }
 
 function getSystemColumnDefinition_(key) {
-  for (var i = 0; i < SYSTEM_COLUMNS.length; i++) {
-    if (SYSTEM_COLUMNS[i].key === key) return SYSTEM_COLUMNS[i];
+  var columns = getSystemColumns_();
+  for (var i = 0; i < columns.length; i++) {
+    if (columns[i].key === key) return columns[i];
   }
   throw new Error('找不到系統清冊欄位定義：' + key);
 }
@@ -318,7 +345,7 @@ function getSystemRowValue_(row, key) {
 
 function mapSystemRowToObject_(row, rowNum) {
   var obj = {};
-  SYSTEM_COLUMNS.forEach(function(col) {
+  getSystemColumns_().forEach(function(col) {
     var idx = col.column - 1;
     obj[col.key] = row && row[idx] !== undefined ? row[idx] : '';
   });
@@ -333,7 +360,7 @@ function buildSystemRowFromData_(systemData, existingRow) {
   for (var i = 0; i < getSystemMaxColumnNumber_(); i++) {
     row[i] = existingRow[i] !== undefined ? existingRow[i] : '';
   }
-  SYSTEM_COLUMNS.forEach(function(col) {
+  getSystemColumns_().forEach(function(col) {
     var idx = col.column - 1;
     if (systemData[col.key] !== undefined) row[idx] = systemData[col.key];
   });
@@ -344,6 +371,58 @@ function getLegacySystemValue_(source, row, key) {
   var idx = getSystemColumnIndex_(key);
   if (source && source[key] !== undefined) return source[key];
   return row && row[idx] !== undefined ? row[idx] : '';
+}
+
+function debugGetSystemData() {
+  var result = {
+    spreadsheet: null,
+    systemColumnConstants: getSystemColumnConstantDebug_(),
+    systemColumnConstantsReady: false,
+    systemMaxColumn: 0,
+    systemSheetExists: false,
+    lastRow: 0,
+    lastColumn: 0,
+    dataRowCount: 0,
+    headers: [],
+    sampleRow: [],
+    sampleMapped: null,
+    error: ''
+  };
+
+  try {
+    assertSystemColumnConstantsReady_();
+    result.systemColumnConstantsReady = true;
+    result.systemMaxColumn = getSystemMaxColumnNumber_();
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) {
+      result.error = 'SpreadsheetApp.getActiveSpreadsheet() 取不到試算表，請確認 Web App 是否綁定在正確的 Google Sheet。';
+      return result;
+    }
+
+    result.spreadsheet = {
+      id: ss.getId(),
+      name: ss.getName(),
+      url: ss.getUrl()
+    };
+
+    var sheet = ss.getSheetByName('系統清冊');
+    result.systemSheetExists = !!sheet;
+    if (!sheet) return result;
+
+    result.lastRow = sheet.getLastRow();
+    result.lastColumn = sheet.getLastColumn();
+    result.dataRowCount = Math.max(result.lastRow - 1, 0);
+    if (result.lastColumn > 0) result.headers = sheet.getRange(1, 1, 1, result.lastColumn).getDisplayValues()[0];
+    if (result.lastRow > 1 && result.lastColumn > 0) {
+      result.sampleRow = sheet.getRange(2, 1, 1, result.lastColumn).getDisplayValues()[0];
+      result.sampleMapped = mapSystemRowToObject_(result.sampleRow, 2);
+    }
+  } catch (err) {
+    result.error = err && err.message ? err.message : String(err);
+  }
+
+  return result;
 }
 
 function getDefaultRuleDefinitions_() {
