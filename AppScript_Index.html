@@ -156,6 +156,7 @@
     .rating-signal{font-size:12px;color:#475467}
     .rating-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
     .rating-field label{display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px}
+    .rating-form-grid .rating-field.full{grid-column:1/-1}
     .rating-field textarea,.rating-field input{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;font-family:inherit}
     .rating-field textarea{min-height:96px;resize:vertical}
     .rating-warning{margin-top:12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px}
@@ -687,7 +688,7 @@
             <div class="rating-hero">
               <div>
                 <h2>防護需求分級評估</h2>
-                <p>依附表九以四個構面逐步評估衝擊程度，系統先依既有清冊資料提供建議，再由評估人員覆核與補充理由，最終等級取四構面最高者。</p>
+                <p>依附表九以四個構面逐步評估衝擊程度，系統先依既有清冊資料提供建議，再由評估人員選擇最符合的情境並補充說明，最終等級取四構面最高者。</p>
               </div>
               <div class="wizard-summary-badge">
                 <span class="small">目前預估總等級</span>
@@ -698,7 +699,7 @@
             <div class="wizard-panel" id="rating-panel"></div>
             <div class="wizard-actions">
               <div class="left">
-                <button class="btn btn-outline" onclick="prevRatingStep()">上一步</button>
+                <button class="btn btn-outline" id="rating-prev-btn" onclick="prevRatingStep()">上一步</button>
                 <span class="rating-inline-note" id="rating-step-note"></span>
               </div>
               <div class="right">
@@ -706,7 +707,7 @@
                   <label>評估人員</label>
                   <input type="text" id="rating-assessor" readonly>
                 </div>
-                <button class="btn btn-outline" onclick="nextRatingStep()">下一步</button>
+                <button class="btn btn-outline" id="rating-next-btn" onclick="nextRatingStep()">下一步</button>
                 <button class="btn btn-primary hidden" id="rating-save-btn" onclick="submitRating()">儲存評估結果</button>
               </div>
             </div>
@@ -1823,7 +1824,7 @@ function renderRatingPanel() {
 
 function renderRatingOverview() {
   var html = '<h3>附表九評估導覽</h3>';
-  html += '<p>請依四個構面逐步判斷衝擊程度。系統會先依清冊資料提供建議，你可以視需要補充評估說明或覆核理由，協助後續追蹤與溝通。</p>';
+  html += '<p>請依四個構面逐步判斷衝擊程度。系統會先依清冊資料提供建議，你可以點選情境卡片作為人工判定，並視需要補充評估說明。</p>';
   html += '<div class="rating-result-card">';
   RATING_FIELDS.forEach(function(field) {
     var detail = ratingState.details[field];
@@ -1843,7 +1844,7 @@ function renderRatingDimensionStep(field) {
   var detail = ratingState.details[field];
   var readOnly = !canEditCurrentSystem();
   var html = '<h3>' + escH(detail.label) + '</h3>';
-  html += '<p>請選擇最符合附表九描述的衝擊情境；若需要保留脈絡，可再補充本系統的判斷理由。</p>';
+  html += '<p>請直接點選最符合附表九描述的衝擊情境；系統會同步帶入人工最終判定，必要時再補充評估說明。</p>';
   html += '<div class="scenario-grid">';
   (detail.scenarioOptions || []).forEach(function(opt) {
     var cls = getLevelClass(opt.level);
@@ -1865,26 +1866,23 @@ function renderRatingDimensionStep(field) {
     html += '<option value="' + level + '"' + (detail.selectedLevel === level ? ' selected' : '') + '>' + level + '</option>';
   });
   html += '</select></div>';
-  html += '<div class="rating-field"><label>附表九情境等級</label><input type="text" value="' + escH(detail.scenarioLevel || '') + '" readonly></div>';
-  html += '<div class="rating-field"><label>評估說明（選填）</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="可補充本構面為何判定為此等級。" ' + (readOnly ? 'disabled' : '') + '>' + escH(detail.note || '') + '</textarea></div>';
-  html += '<div class="rating-field"><label>覆核理由（選填）</label><textarea id="rating-override-' + field + '" oninput="updateRatingText(\'' + field + '\',\'overrideReason\',this.value)" placeholder="若人工判定低於系統建議，可補充覆核原因。" ' + (readOnly ? 'disabled' : '') + '>' + escH(detail.overrideReason || '') + '</textarea></div>';
+  html += '<div class="rating-field full"><label>評估說明（選填）</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="可補充本構面為何判定為此等級。" ' + (readOnly ? 'disabled' : '') + '>' + escH(detail.note || '') + '</textarea></div>';
   html += '</div>';
   if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1)) {
-    html += '<div class="rating-warning">人工判定低於系統建議。若需要保留判斷脈絡，可補充覆核理由。</div>';
+    html += '<div class="rating-warning">人工判定低於系統建議。若需要保留判斷脈絡，可在評估說明補充原因。</div>';
   }
   return html;
 }
 
 function renderRatingReview() {
-  var html = '<h3>結果確認</h3><p>請確認四個構面的人工判定與系統建議是否正確。評估說明與覆核理由可視需要保留。最終防護需求等級取四構面最高者。</p>';
-  html += '<table class="rating-matrix"><thead><tr><th>構面</th><th>系統建議</th><th>人工判定</th><th>評估說明</th><th>覆核理由</th></tr></thead><tbody>';
+  var html = '<h3>結果確認</h3><p>請確認四個構面的人工判定與系統建議是否正確。評估說明可視需要保留。最終防護需求等級取四構面最高者。</p>';
+  html += '<table class="rating-matrix"><thead><tr><th>構面</th><th>系統建議</th><th>人工判定</th><th>評估說明</th></tr></thead><tbody>';
   RATING_FIELDS.forEach(function(field) {
     var detail = ratingState.details[field];
     html += '<tr><td><strong>' + escH(detail.label) + '</strong></td>';
     html += '<td><span class="sys-badge ' + getLevelClass(detail.recommendedLevel) + '">' + escH(detail.recommendedLevel) + '</span></td>';
     html += '<td><span class="sys-badge ' + getLevelClass(detail.selectedLevel) + '">' + escH(detail.selectedLevel) + '</span></td>';
-    html += '<td>' + escH(detail.note || '-') + '</td>';
-    html += '<td>' + escH(detail.overrideReason || '-') + '</td></tr>';
+    html += '<td>' + escH(detail.note || '-') + '</td></tr>';
   });
   html += '</tbody></table>';
   html += '<div style="margin-top:14px">最終防護需求等級：<span class="result-badge ' + getLevelClass(ratingState.finalLevel) + '">' + escH(ratingState.finalLevel) + '</span></div>';
@@ -1912,12 +1910,17 @@ function renderRatingStatus() {
 }
 
 function updateRatingSaveButtonState() {
-  var btn = document.getElementById('rating-save-btn');
-  if (!btn) return;
-  var canSave = !!ratingState && ratingState.step === RATING_STEPS.length - 1 && canEditCurrentSystem() && !ratingSaving;
-  btn.classList.toggle('hidden', !canEditCurrentSystem());
-  btn.disabled = !canSave;
-  btn.title = canSave ? '' : '請先進入第 6 步「結果確認」後再儲存評估結果';
+  var saveBtn = document.getElementById('rating-save-btn');
+  var prevBtn = document.getElementById('rating-prev-btn');
+  var nextBtn = document.getElementById('rating-next-btn');
+  var isReviewStep = !!ratingState && ratingState.step === RATING_STEPS.length - 1;
+  if (prevBtn) prevBtn.classList.toggle('hidden', !ratingState || ratingState.step === 0);
+  if (nextBtn) nextBtn.classList.toggle('hidden', !ratingState || isReviewStep);
+  if (!saveBtn) return;
+  var showSave = isReviewStep && canEditCurrentSystem();
+  saveBtn.classList.toggle('hidden', !showSave);
+  saveBtn.disabled = !showSave || ratingSaving;
+  saveBtn.title = showSave ? '' : '請先進入第 6 步「結果確認」後再儲存評估結果';
 }
 
 function renderRatingSaveProgressPanel() {
@@ -1990,7 +1993,7 @@ function resetRatingSaveProgress() {
 
 function chooseScenario(field, level) {
   ratingState.details[field].scenarioLevel = level;
-  if (!ratingState.details[field].selectedLevel) ratingState.details[field].selectedLevel = level;
+  ratingState.details[field].selectedLevel = level;
   renderRatingWizard();
 }
 
