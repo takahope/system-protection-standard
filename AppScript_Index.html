@@ -291,16 +291,18 @@
     .modal .field-help{font-size:11px;color:var(--text2);line-height:1.5}
     .modal .hr-owner-select{min-height:140px}
     .system-modal-head{padding:22px 24px 18px;background:radial-gradient(circle at top right,#e9f3ff 0%,rgba(233,243,255,0) 46%),linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);border-bottom:1px solid #e3ebf6}
-    .system-modal-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .system-modal-title-row{display:flex;justify-content:space-between;align-items:stretch;gap:18px}
+    .system-modal-title-copy{flex:1;min-width:0}
     .system-modal-title-row h2{margin:0;font-size:18px;line-height:1.4;color:#0f172a}
     .system-modal-subtitle{margin-top:6px;font-size:12px;line-height:1.7;color:#64748b}
-    .system-modal-completeness{flex-shrink:0;min-width:180px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid #d9e6f7;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .system-modal-status-group{display:flex;align-items:stretch;justify-content:flex-end;gap:8px;flex-shrink:0}
+    .system-modal-completeness{display:flex;flex-direction:column;justify-content:center;flex-shrink:0;min-width:150px;min-height:64px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid #d9e6f7;box-shadow:0 10px 24px rgba(15,23,42,.06);box-sizing:border-box}
     .system-modal-completeness .num{font-size:24px;font-weight:900;line-height:1;color:#174ea6}
-    .system-modal-completeness .label{margin-top:4px;font-size:11px;font-weight:700;color:#475467}
+    .system-modal-completeness .label{margin-top:4px;font-size:11px;font-weight:700;color:#475467;white-space:nowrap}
     .system-modal-completeness.ok .num{color:var(--success)}
     .system-modal-reminder{margin-top:14px;padding:11px 13px;border-radius:14px;background:#fff8e8;border:1px solid #f7d79a;color:#8a5100;font-size:12px;line-height:1.7}
     .system-modal-reminder.ok{background:#edf9f0;border-color:#b7e0c0;color:#0d6b3d}
-    .system-auto-card{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#eef6ff 0%,#f8fbff 100%);color:#0f172a;border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08)}
+    .system-auto-card{display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:150px;min-height:64px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#eef6ff 0%,#f8fbff 100%);color:#0f172a;border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08);box-sizing:border-box}
     .system-auto-card label{display:block;font-size:10px;color:#64748b;margin-bottom:4px}
     .system-auto-card strong{font-size:15px;color:#174ea6}
     .system-auto-card span{font-size:11px;color:#475467;line-height:1.5}
@@ -363,7 +365,8 @@
       .system-field.compact,.system-field.medium,.system-field.wide,.system-field[class*='span-']{grid-column:span 6}
       .system-field.span-8,.system-field.span-9,.system-field.span-10,.system-field.span-11,.system-field.span-12{grid-column:1/-1}
       .system-modal-title-row{flex-direction:column}
-      .system-modal-completeness{width:100%}
+      .system-modal-status-group{width:100%}
+      .system-auto-card,.system-modal-completeness{flex:1;min-width:0;width:auto}
     }
     @media (max-width:720px){
       .modal{width:96vw;max-height:92vh}
@@ -2444,14 +2447,14 @@ function renderSystemModalHeader(title, currentData) {
   var missing = getIncompleteRecommendedFields(currentData || {});
   var level = currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '尚未評估';
   var html = '<div class="system-modal-head">';
-  html += '<div class="system-modal-title-row"><div><h2>' + escH(title) + '</h2>';
+  html += '<div class="system-modal-title-row"><div class="system-modal-title-copy"><h2>' + escH(title) + '</h2>';
   html += '<div class="system-modal-subtitle">先保存已掌握的資訊即可；未完成欄位會持續提醒，方便分次補齊。</div></div>';
-  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div></div>';
+  html += '<div class="system-modal-status-group"><div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div></div>';
+  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div></div></div>';
   html += '<div class="system-modal-reminder' + (missing.length ? '' : ' ok') + '">';
   html += missing.length ? ('尚有 ' + missing.length + ' 項必填資料待補，但不影響本次新增或儲存。') : '目前必填欄位都已填寫。';
   html += '</div>';
   html += '<input type="hidden" id="modal-level" value="' + escH(String(currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '')) + '">';
-  html += '<div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div><span>此欄位由分級評估流程自動更新，不需在系統資料表單中手動填寫。</span></div>';
   html += '</div>';
   return html;
 }
