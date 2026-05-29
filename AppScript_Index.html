@@ -121,12 +121,6 @@
     .rating-chip.mid{background:#fef7e0;color:var(--warning)}
     .rating-chip.low{background:#e6f4ea;color:var(--success)}
     .rating-main{display:grid;gap:14px}
-    .rating-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px;border-radius:16px;background:radial-gradient(circle at top left,#fff 0%,#f7f9fc 60%,#eef2f7 100%);border:1px solid #e4e8ee}
-    .rating-hero h2{font-size:18px;margin:0 0 8px}
-    .rating-hero p{font-size:12px;color:var(--text2);line-height:1.7;margin:0}
-    .wizard-summary-badge{background:#101828;color:#fff;border-radius:14px;padding:12px 14px;min-width:140px}
-    .wizard-summary-badge .small{display:block;font-size:10px;opacity:.7;margin-bottom:6px}
-    .wizard-summary-badge .big{font-size:30px;font-weight:800;line-height:1}
     .wizard-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
     .wizard-step{padding:10px 12px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--text2);cursor:pointer;text-align:left}
     .wizard-step.active{border-color:var(--primary);background:#edf4ff;color:var(--primary)}
@@ -152,6 +146,10 @@
     .rating-recommend{margin-top:14px;padding:12px 14px;border-radius:14px;background:#f8fafc;border:1px solid #dbe2ea}
     .rating-recommend .headline{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
     .rating-recommend .headline strong{font-size:12px}
+    .rating-recommend-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    .rating-recommend-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:#fff;border:1px solid #e5eaf2}
+    .rating-recommend-item strong{font-size:12px;color:#0f172a}
+    .rating-recommend-copy{font-size:12px;line-height:1.7;color:#64748b;margin:0 0 10px}
     .rating-signal-list{display:grid;gap:6px;margin-top:8px}
     .rating-signal{font-size:12px;color:#475467}
     .rating-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
@@ -197,7 +195,6 @@
       .rating-wizard{grid-template-columns:1fr}
       .wizard-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
       .scenario-grid,.rating-form-grid{grid-template-columns:1fr}
-      .rating-hero{flex-direction:column}
       .topbar{padding:12px 16px;gap:12px}
       .topbar-user-card{max-width:240px;padding:8px 10px}
       .topbar-user-email{display:none}
@@ -685,16 +682,6 @@
             <div class="rating-chip-list" id="rating-risk-chips"></div>
           </aside>
           <div class="rating-main">
-            <div class="rating-hero">
-              <div>
-                <h2>防護需求分級評估</h2>
-                <p>依附表九以四個構面逐步評估衝擊程度，系統先依既有清冊資料提供建議，再由評估人員選擇最符合的情境並補充說明，最終等級取四構面最高者。</p>
-              </div>
-              <div class="wizard-summary-badge">
-                <span class="small">目前預估總等級</span>
-                <div class="big" id="rating-overall-level">普</div>
-              </div>
-            </div>
             <div class="wizard-steps" id="rating-steps"></div>
             <div class="wizard-panel" id="rating-panel"></div>
             <div class="wizard-actions">
@@ -1792,8 +1779,7 @@ function getLevelClass(level) {
 
 function renderRatingWizard() {
   if (!ratingState) return;
-  var overall = computeOverallRatingLevel();
-  document.getElementById('rating-overall-level').textContent = overall;
+  computeOverallRatingLevel();
   renderRatingSteps();
   renderRatingPanel();
   renderRatingStatus();
@@ -1844,7 +1830,6 @@ function renderRatingDimensionStep(field) {
   var detail = ratingState.details[field];
   var readOnly = !canEditCurrentSystem();
   var html = '<h3>' + escH(detail.label) + '</h3>';
-  html += '<p>請直接點選最符合附表九描述的衝擊情境；系統會同步帶入人工最終判定，必要時再補充評估說明。</p>';
   html += '<div class="scenario-grid">';
   (detail.scenarioOptions || []).forEach(function(opt) {
     var cls = getLevelClass(opt.level);
@@ -1856,16 +1841,15 @@ function renderRatingDimensionStep(field) {
   });
   html += '</div>';
   html += '<div class="rating-recommend">';
-  html += '<div class="headline"><strong>系統建議等級</strong><span class="sys-badge ' + getLevelClass(detail.recommendedLevel) + '">' + escH(detail.recommendedLevel) + '</span></div>';
+  html += '<p class="rating-recommend-copy">依附表九以四個構面逐步評估衝擊程度，系統先依既有清冊資料提供建議，再由評估人員選擇最符合的情境並補充說明，最終等級取四構面最高者。</p>';
+  html += '<div class="rating-recommend-row">';
+  html += '<div class="rating-recommend-item"><strong>系統建議等級</strong><span class="sys-badge ' + getLevelClass(detail.recommendedLevel) + '">' + escH(detail.recommendedLevel) + '</span></div>';
+  html += '<div class="rating-recommend-item"><strong>人工最終判定</strong><span class="sys-badge ' + getLevelClass(detail.selectedLevel) + '">' + escH(detail.selectedLevel || '-') + '</span></div>';
+  html += '</div>';
   html += '<div class="rating-signal-list">';
   (detail.signals || []).forEach(function(sig) { html += '<div class="rating-signal">- ' + escH(sig) + '</div>'; });
   html += '</div></div>';
   html += '<div class="rating-form-grid">';
-  html += '<div class="rating-field"><label>人工最終判定</label><select id="rating-selected-' + field + '" onchange="updateSelectedLevel(\'' + field + '\', this.value)" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px" ' + (readOnly ? 'disabled' : '') + '>';
-  ['普','中','高'].forEach(function(level) {
-    html += '<option value="' + level + '"' + (detail.selectedLevel === level ? ' selected' : '') + '>' + level + '</option>';
-  });
-  html += '</select></div>';
   html += '<div class="rating-field full"><label>評估說明（選填）</label><textarea id="rating-note-' + field + '" oninput="updateRatingText(\'' + field + '\',\'note\',this.value)" placeholder="可補充本構面為何判定為此等級。" ' + (readOnly ? 'disabled' : '') + '>' + escH(detail.note || '') + '</textarea></div>';
   html += '</div>';
   if ((LEVEL_ORDER[detail.selectedLevel] || 1) < (LEVEL_ORDER[detail.recommendedLevel] || 1)) {
