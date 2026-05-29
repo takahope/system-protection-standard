@@ -230,6 +230,94 @@ var DASHBOARD_SNAPSHOT_SHEET = '儀表板快照';
 var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type', 'rule_value', 'description', 'enabled', 'sort_order'];
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
 var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
+var SYSTEM_COLUMNS = [
+  {key:'系統ID', label:'系統ID'},
+  {key:'資產編號', label:'資產編號'},
+  {key:'系統名稱', label:'系統名稱'},
+  {key:'系統屬性', label:'系統屬性'},
+  {key:'建置方式', label:'建置方式'},
+  {key:'建置方式補充說明', label:'建置方式補充說明'},
+  {key:'系統管理者(部門/單位)', label:'系統管理者(部門/單位)'},
+  {key:'系統使用者(部門/單位)', label:'系統使用者(部門/單位)'},
+  {key:'系統建置日期', label:'系統建置日期'},
+  {key:'主機設置於機關內', label:'主機設置於機關內'},
+  {key:'核心系統', label:'核心系統'},
+  {key:'含機敏資訊', label:'含機敏資訊'},
+  {key:'個資數量', label:'個資數量'},
+  {key:'機敏資訊以非明文方式儲存', label:'機敏資訊以非明文方式儲存'},
+  {key:'機敏資訊類別', label:'機敏資訊類別'},
+  {key:'是否與民生權益相關', label:'是否與民生權益相關'},
+  {key:'防護需求等級', label:'防護需求等級'},
+  {key:'是否包含於ISMS導入範圍', label:'是否包含於ISMS導入範圍'},
+  {key:'建置廠商', label:'建置廠商'},
+  {key:'建置廠商統一編號', label:'建置廠商統一編號'},
+  {key:'維運廠商', label:'維運廠商'},
+  {key:'維運廠商統一編號', label:'維運廠商統一編號'},
+  {key:'最大可容忍中斷時間', label:'最大可容忍中斷時間'},
+  {key:'是否符合防護基準', label:'是否符合防護基準'},
+  {key:'不符合防護基準項目代碼', label:'不符合防護基準項目代碼'},
+  {key:'系統是否對外', label:'系統是否對外'},
+  {key:'系統日誌保存時間是否超過6個月', label:'系統日誌保存時間是否超過6個月'},
+  {key:'有無開放遠端連線維護', label:'有無開放遠端連線維護'},
+  {key:'是否禁用弱密碼', label:'是否禁用弱密碼'},
+  {key:'系統是否備份', label:'系統是否備份'},
+  {key:'備妥流量清洗機制', label:'備妥流量清洗機制'},
+  {key:'備妥CDN啟用作業程序', label:'備妥CDN啟用作業程序'},
+  {key:'備妥靜態網頁', label:'備妥靜態網頁'},
+  {key:'10分鐘內切換至靜態網頁', label:'10分鐘內切換至靜態網頁'},
+  {key:'備註', label:'備註'},
+  {key:'提供之服務，是否含有人工智慧', label:'提供之服務，是否含有人工智慧'},
+  {key:'系統負責人', label:'系統負責人'}
+];
+
+function getSystemHeaders_() {
+  return SYSTEM_COLUMNS.map(function(col) { return col.label; });
+}
+
+function getSystemColumnIndex_(key) {
+  for (var i = 0; i < SYSTEM_COLUMNS.length; i++) {
+    if (SYSTEM_COLUMNS[i].key === key) return i;
+  }
+  throw new Error('找不到系統清冊欄位定義：' + key);
+}
+
+function getSystemColumnNumber_(key) {
+  return getSystemColumnIndex_(key) + 1;
+}
+
+function assertSystemSheetColumnCapacity_(sheet) {
+  if (!sheet || sheet.getLastColumn() < SYSTEM_COLUMNS.length) {
+    throw new Error('系統清冊欄位數不足，請先至「系統設定」重新初始化表頭後再儲存。');
+  }
+}
+
+function getSystemRowValue_(row, key) {
+  var idx = getSystemColumnIndex_(key);
+  return row && row[idx] !== undefined ? row[idx] : '';
+}
+
+function mapSystemRowToObject_(row, rowNum) {
+  var obj = {};
+  SYSTEM_COLUMNS.forEach(function(col, idx) {
+    obj[col.key] = row && row[idx] !== undefined ? row[idx] : '';
+  });
+  obj._row = rowNum || '';
+  return obj;
+}
+
+function buildSystemRowFromData_(systemData, existingRow) {
+  systemData = systemData || {};
+  existingRow = existingRow || [];
+  return SYSTEM_COLUMNS.map(function(col, idx) {
+    return systemData[col.key] !== undefined ? systemData[col.key] : (existingRow[idx] !== undefined ? existingRow[idx] : '');
+  });
+}
+
+function getLegacySystemValue_(source, row, key) {
+  var idx = getSystemColumnIndex_(key);
+  if (source && source[key] !== undefined) return source[key];
+  return row && row[idx] !== undefined ? row[idx] : '';
+}
 
 function getDefaultRuleDefinitions_() {
   return [
@@ -505,12 +593,10 @@ function getOwnedSystemsByEmail_(email) {
   if (!normalized) return [];
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
-  if (!sheet || sheet.getLastRow() <= 1) return [];
+  if (!sheet || sheet.getLastRow() <= 1 || sheet.getLastColumn() < SYSTEM_COLUMNS.length) return [];
   var data = sheet.getDataRange().getDisplayValues();
-  var headers = data[0];
-  var idIdx = headers.indexOf('系統ID');
-  var ownerIdx = headers.indexOf('系統負責人');
-  if (idIdx === -1 || ownerIdx === -1) return [];
+  var idIdx = getSystemColumnIndex_('系統ID');
+  var ownerIdx = getSystemColumnIndex_('系統負責人');
   var result = [];
   for (var i = 1; i < data.length; i++) {
     if (normalizeEmail_(data[i][ownerIdx]) === normalized && data[i][idIdx]) {
@@ -684,19 +770,7 @@ function getRuleAuditLogs() {
 // ===== 初始化試算表結構 =====
 function initializeSheetsCore_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sysHeaders = [
-    '系統ID', '資產編號', '系統名稱', '系統屬性', '建置方式', '建置方式補充說明',
-    '系統管理者(部門/單位)', '系統使用者(部門/單位)', '系統建置日期',
-    '主機設置於機關內', '核心系統', '含機敏資訊', '個資數量',
-    '機敏資訊以非明文方式儲存', '機敏資訊類別', '是否與民生權益相關',
-    '防護需求等級', '是否包含於ISMS導入範圍', '建置廠商', '建置廠商統一編號',
-    '維運廠商', '維運廠商統一編號', '最大可容忍中斷時間',
-    '是否符合防護基準', '不符合防護基準項目代碼',
-    '系統是否對外', '系統日誌保存時間是否超過6個月',
-    '有無開放遠端連線維護', '是否禁用弱密碼', '系統是否備份',
-    '備妥流量清洗機制', '備妥CDN啟用作業程序', '備妥靜態網頁',
-    '10分鐘內切換至靜態網頁', '備註', '提供之服務，是否含有人工智慧', '系統負責人'
-  ];
+  var sysHeaders = getSystemHeaders_();
 
   ensureRuleSettingsSheet_();
   ensureRuleAuditSheet_();
@@ -719,8 +793,8 @@ function initializeSheetsCore_() {
         source[currentHeaders[colIndex]] = currentData[rowIndex][colIndex];
       }
 
-      var legacyAiText = String(source['提供之服務，是否含有人工智慧'] || '').trim();
-      var legacyNoteText = String(source['備註'] || '').trim();
+      var legacyAiText = String(getLegacySystemValue_(source, currentData[rowIndex], '提供之服務，是否含有人工智慧') || '').trim();
+      var legacyNoteText = String(getLegacySystemValue_(source, currentData[rowIndex], '備註') || '').trim();
       var migratedAiValue = '';
       var noteParts = [];
 
@@ -728,10 +802,10 @@ function initializeSheetsCore_() {
       if (legacyAiText === '是' || legacyAiText === '否') migratedAiValue = legacyAiText;
       else if (legacyAiText) noteParts.push(legacyAiText);
 
-      migratedRows.push(sysHeaders.map(function(header) {
-        if (header === '備註') return noteParts.join('\n');
-        if (header === '提供之服務，是否含有人工智慧') return migratedAiValue;
-        return source[header] !== undefined ? source[header] : '';
+      migratedRows.push(SYSTEM_COLUMNS.map(function(col) {
+        if (col.key === '備註') return noteParts.join('\n');
+        if (col.key === '提供之服務，是否含有人工智慧') return migratedAiValue;
+        return getLegacySystemValue_(source, currentData[rowIndex], col.key);
       }));
     }
 
@@ -1174,12 +1248,13 @@ function updateSystemLevel_(systemId, level) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sysSheet = ss.getSheetByName('系統清冊');
   if (!sysSheet || sysSheet.getLastRow() <= 1) return;
+  assertSystemSheetColumnCapacity_(sysSheet);
   var sysData = sysSheet.getDataRange().getValues();
+  var idCol = getSystemColumnIndex_('系統ID');
+  var levelCol = getSystemColumnNumber_('防護需求等級');
   for (var i = 1; i < sysData.length; i++) {
-    if (sysData[i][0] == systemId) {
-      var headers = sysData[0];
-      var levelCol = headers.indexOf('防護需求等級');
-      if (levelCol >= 0) sysSheet.getRange(i + 1, levelCol + 1).setValue(level);
+    if (sysData[i][idCol] == systemId) {
+      sysSheet.getRange(i + 1, levelCol).setValue(level);
       break;
     }
   }
@@ -1279,6 +1354,7 @@ function getSystems() {
 
   // Use display values so Apps Script does not try to serialize Date objects
   // back to the browser as part of the response payload.
+  assertSystemSheetColumnCapacity_(sheet);
   var data = sheet.getDataRange().getDisplayValues();
   if (data.length <= 1) return [];
 
@@ -1291,14 +1367,10 @@ function getSystems() {
       if (assessData[a][0]) assessmentMap[assessData[a][0]] = true;
     }
   }
-  var headers = data[0];
   var systems = [];
   for (var i = 1; i < data.length; i++) {
-    if (!data[i][0] && !data[i][2]) continue;
-    var obj = {};
-    for (var j = 0; j < headers.length; j++) {
-      obj[headers[j]] = data[i][j];
-    }
+    if (!getSystemRowValue_(data[i], '系統ID') && !getSystemRowValue_(data[i], '系統名稱')) continue;
+    var obj = mapSystemRowToObject_(data[i], i + 1);
     var ownerEmail = normalizeEmail_(obj['系統負責人']);
     var ownerInfo = hrDirectory.map[ownerEmail];
     var level = String(obj['防護需求等級'] || '').trim();
@@ -1313,31 +1385,13 @@ function getSystems() {
   return systems;
 }
 
-function assertSystemOwnerHeader_(headers) {
-  var ownerIdx = headers.indexOf('系統負責人');
-  if (ownerIdx === -1) {
-    throw new Error('系統清冊缺少「系統負責人」欄位，請先至「系統設定」重新初始化表頭後再儲存。');
-  }
-  return ownerIdx;
-}
-
-function buildSystemRowObject_(headers, row, rowNum) {
-  var obj = {};
-  for (var i = 0; i < headers.length; i++) {
-    obj[headers[i]] = row[i] !== undefined ? row[i] : '';
-  }
-  obj._row = rowNum || '';
-  return obj;
-}
-
 function addSystem(systemData) {
   var status = assertCanCreateSystem_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('系統清冊'); }
 
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  assertSystemOwnerHeader_(headers);
+  assertSystemSheetColumnCapacity_(sheet);
   var id = 'SYS_' + new Date().getTime();
   var requestedOwner = systemData['系統負責人'] || '';
   systemData['系統ID'] = id;
@@ -1345,11 +1399,11 @@ function addSystem(systemData) {
     systemData['系統負責人'] = status.evaluator.email || '';
   }
 
-  var row = headers.map(function(h) { return systemData[h] || ''; });
+  var row = buildSystemRowFromData_(systemData, []);
   sheet.appendRow(row);
   SpreadsheetApp.flush();
   var targetRow = sheet.getLastRow();
-  var persisted = buildSystemRowObject_(headers, row, targetRow);
+  var persisted = mapSystemRowToObject_(row, targetRow);
   return {
     success: true,
     id: id,
@@ -1366,21 +1420,18 @@ function updateSystem(rowNum, systemData) {
   var auth = assertCanEditSystem_(systemId);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  assertSystemOwnerHeader_(headers);
+  assertSystemSheetColumnCapacity_(sheet);
   var targetRow = auth.system && auth.system._row ? auth.system._row : rowNum;
   var requestedOwner = systemData['系統負責人'] || '';
   if (!auth.status.canAssignOwner) {
     systemData['系統負責人'] = auth.system['系統負責人'] || '';
   }
 
-  var existingRow = sheet.getRange(targetRow, 1, 1, headers.length).getDisplayValues()[0];
-  var row = headers.map(function(h, idx) {
-    return systemData[h] !== undefined ? systemData[h] : existingRow[idx];
-  });
+  var existingRow = sheet.getRange(targetRow, 1, 1, SYSTEM_COLUMNS.length).getDisplayValues()[0];
+  var row = buildSystemRowFromData_(systemData, existingRow);
   sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
   SpreadsheetApp.flush();
-  var persisted = buildSystemRowObject_(headers, row, targetRow);
+  var persisted = mapSystemRowToObject_(row, targetRow);
   return {
     success: true,
     system: persisted,
@@ -1791,11 +1842,9 @@ function recalculateSystemCompliance(systemId) {
   var sysSheet = ss.getSheetByName('系統清冊');
   if (!sysSheet || !auth.system || !auth.system._row) throw new Error('找不到系統清冊資料列');
 
-  var headers = sysSheet.getRange(1, 1, 1, sysSheet.getLastColumn()).getDisplayValues()[0];
-  var codeCol = headers.indexOf('不符合防護基準項目代碼');
-  var statusCol = headers.indexOf('是否符合防護基準');
-  if (codeCol >= 0) sysSheet.getRange(auth.system._row, codeCol + 1).setValue(result.codeString || '');
-  if (statusCol >= 0) sysSheet.getRange(auth.system._row, statusCol + 1).setValue(result.status || '');
+  assertSystemSheetColumnCapacity_(sysSheet);
+  sysSheet.getRange(auth.system._row, getSystemColumnNumber_('不符合防護基準項目代碼')).setValue(result.codeString || '');
+  sysSheet.getRange(auth.system._row, getSystemColumnNumber_('是否符合防護基準')).setValue(result.status || '');
   SpreadsheetApp.flush();
   return result;
 }
@@ -1995,9 +2044,11 @@ function deleteSystem(systemId) {
   var sheet = ss.getSheetByName('系統清冊');
   if (!sheet) return {success: false};
 
+  assertSystemSheetColumnCapacity_(sheet);
   var data = sheet.getDataRange().getValues();
+  var idCol = getSystemColumnIndex_('系統ID');
   for (var i = data.length - 1; i >= 1; i--) {
-    if (data[i][0] == systemId) {
+    if (data[i][idCol] == systemId) {
       sheet.deleteRow(i + 1);
       break;
     }
