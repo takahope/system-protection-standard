@@ -396,6 +396,17 @@
     .progress-bar .fill{height:100%;border-radius:10px;transition:width .3s}
     .fill.green{background:var(--success)} .fill.orange{background:var(--warning)} .fill.red{background:var(--danger)}
 
+    .system-load-progress-shell{display:flex;justify-content:center;align-items:center;min-height:360px;padding:32px 18px}
+    .system-load-progress-panel{width:min(520px,100%);padding:22px;border-radius:24px;background:radial-gradient(circle at top right,rgba(233,243,255,.95) 0%,rgba(233,243,255,0) 48%),rgba(255,255,255,.88);border:1px solid rgba(207,224,255,.9);box-shadow:0 18px 48px rgba(23,78,166,.12),inset 0 1px 0 rgba(255,255,255,.9);animation:stageIn 260ms cubic-bezier(.2,.8,.2,1)}
+    .system-load-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;color:#174ea6;font-size:14px;font-weight:900}
+    .system-load-progress-percent{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .system-load-progress-track{height:12px;border-radius:999px;background:#dfe8f7;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.08)}
+    .system-load-progress-bar{position:relative;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#1a73e8 0%,#72b7ff 58%,#f4c15d 100%);box-shadow:0 0 18px rgba(26,115,232,.24);transition:width 220ms ease}
+    .system-load-progress-bar:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.72) 50%,transparent 100%);transform:translateX(-100%);animation:loadBarShimmer 1.3s ease-in-out infinite}
+    .system-load-progress-summary{display:flex;align-items:center;gap:9px;margin:14px 0 0;color:#64748b;font-size:13px;line-height:1.6}
+    .system-load-progress-summary:before{content:"";width:9px;height:9px;border-radius:999px;background:#f4c15d;box-shadow:0 0 0 5px rgba(244,193,93,.16);flex-shrink:0}
+    @keyframes stageIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes loadBarShimmer{to{transform:translateX(100%)}}
     .loading{text-align:center;padding:30px;color:var(--text2)}
     .spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -774,6 +785,7 @@
 <script>
 var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData = null;
 var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
+var systemLoadProgressTimer = null, systemLoadProgressStartedAt = 0, systemLoadProgressValue = 0;
 var lastSystemQuery = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
@@ -1340,39 +1352,113 @@ function restoreListScrollIfNeeded() {
   window.scrollTo(0, listScrollTop || 0);
 }
 
+function renderSystemLoadProgressPanel() {
+  var html = '<div class="system-load-progress-shell"><section class="system-load-progress-panel" aria-live="polite">';
+  html += '<div class="system-load-progress-meta"><span id="system-load-progress-title">正在載入系統資料</span><span id="system-load-progress-percent" class="system-load-progress-percent">0%</span></div>';
+  html += '<div class="system-load-progress-track" aria-hidden="true"><div id="system-load-progress-bar" class="system-load-progress-bar"></div></div>';
+  html += '<p id="system-load-progress-summary" class="system-load-progress-summary">正在建立資料連線</p>';
+  html += '</section></div>';
+  return html;
+}
+
+function getSystemLoadProgressSummary(percent) {
+  if (percent >= 100) return '系統資料載入完成';
+  if (percent >= 80) return '正在準備系統總覽';
+  if (percent >= 60) return '正在計算統計摘要';
+  if (percent >= 40) return '正在整理系統資料';
+  if (percent >= 20) return '正在讀取系統清冊';
+  return '正在建立資料連線';
+}
+
+function clearSystemLoadProgressTimer() {
+  if (systemLoadProgressTimer) {
+    clearInterval(systemLoadProgressTimer);
+    systemLoadProgressTimer = null;
+  }
+}
+
+function setSystemLoadProgress(percent, forcedSummary) {
+  var pct = Math.max(0, Math.min(100, Math.floor(percent || 0)));
+  systemLoadProgressValue = pct;
+  var title = document.getElementById('system-load-progress-title');
+  var pctEl = document.getElementById('system-load-progress-percent');
+  var bar = document.getElementById('system-load-progress-bar');
+  var summary = document.getElementById('system-load-progress-summary');
+  if (title) title.textContent = pct >= 100 ? '系統資料載入完成' : '正在載入系統資料';
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (bar) bar.style.width = pct + '%';
+  if (summary) summary.textContent = forcedSummary || getSystemLoadProgressSummary(pct);
+}
+
+function startSystemLoadProgress(grid) {
+  clearSystemLoadProgressTimer();
+  systemLoadProgressStartedAt = Date.now();
+  systemLoadProgressValue = 0;
+  if (grid) grid.innerHTML = renderSystemLoadProgressPanel();
+  setSystemLoadProgress(0);
+  systemLoadProgressTimer = setInterval(function() {
+    var elapsed = Date.now() - systemLoadProgressStartedAt;
+    var next = Math.min(90, Math.floor((elapsed / 5000) * 90));
+    if (next > systemLoadProgressValue) setSystemLoadProgress(next);
+  }, 120);
+}
+
+function finishSystemLoadProgress(callback) {
+  clearSystemLoadProgressTimer();
+  setSystemLoadProgress(100, '系統資料載入完成');
+  setTimeout(function() {
+    if (typeof callback === 'function') callback();
+  }, 260);
+}
+
+function resetSystemLoadProgress() {
+  clearSystemLoadProgressTimer();
+  systemLoadProgressStartedAt = 0;
+  systemLoadProgressValue = 0;
+}
+
 function loadSystems(opts) {
   opts = opts || {};
   var silent = !!opts.silent;
   var preserveScroll = !!opts.preserveScroll;
   var grid = document.getElementById('system-grid');
+  var showProgress = !silent || !systemsLoaded || !allSystems.length;
   if (systemsLoading) {
     if (opts.force) systemsRefreshQueued = true;
     return;
   }
   systemsLoading = true;
   setSystemRefreshButtonState(true);
-  if (!silent || !systemsLoaded || !allSystems.length) {
-    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>載入中...</p></div>';
+  if (showProgress) {
+    startSystemLoadProgress(grid);
     renderSystemRefreshHint('', '');
   } else {
     renderSystemRefreshHint('背景更新中...', 'updating');
   }
   google.script.run.withSuccessHandler(function(data){
     var systems = Array.isArray(data) ? data : [];
-    allSystems = systems;
-    systemsLoaded = true;
-    lastSystemsRefreshAt = formatRefreshTime(new Date());
-    renderSystems(getFilteredSystems());
-    renderGlobalStats(systems);
-    renderSystemRefreshHint('已更新 ' + lastSystemsRefreshAt, '');
-    if (preserveScroll) restoreListScrollIfNeeded();
-    systemsLoading = false;
-    setSystemRefreshButtonState(false);
-    if (systemsRefreshQueued) {
-      systemsRefreshQueued = false;
-      loadSystems({force:true,silent:true,preserveScroll:true});
+    var renderLoadedSystems = function() {
+      allSystems = systems;
+      systemsLoaded = true;
+      lastSystemsRefreshAt = formatRefreshTime(new Date());
+      renderSystems(getFilteredSystems());
+      renderGlobalStats(systems);
+      renderSystemRefreshHint('已更新 ' + lastSystemsRefreshAt, '');
+      if (preserveScroll) restoreListScrollIfNeeded();
+      systemsLoading = false;
+      setSystemRefreshButtonState(false);
+      if (systemsRefreshQueued) {
+        systemsRefreshQueued = false;
+        loadSystems({force:true,silent:true,preserveScroll:true});
+      }
+    };
+    if (showProgress) {
+      finishSystemLoadProgress(renderLoadedSystems);
+    } else {
+      renderLoadedSystems();
     }
   }).withFailureHandler(function(err){
+    resetSystemLoadProgress();
     systemsLoading = false;
     setSystemRefreshButtonState(false);
     systemsRefreshQueued = false;
