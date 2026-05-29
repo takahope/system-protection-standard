@@ -345,18 +345,26 @@
     .owner-input-wrap datalist{display:none}
     .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-    .system-submit-progress{display:none;flex:1;min-width:220px;max-width:360px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#f7fbff 0%,#eef5ff 100%);border:1px solid #d6e5fb;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
-    .system-submit-progress.active{display:block}
-    .system-submit-progress.error{background:#fff7f5;border-color:#f4c7c3}
-    .system-submit-progress.done{background:#f3fbf6;border-color:#c6ead5}
-    .system-submit-progress-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px;font-size:11px;font-weight:800;color:#174ea6;letter-spacing:.02em}
-    .system-submit-progress.error .system-submit-progress-head{color:var(--danger)}
-    .system-submit-progress.done .system-submit-progress-head{color:var(--success)}
-    .system-submit-track{position:relative;height:8px;border-radius:999px;overflow:hidden;background:#dfe8f7}
-    .system-submit-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#1a73e8 0%,#4f9af7 55%,#9cc6ff 100%);box-shadow:0 0 16px rgba(26,115,232,.35);transition:width .18s ease}
-    .system-submit-progress.error .system-submit-fill{background:linear-gradient(90deg,#d93025 0%,#f06d64 100%);box-shadow:0 0 14px rgba(217,48,37,.24)}
-    .system-submit-progress.done .system-submit-fill{background:linear-gradient(90deg,#0d904f 0%,#42be7d 100%);box-shadow:0 0 14px rgba(13,144,79,.28)}
-    .system-submit-message{margin-top:7px;font-size:11px;line-height:1.5;color:#475467}
+    .system-submit-progress{display:none;flex:1;align-items:center;gap:12px;min-width:280px;max-width:460px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9)}
+    .system-submit-progress.active{display:flex}
+    .system-submit-progress.error{background:#fff7f5;border-color:#f4c7c3;box-shadow:0 10px 24px rgba(217,48,37,.08)}
+    .system-submit-progress.done{background:#f3fbf6;border-color:#c6ead5;box-shadow:0 10px 24px rgba(13,144,79,.08)}
+    .system-submit-copy{flex:1;min-width:0}
+    .system-submit-progress-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;font-size:11px;font-weight:800;color:#174ea6;letter-spacing:.02em}
+    .system-submit-status-dot{width:8px;height:8px;border-radius:999px;background:#1a73e8;box-shadow:0 0 0 4px rgba(26,115,232,.12)}
+    .system-submit-percent{margin-left:auto;font-variant-numeric:tabular-nums;color:#174ea6}
+    .system-submit-progress.error .system-submit-progress-head,.system-submit-progress.error .system-submit-percent{color:var(--danger)}
+    .system-submit-progress.error .system-submit-status-dot{background:var(--danger);box-shadow:0 0 0 4px rgba(217,48,37,.12)}
+    .system-submit-progress.done .system-submit-progress-head,.system-submit-progress.done .system-submit-percent{color:var(--success)}
+    .system-submit-progress.done .system-submit-status-dot{background:var(--success);box-shadow:0 0 0 4px rgba(13,144,79,.12)}
+    .system-submit-track{position:relative;width:118px;height:6px;border-radius:999px;overflow:hidden;background:#dfe8f7;flex-shrink:0}
+    .system-submit-fill{position:relative;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#1a73e8 0%,#4f9af7 56%,#9cc6ff 100%);box-shadow:0 0 14px rgba(26,115,232,.28);transition:width .18s ease}
+    .system-submit-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.75) 50%,transparent 100%);transform:translateX(-100%);animation:submitShimmer 1.2s ease-in-out infinite}
+    .system-submit-progress.error .system-submit-fill{background:linear-gradient(90deg,#d93025 0%,#f06d64 100%);box-shadow:0 0 14px rgba(217,48,37,.22)}
+    .system-submit-progress.done .system-submit-fill{background:linear-gradient(90deg,#0d904f 0%,#42be7d 100%);box-shadow:0 0 14px rgba(13,144,79,.24)}
+    .system-submit-progress.error .system-submit-fill:after,.system-submit-progress.done .system-submit-fill:after{display:none}
+    .system-submit-message{font-size:11px;line-height:1.45;color:#475467;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    @keyframes submitShimmer{to{transform:translateX(100%)}}
     .modal.busy{cursor:progress}
     .modal.busy input,.modal.busy select,.modal.busy textarea{background:#f8fafc;color:#64748b}
     .modal.busy .btn{opacity:.72;cursor:not-allowed}
@@ -378,7 +386,8 @@
       .modal .modal-actions{align-items:stretch;flex-wrap:wrap;padding-left:16px;padding-right:16px}
       .modal-action-left,.modal-action-right{width:100%;justify-content:flex-end}
       .modal-action-left{justify-content:flex-start}
-      .system-submit-progress{order:-1;width:100%;max-width:none;min-width:0}
+      .system-submit-progress{order:-1;width:100%;max-width:none;min-width:0;align-items:stretch;flex-direction:column}
+      .system-submit-track{width:100%}
     }
 
     /* Progress bar */
@@ -2277,9 +2286,9 @@ function renderSystemFieldLabel(fieldKey) {
 
 function renderSystemSubmitProgress() {
   var html = '<div id="system-submit-progress" class="system-submit-progress" aria-live="polite" aria-hidden="true">';
-  html += '<div class="system-submit-progress-head"><span id="system-submit-title">正在處理</span><span id="system-submit-percent">0%</span></div>';
+  html += '<div class="system-submit-copy"><div class="system-submit-progress-head"><span class="system-submit-status-dot"></span><span id="system-submit-title">處理中</span><span id="system-submit-percent" class="system-submit-percent">0%</span></div>';
+  html += '<div id="system-submit-message" class="system-submit-message">準備作業</div></div>';
   html += '<div class="system-submit-track"><div id="system-submit-fill" class="system-submit-fill"></div></div>';
-  html += '<div id="system-submit-message" class="system-submit-message">檢查欄位資料</div>';
   html += '</div>';
   return html;
 }
@@ -2321,10 +2330,12 @@ function updateSystemSubmitProgress(progress, state, message) {
   var fill = document.getElementById('system-submit-fill');
   var pctEl = document.getElementById('system-submit-percent');
   var msgEl = document.getElementById('system-submit-message');
+  var titleEl = document.getElementById('system-submit-title');
   wrap.className = 'system-submit-progress active' + (state ? ' ' + state : '');
   wrap.setAttribute('aria-hidden', 'false');
   if (fill) fill.style.width = pct + '%';
   if (pctEl) pctEl.textContent = pct + '%';
+  if (titleEl) titleEl.textContent = state === 'done' ? '已完成' : (state === 'error' ? '需處理' : '處理中');
   if (msgEl) msgEl.textContent = message || getSystemSubmitMessage(pct);
 }
 
@@ -2356,7 +2367,7 @@ function startSystemSubmitProgress(mode) {
   systemModalSubmitting = true;
   systemSubmitProgress = 0;
   setSystemModalBusy(true);
-  updateSystemSubmitProgress(0, '', mode === 'edit' ? '檢查更新內容' : '檢查欄位資料');
+  updateSystemSubmitProgress(0, '', mode === 'edit' ? '準備儲存變更' : '準備新增資料');
   systemSubmitTimer = setInterval(function() {
     if (systemSubmitProgress >= 90) return;
     systemSubmitProgress = Math.min(90, systemSubmitProgress + 1.8);
@@ -2369,7 +2380,7 @@ function completeSystemSubmitProgress(success, message, callback) {
   clearSystemSubmitTimer();
   if (success) {
     systemSubmitProgress = 100;
-    updateSystemSubmitProgress(100, 'done', message || '完成作業');
+    updateSystemSubmitProgress(100, 'done', message || '已完成，即將關閉');
     setTimeout(function() {
       systemModalSubmitting = false;
       setSystemModalBusy(false);
@@ -2585,7 +2596,7 @@ function submitAddSystem() {
   if (!startSystemSubmitProgress('add')) return;
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
-      completeSystemSubmitProgress(true, '完成作業', function(){
+      completeSystemSubmitProgress(true, '已完成，即將關閉', function(){
         closeModal(true);
         refreshSystemsAfterSystemSave('', r.message || '系統已新增');
       });
@@ -2610,7 +2621,7 @@ function submitEditSystem() {
   if (!startSystemSubmitProgress('edit')) return;
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
-      completeSystemSubmitProgress(true, '完成作業', function(){
+      completeSystemSubmitProgress(true, '已完成，即將關閉', function(){
         var savedSystemId = currentSystem['系統ID'];
         closeModal(true);
         refreshSystemsAfterSystemSave(savedSystemId, r.message || '系統已更新');
