@@ -168,6 +168,14 @@
     .rating-inline-note{font-size:12px;color:var(--text2)}
     .rating-status{padding:10px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px}
     .rating-status.warn{background:#fff8ee;border-color:#fed7aa;color:#9a3412}
+    .rating-save-progress-panel{margin-top:12px;padding:14px;border-radius:16px;background:rgba(255,255,255,.82);border:1px solid rgba(207,224,255,.9);box-shadow:0 12px 30px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9);animation:stageIn 260ms cubic-bezier(.2,.8,.2,1)}
+    .rating-save-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#174ea6;font-size:12px;font-weight:900}
+    .rating-save-progress-percent{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .rating-save-progress-track{height:10px;border-radius:999px;background:#dfe8f7;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.08)}
+    .rating-save-progress-bar{position:relative;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#1a73e8 0%,#72b7ff 58%,#f4c15d 100%);box-shadow:0 0 16px rgba(26,115,232,.22);transition:width 220ms ease}
+    .rating-save-progress-bar:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.72) 50%,transparent 100%);transform:translateX(-100%);animation:loadBarShimmer 1.3s ease-in-out infinite}
+    .rating-save-progress-summary{display:flex;align-items:center;gap:9px;margin:10px 0 0;color:#64748b;font-size:12px;line-height:1.6}
+    .rating-save-progress-summary:before{content:"";width:8px;height:8px;border-radius:999px;background:#f4c15d;box-shadow:0 0 0 5px rgba(244,193,93,.16);flex-shrink:0}
     .exemption-card{background:linear-gradient(180deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;border-radius:18px;padding:22px}
     .exemption-card h3{font-size:18px;margin-bottom:8px}
     .exemption-card p{font-size:13px;line-height:1.8;color:#475467;margin-bottom:14px}
@@ -808,6 +816,7 @@ var RATING_LABELS = {
   compliance: '法律遵循性'
 };
 var ratingState = null;
+var ratingSaving = false, ratingSaveProgressTimer = null, ratingSaveProgressStartedAt = 0, ratingSaveProgressValue = 0;
 var ratingTabTemplate = '';
 var assessTabTemplate = '';
 var ruleState = {rows: [], adminStatus: null};
@@ -1086,7 +1095,7 @@ function syncSystemCrudActions() {
   var assessBtn = document.getElementById('assessment-save-btn');
   if (addBtn) addBtn.classList.toggle('hidden', !canCreateSystems());
   if (editBtn) editBtn.classList.toggle('hidden', !canEditCurrentSystem());
-  if (ratingBtn) ratingBtn.classList.toggle('hidden', !canEditCurrentSystem());
+  if (ratingBtn) updateRatingSaveButtonState();
   if (assessBtn) assessBtn.classList.toggle('hidden', !canEditCurrentSystem());
 }
 
@@ -1700,6 +1709,8 @@ function openSystem(sysId) {
 
 // ===== Rating =====
 function setRatingState(rating) {
+  ratingSaving = false;
+  resetRatingSaveProgress();
   ratingState = rating || {
     systemId: currentSystem ? currentSystem['系統ID'] : '',
     systemName: currentSystem ? currentSystem['系統名稱'] : '',
@@ -1785,6 +1796,7 @@ function renderRatingWizard() {
   renderRatingSteps();
   renderRatingPanel();
   renderRatingStatus();
+  updateRatingSaveButtonState();
 }
 
 function renderRatingSteps() {
@@ -1896,7 +1908,84 @@ function renderRatingStatus() {
   if (evaluator.warning) {
     msg += (msg ? '<br>' : '') + escH(evaluator.warning);
   }
-  result.innerHTML = msg;
+  result.innerHTML = msg + '<div id="rating-save-progress-slot"></div>';
+}
+
+function updateRatingSaveButtonState() {
+  var btn = document.getElementById('rating-save-btn');
+  if (!btn) return;
+  var canSave = !!ratingState && ratingState.step === RATING_STEPS.length - 1 && canEditCurrentSystem() && !ratingSaving;
+  btn.classList.toggle('hidden', !canEditCurrentSystem());
+  btn.disabled = !canSave;
+  btn.title = canSave ? '' : '請先進入第 6 步「結果確認」後再儲存評估結果';
+}
+
+function renderRatingSaveProgressPanel() {
+  var html = '<section class="rating-save-progress-panel" aria-live="polite">';
+  html += '<div class="rating-save-progress-meta"><span id="rating-save-progress-title">正在儲存評估結果</span><span id="rating-save-progress-percent" class="rating-save-progress-percent">0%</span></div>';
+  html += '<div class="rating-save-progress-track" aria-hidden="true"><div id="rating-save-progress-bar" class="rating-save-progress-bar"></div></div>';
+  html += '<p id="rating-save-progress-summary" class="rating-save-progress-summary">正在檢查評估內容</p>';
+  html += '</section>';
+  return html;
+}
+
+function getRatingSaveProgressSummary(percent) {
+  if (percent >= 100) return '評估結果儲存完成';
+  if (percent >= 80) return '正在更新系統防護需求等級';
+  if (percent >= 60) return '正在寫入分級評估結果';
+  if (percent >= 40) return '正在計算最終防護需求等級';
+  if (percent >= 20) return '正在彙整四構面判定';
+  return '正在檢查評估內容';
+}
+
+function clearRatingSaveProgressTimer() {
+  if (ratingSaveProgressTimer) {
+    clearInterval(ratingSaveProgressTimer);
+    ratingSaveProgressTimer = null;
+  }
+}
+
+function setRatingSaveProgress(percent, forcedSummary) {
+  var pct = Math.max(0, Math.min(100, Math.floor(percent || 0)));
+  ratingSaveProgressValue = pct;
+  var title = document.getElementById('rating-save-progress-title');
+  var pctEl = document.getElementById('rating-save-progress-percent');
+  var bar = document.getElementById('rating-save-progress-bar');
+  var summary = document.getElementById('rating-save-progress-summary');
+  if (title) title.textContent = pct >= 100 ? '評估結果儲存完成' : '正在儲存評估結果';
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (bar) bar.style.width = pct + '%';
+  if (summary) summary.textContent = forcedSummary || getRatingSaveProgressSummary(pct);
+}
+
+function startRatingSaveProgress() {
+  clearRatingSaveProgressTimer();
+  ratingSaveProgressStartedAt = Date.now();
+  ratingSaveProgressValue = 0;
+  var slot = document.getElementById('rating-save-progress-slot');
+  if (slot) slot.innerHTML = renderRatingSaveProgressPanel();
+  setRatingSaveProgress(0);
+  ratingSaveProgressTimer = setInterval(function() {
+    var elapsed = Date.now() - ratingSaveProgressStartedAt;
+    var next = Math.min(90, Math.floor((elapsed / 10000) * 90));
+    if (next > ratingSaveProgressValue) setRatingSaveProgress(next);
+  }, 120);
+}
+
+function finishRatingSaveProgress(callback) {
+  clearRatingSaveProgressTimer();
+  setRatingSaveProgress(100, '評估結果儲存完成');
+  setTimeout(function() {
+    if (typeof callback === 'function') callback();
+  }, 260);
+}
+
+function resetRatingSaveProgress() {
+  clearRatingSaveProgressTimer();
+  ratingSaveProgressStartedAt = 0;
+  ratingSaveProgressValue = 0;
+  var slot = document.getElementById('rating-save-progress-slot');
+  if (slot) slot.innerHTML = '';
 }
 
 function chooseScenario(field, level) {
@@ -1937,10 +2026,14 @@ function validateRatingState() {
 }
 
 function submitRating() {
-  if (!currentSystem || !ratingState) return;
+  if (!currentSystem || !ratingState || ratingSaving) return;
   if (!canEditCurrentSystem()) { showToast('目前帳號無法編輯此系統的分級評估'); return; }
+  if (ratingState.step !== RATING_STEPS.length - 1) { showToast('請先進入第 6 步「結果確認」後再儲存評估結果'); return; }
   var err = validateRatingState();
   if (err) { showToast(err); return; }
+  ratingSaving = true;
+  updateRatingSaveButtonState();
+  startRatingSaveProgress();
   ratingState.assessor = ratingState.currentEvaluator ? (ratingState.currentEvaluator.displayName || ratingState.currentEvaluator.email || '') : '';
   computeOverallRatingLevel();
   var data = {
@@ -1951,19 +2044,32 @@ function submitRating() {
   };
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
-      var cls=getLevelClass(r.finalLevel);
-      ratingState.assessDate = r.assessDate || '';
-      ratingState.finalLevel = r.finalLevel;
-      ratingState.assessor = r.assessor || ratingState.assessor;
-      ratingState.currentEvaluator = r.currentEvaluator || ratingState.currentEvaluator;
-      syncRatingEvaluator();
-      document.getElementById('detail-level-badge').innerHTML='<span class="result-badge '+cls+'" style="font-size:14px;padding:4px 14px">'+r.finalLevel+'</span>';
-      currentSystem['防護需求等級']=r.finalLevel;
-      renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
-      renderRatingWizard();
-      showToast('評估結果已儲存');
+      finishRatingSaveProgress(function() {
+        var cls=getLevelClass(r.finalLevel);
+        ratingState.assessDate = r.assessDate || '';
+        ratingState.finalLevel = r.finalLevel;
+        ratingState.assessor = r.assessor || ratingState.assessor;
+        ratingState.currentEvaluator = r.currentEvaluator || ratingState.currentEvaluator;
+        ratingSaving = false;
+        syncRatingEvaluator();
+        document.getElementById('detail-level-badge').innerHTML='<span class="result-badge '+cls+'" style="font-size:14px;padding:4px 14px">'+r.finalLevel+'</span>';
+        currentSystem['防護需求等級']=r.finalLevel;
+        renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
+        renderRatingWizard();
+        showToast('評估結果已儲存');
+      });
+    } else {
+      ratingSaving = false;
+      resetRatingSaveProgress();
+      updateRatingSaveButtonState();
+      showToast(r.message || '儲存失敗，請稍後再試');
     }
-  }).withFailureHandler(function(e){showToast('儲存失敗：'+e.message);}).saveRating(data);
+  }).withFailureHandler(function(e){
+    ratingSaving = false;
+    resetRatingSaveProgress();
+    updateRatingSaveButtonState();
+    showToast('儲存失敗：'+e.message);
+  }).saveRating(data);
 }
 
 // ===== Assessment =====
