@@ -231,62 +231,82 @@ var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type'
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
 var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
 var SYSTEM_COLUMNS = [
-  {key:'系統ID', label:'系統ID'},
-  {key:'資產編號', label:'資產編號'},
-  {key:'系統名稱', label:'系統名稱'},
-  {key:'系統屬性', label:'系統屬性'},
-  {key:'建置方式', label:'建置方式'},
-  {key:'建置方式補充說明', label:'建置方式補充說明'},
-  {key:'系統管理者(部門/單位)', label:'系統管理者(部門/單位)'},
-  {key:'系統使用者(部門/單位)', label:'系統使用者(部門/單位)'},
-  {key:'系統建置日期', label:'系統建置日期'},
-  {key:'主機設置於機關內', label:'主機設置於機關內'},
-  {key:'核心系統', label:'核心系統'},
-  {key:'含機敏資訊', label:'含機敏資訊'},
-  {key:'個資數量', label:'個資數量'},
-  {key:'機敏資訊以非明文方式儲存', label:'機敏資訊以非明文方式儲存'},
-  {key:'機敏資訊類別', label:'機敏資訊類別'},
-  {key:'是否與民生權益相關', label:'是否與民生權益相關'},
-  {key:'防護需求等級', label:'防護需求等級'},
-  {key:'是否包含於ISMS導入範圍', label:'是否包含於ISMS導入範圍'},
-  {key:'建置廠商', label:'建置廠商'},
-  {key:'建置廠商統一編號', label:'建置廠商統一編號'},
-  {key:'維運廠商', label:'維運廠商'},
-  {key:'維運廠商統一編號', label:'維運廠商統一編號'},
-  {key:'最大可容忍中斷時間', label:'最大可容忍中斷時間'},
-  {key:'是否符合防護基準', label:'是否符合防護基準'},
-  {key:'不符合防護基準項目代碼', label:'不符合防護基準項目代碼'},
-  {key:'系統是否對外', label:'系統是否對外'},
-  {key:'系統日誌保存時間是否超過6個月', label:'系統日誌保存時間是否超過6個月'},
-  {key:'有無開放遠端連線維護', label:'有無開放遠端連線維護'},
-  {key:'是否禁用弱密碼', label:'是否禁用弱密碼'},
-  {key:'系統是否備份', label:'系統是否備份'},
-  {key:'備妥流量清洗機制', label:'備妥流量清洗機制'},
-  {key:'備妥CDN啟用作業程序', label:'備妥CDN啟用作業程序'},
-  {key:'備妥靜態網頁', label:'備妥靜態網頁'},
-  {key:'10分鐘內切換至靜態網頁', label:'10分鐘內切換至靜態網頁'},
-  {key:'備註', label:'備註'},
-  {key:'提供之服務，是否含有人工智慧', label:'提供之服務，是否含有人工智慧'},
-  {key:'系統負責人', label:'系統負責人'}
+  {key:'系統ID', label:'系統ID', column:SYSTEM_ID_COLUMN},
+  {key:'資產編號', label:'資產編號', column:SYSTEM_ASSET_NO_COLUMN},
+  {key:'系統名稱', label:'系統名稱', column:SYSTEM_NAME_COLUMN},
+  {key:'系統屬性', label:'系統屬性', column:SYSTEM_ATTRIBUTE_COLUMN},
+  {key:'建置方式', label:'建置方式', column:SYSTEM_BUILD_METHOD_COLUMN},
+  {key:'建置方式補充說明', label:'建置方式補充說明', column:SYSTEM_BUILD_METHOD_NOTE_COLUMN},
+  {key:'系統管理者(部門/單位)', label:'系統管理者(部門/單位)', column:SYSTEM_MANAGER_DEPT_COLUMN},
+  {key:'系統使用者(部門/單位)', label:'系統使用者(部門/單位)', column:SYSTEM_USER_DEPT_COLUMN},
+  {key:'系統建置日期', label:'系統建置日期', column:SYSTEM_BUILD_DATE_COLUMN},
+  {key:'主機設置於機關內', label:'主機設置於機關內', column:SYSTEM_HOST_INTERNAL_COLUMN},
+  {key:'核心系統', label:'核心系統', column:SYSTEM_CORE_COLUMN},
+  {key:'含機敏資訊', label:'含機敏資訊', column:SYSTEM_HAS_SENSITIVE_COLUMN},
+  {key:'個資數量', label:'個資數量', column:SYSTEM_PERSONAL_DATA_COUNT_COLUMN},
+  {key:'機敏資訊以非明文方式儲存', label:'機敏資訊以非明文方式儲存', column:SYSTEM_SENSITIVE_ENCRYPTED_COLUMN},
+  {key:'機敏資訊類別', label:'機敏資訊類別', column:SYSTEM_SENSITIVE_CATEGORY_COLUMN},
+  {key:'是否與民生權益相關', label:'是否與民生權益相關', column:SYSTEM_CIVIL_RIGHTS_COLUMN},
+  {key:'防護需求等級', label:'防護需求等級', column:SYSTEM_LEVEL_COLUMN},
+  {key:'是否包含於ISMS導入範圍', label:'是否包含於ISMS導入範圍', column:SYSTEM_ISMS_SCOPE_COLUMN},
+  {key:'建置廠商', label:'建置廠商', column:SYSTEM_BUILDER_VENDOR_COLUMN},
+  {key:'建置廠商統一編號', label:'建置廠商統一編號', column:SYSTEM_BUILDER_VENDOR_TAX_ID_COLUMN},
+  {key:'維運廠商', label:'維運廠商', column:SYSTEM_MAINTENANCE_VENDOR_COLUMN},
+  {key:'維運廠商統一編號', label:'維運廠商統一編號', column:SYSTEM_MAINTENANCE_VENDOR_TAX_ID_COLUMN},
+  {key:'最大可容忍中斷時間', label:'最大可容忍中斷時間', column:SYSTEM_MTPD_COLUMN},
+  {key:'是否符合防護基準', label:'是否符合防護基準', column:SYSTEM_COMPLIANCE_STATUS_COLUMN},
+  {key:'不符合防護基準項目代碼', label:'不符合防護基準項目代碼', column:SYSTEM_NON_COMPLIANCE_CODES_COLUMN},
+  {key:'系統是否對外', label:'系統是否對外', column:SYSTEM_EXTERNAL_COLUMN},
+  {key:'系統日誌保存時間是否超過6個月', label:'系統日誌保存時間是否超過6個月', column:SYSTEM_LOG_RETENTION_COLUMN},
+  {key:'有無開放遠端連線維護', label:'有無開放遠端連線維護', column:SYSTEM_REMOTE_MAINTENANCE_COLUMN},
+  {key:'是否禁用弱密碼', label:'是否禁用弱密碼', column:SYSTEM_WEAK_PASSWORD_DISABLED_COLUMN},
+  {key:'系統是否備份', label:'系統是否備份', column:SYSTEM_BACKUP_COLUMN},
+  {key:'備妥流量清洗機制', label:'備妥流量清洗機制', column:SYSTEM_TRAFFIC_CLEANING_COLUMN},
+  {key:'備妥CDN啟用作業程序', label:'備妥CDN啟用作業程序', column:SYSTEM_CDN_PROCEDURE_COLUMN},
+  {key:'備妥靜態網頁', label:'備妥靜態網頁', column:SYSTEM_STATIC_PAGE_COLUMN},
+  {key:'10分鐘內切換至靜態網頁', label:'10分鐘內切換至靜態網頁', column:SYSTEM_STATIC_PAGE_SWITCH_COLUMN},
+  {key:'備註', label:'備註', column:SYSTEM_NOTE_COLUMN},
+  {key:'提供之服務，是否含有人工智慧', label:'提供之服務，是否含有人工智慧', column:SYSTEM_AI_SERVICE_COLUMN},
+  {key:'系統負責人', label:'系統負責人', column:SYSTEM_OWNER_COLUMN}
 ];
 
-function getSystemHeaders_() {
-  return SYSTEM_COLUMNS.map(function(col) { return col.label; });
+function getSystemMaxColumnNumber_() {
+  var maxColumn = 0;
+  SYSTEM_COLUMNS.forEach(function(col) {
+    if (col.column > maxColumn) maxColumn = col.column;
+  });
+  return maxColumn;
 }
 
-function getSystemColumnIndex_(key) {
+function getSystemColumnsByPosition_() {
+  return SYSTEM_COLUMNS.slice().sort(function(a, b) { return a.column - b.column; });
+}
+
+function getSystemHeaders_() {
+  var headers = [];
+  getSystemColumnsByPosition_().forEach(function(col) {
+    headers[col.column - 1] = col.label;
+  });
+  return headers;
+}
+
+function getSystemColumnDefinition_(key) {
   for (var i = 0; i < SYSTEM_COLUMNS.length; i++) {
-    if (SYSTEM_COLUMNS[i].key === key) return i;
+    if (SYSTEM_COLUMNS[i].key === key) return SYSTEM_COLUMNS[i];
   }
   throw new Error('找不到系統清冊欄位定義：' + key);
 }
 
+function getSystemColumnIndex_(key) {
+  return getSystemColumnDefinition_(key).column - 1;
+}
+
 function getSystemColumnNumber_(key) {
-  return getSystemColumnIndex_(key) + 1;
+  return getSystemColumnDefinition_(key).column;
 }
 
 function assertSystemSheetColumnCapacity_(sheet) {
-  if (!sheet || sheet.getLastColumn() < SYSTEM_COLUMNS.length) {
+  if (!sheet || sheet.getLastColumn() < getSystemMaxColumnNumber_()) {
     throw new Error('系統清冊欄位數不足，請先至「系統設定」重新初始化表頭後再儲存。');
   }
 }
@@ -298,7 +318,8 @@ function getSystemRowValue_(row, key) {
 
 function mapSystemRowToObject_(row, rowNum) {
   var obj = {};
-  SYSTEM_COLUMNS.forEach(function(col, idx) {
+  SYSTEM_COLUMNS.forEach(function(col) {
+    var idx = col.column - 1;
     obj[col.key] = row && row[idx] !== undefined ? row[idx] : '';
   });
   obj._row = rowNum || '';
@@ -308,9 +329,15 @@ function mapSystemRowToObject_(row, rowNum) {
 function buildSystemRowFromData_(systemData, existingRow) {
   systemData = systemData || {};
   existingRow = existingRow || [];
-  return SYSTEM_COLUMNS.map(function(col, idx) {
-    return systemData[col.key] !== undefined ? systemData[col.key] : (existingRow[idx] !== undefined ? existingRow[idx] : '');
+  var row = [];
+  for (var i = 0; i < getSystemMaxColumnNumber_(); i++) {
+    row[i] = existingRow[i] !== undefined ? existingRow[i] : '';
+  }
+  SYSTEM_COLUMNS.forEach(function(col) {
+    var idx = col.column - 1;
+    if (systemData[col.key] !== undefined) row[idx] = systemData[col.key];
   });
+  return row;
 }
 
 function getLegacySystemValue_(source, row, key) {
@@ -593,7 +620,7 @@ function getOwnedSystemsByEmail_(email) {
   if (!normalized) return [];
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
-  if (!sheet || sheet.getLastRow() <= 1 || sheet.getLastColumn() < SYSTEM_COLUMNS.length) return [];
+  if (!sheet || sheet.getLastRow() <= 1 || sheet.getLastColumn() < getSystemMaxColumnNumber_()) return [];
   var data = sheet.getDataRange().getDisplayValues();
   var idIdx = getSystemColumnIndex_('系統ID');
   var ownerIdx = getSystemColumnIndex_('系統負責人');
@@ -802,7 +829,7 @@ function initializeSheetsCore_() {
       if (legacyAiText === '是' || legacyAiText === '否') migratedAiValue = legacyAiText;
       else if (legacyAiText) noteParts.push(legacyAiText);
 
-      migratedRows.push(SYSTEM_COLUMNS.map(function(col) {
+      migratedRows.push(getSystemColumnsByPosition_().map(function(col) {
         if (col.key === '備註') return noteParts.join('\n');
         if (col.key === '提供之服務，是否含有人工智慧') return migratedAiValue;
         return getLegacySystemValue_(source, currentData[rowIndex], col.key);
@@ -1427,7 +1454,7 @@ function updateSystem(rowNum, systemData) {
     systemData['系統負責人'] = auth.system['系統負責人'] || '';
   }
 
-  var existingRow = sheet.getRange(targetRow, 1, 1, SYSTEM_COLUMNS.length).getDisplayValues()[0];
+  var existingRow = sheet.getRange(targetRow, 1, 1, getSystemMaxColumnNumber_()).getDisplayValues()[0];
   var row = buildSystemRowFromData_(systemData, existingRow);
   sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
   SpreadsheetApp.flush();
