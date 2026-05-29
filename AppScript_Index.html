@@ -167,6 +167,26 @@
     .rating-inline-note{font-size:12px;color:var(--text2)}
     .rating-status{padding:10px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px}
     .rating-status.warn{background:#fff8ee;border-color:#fed7aa;color:#9a3412}
+    .rating-start-card{position:relative;overflow:hidden;border:1px solid #d9e5f7;border-radius:20px;padding:24px;background:linear-gradient(135deg,#f8fbff 0%,#eef6f2 56%,#fff8ea 100%);box-shadow:0 18px 40px rgba(20,83,45,.08)}
+    .rating-start-card:before{content:"";position:absolute;right:-54px;top:-72px;width:180px;height:180px;border-radius:999px;background:rgba(26,115,232,.08)}
+    .rating-start-eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:#2f6f56;margin-bottom:8px}
+    .rating-start-card h3{font-size:20px;margin:0 0 8px;color:#102a43}
+    .rating-start-card p{max-width:680px;font-size:13px;line-height:1.8;color:#52677a;margin:0 0 18px}
+    .rating-start-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:18px 0}
+    .rating-start-meta .item{background:rgba(255,255,255,.72);border:1px solid rgba(205,219,235,.82);border-radius:14px;padding:12px}
+    .rating-start-meta label{display:block;font-size:10px;color:#64748b;margin-bottom:4px}
+    .rating-start-meta div{font-size:13px;font-weight:800;color:#0f172a}
+    .rating-start-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .rating-start-note{font-size:12px;color:#64748b}
+    .rating-load-panel{padding:18px;border-radius:18px;background:rgba(255,255,255,.86);border:1px solid rgba(207,224,255,.95);box-shadow:0 16px 34px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9);animation:stageIn 260ms cubic-bezier(.2,.8,.2,1)}
+    .rating-load-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;color:#174ea6;font-size:13px;font-weight:900}
+    .rating-load-progress-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px}
+    .rating-load-percent{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:13px;font-weight:900;color:#174ea6}
+    .rating-load-track{height:11px;border-radius:999px;background:#dfe8f7;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.08)}
+    .rating-load-bar{position:relative;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#2f6f56 0%,#1a73e8 62%,#f4c15d 100%);box-shadow:0 0 18px rgba(26,115,232,.22);transition:width 220ms ease}
+    .rating-load-bar:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.72) 50%,transparent 100%);transform:translateX(-100%);animation:loadBarShimmer 1.3s ease-in-out infinite}
+    .rating-load-summary{display:flex;align-items:center;gap:9px;margin:12px 0 0;color:#64748b;font-size:12px;line-height:1.6}
+    .rating-load-summary:before{content:"";width:8px;height:8px;border-radius:999px;background:#f4c15d;box-shadow:0 0 0 5px rgba(244,193,93,.16);flex-shrink:0}
     .rating-save-progress-panel{margin-top:12px;padding:14px;border-radius:16px;background:rgba(255,255,255,.82);border:1px solid rgba(207,224,255,.9);box-shadow:0 12px 30px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9);animation:stageIn 260ms cubic-bezier(.2,.8,.2,1)}
     .rating-save-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#174ea6;font-size:12px;font-weight:900}
     .rating-save-progress-percent{font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -801,6 +821,7 @@ var RATING_LABELS = {
 };
 var ratingState = null;
 var ratingSaving = false, ratingSaveProgressTimer = null, ratingSaveProgressStartedAt = 0, ratingSaveProgressValue = 0;
+var ratingLoading = false, ratingLoadProgressTimer = null, ratingLoadProgressStartedAt = 0, ratingLoadProgressValue = 0, ratingLoadRequestSystemId = '';
 var ratingTabTemplate = '';
 var assessTabTemplate = '';
 var ruleState = {rows: [], adminStatus: null};
@@ -1679,22 +1700,172 @@ function openSystem(sysId) {
     return;
   }
 
-  document.getElementById('rating-context').innerHTML = '<div class="loading" style="padding:12px"><div class="spinner"></div></div>';
-  document.getElementById('rating-risk-chips').innerHTML = '';
-  document.getElementById('rating-steps').innerHTML = '';
-  document.getElementById('rating-panel').innerHTML = '<div class="loading" style="padding:18px"><div class="spinner"></div><p>載入評估規則中...</p></div>';
-  document.getElementById('rating-result').innerHTML = '載入中...';
-
-  // Load rating
-  google.script.run.withSuccessHandler(function(rating){
-    setRatingState(rating);
-  }).getRating(sysId);
+  resetRatingLoadProgress();
+  ratingState = null;
+  renderRatingStartPanel();
 }
 
 // ===== Rating =====
+function renderRatingStartPanel(message, isError) {
+  clearRatingLoadProgressTimer();
+  ratingLoading = false;
+  ratingLoadRequestSystemId = '';
+  var context = document.getElementById('rating-context');
+  var chips = document.getElementById('rating-risk-chips');
+  var steps = document.getElementById('rating-steps');
+  var panel = document.getElementById('rating-panel');
+  var result = document.getElementById('rating-result');
+  var prevBtn = document.getElementById('rating-prev-btn');
+  var nextBtn = document.getElementById('rating-next-btn');
+  var saveBtn = document.getElementById('rating-save-btn');
+  var note = document.getElementById('rating-step-note');
+  if (context) context.innerHTML = '';
+  if (chips) chips.innerHTML = '';
+  if (steps) steps.innerHTML = '';
+  if (prevBtn) prevBtn.classList.add('hidden');
+  if (nextBtn) nextBtn.classList.add('hidden');
+  if (saveBtn) saveBtn.classList.add('hidden');
+  if (note) note.textContent = '';
+  if (!panel || !currentSystem) return;
+
+  var alertHtml = message ? '<div class="rating-status' + (isError ? ' warn' : '') + '" style="margin-bottom:12px">' + escH(message) + '</div>' : '';
+  var lv = String(currentSystem['防護需求等級'] || '未設定');
+  var systemType = String(currentSystem['系統屬性'] || '-');
+  var owner = String(currentSystem['系統負責人'] || '-');
+  var html = alertHtml;
+  html += '<section class="rating-start-card">';
+  html += '<div class="rating-start-eyebrow">ON-DEMAND ANALYSIS</div>';
+  html += '<h3>尚未開始防護需求分級評估</h3>';
+  html += '<p>為節省後端資源並降低頁面干擾，系統會在你按下開始後，才依目前清冊資料讀取規則、分析四個構面並產生建議等級。</p>';
+  html += '<div class="rating-start-meta">';
+  html += '<div class="item"><label>目前防護需求等級</label><div>' + escH(lv) + '</div></div>';
+  html += '<div class="item"><label>系統屬性</label><div>' + escH(systemType) + '</div></div>';
+  html += '<div class="item"><label>系統負責人</label><div>' + escH(owner) + '</div></div>';
+  html += '</div>';
+  html += '<div class="rating-start-actions">';
+  html += '<button class="btn btn-primary" onclick="startRatingAssessment()">開始進行防護需求分級評估</button>';
+  html += '<span class="rating-start-note">按下後才會啟動分級建議分析。</span>';
+  html += '</div>';
+  html += '</section>';
+  panel.innerHTML = html;
+  if (result) {
+    result.className = 'rating-status';
+    result.textContent = '尚未載入分級評估資料。';
+  }
+}
+
+function renderRatingLoadProgressPanel() {
+  var html = '<section class="rating-load-panel" aria-live="polite">';
+  html += '<div class="rating-load-meta"><span id="rating-load-title">正在分析防護需求分級</span></div>';
+  html += '<div class="rating-load-progress-row">';
+  html += '<div class="rating-load-track" aria-hidden="true"><div id="rating-load-bar" class="rating-load-bar"></div></div>';
+  html += '<span id="rating-load-percent" class="rating-load-percent">0%</span>';
+  html += '</div>';
+  html += '<p id="rating-load-summary" class="rating-load-summary">正在讀取系統清冊資料</p>';
+  html += '</section>';
+  return html;
+}
+
+function getRatingLoadProgressSummary(percent) {
+  if (percent >= 100) return '分級建議分析完成';
+  if (percent >= 80) return '正在準備評估操作介面';
+  if (percent >= 60) return '正在彙整建議防護需求等級';
+  if (percent >= 40) return '正在分析四個衝擊構面';
+  if (percent >= 20) return '正在套用分級規則';
+  return '正在讀取系統清冊資料';
+}
+
+function clearRatingLoadProgressTimer() {
+  if (ratingLoadProgressTimer) {
+    clearInterval(ratingLoadProgressTimer);
+    ratingLoadProgressTimer = null;
+  }
+}
+
+function setRatingLoadProgress(percent, forcedSummary) {
+  var pct = Math.max(0, Math.min(100, Math.floor(percent || 0)));
+  ratingLoadProgressValue = pct;
+  var title = document.getElementById('rating-load-title');
+  var pctEl = document.getElementById('rating-load-percent');
+  var bar = document.getElementById('rating-load-bar');
+  var summary = document.getElementById('rating-load-summary');
+  if (title) title.textContent = pct >= 100 ? '分級建議分析完成' : '正在分析防護需求分級';
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (bar) bar.style.width = pct + '%';
+  if (summary) summary.textContent = forcedSummary || getRatingLoadProgressSummary(pct);
+}
+
+function startRatingLoadProgress() {
+  clearRatingLoadProgressTimer();
+  ratingLoadProgressStartedAt = Date.now();
+  ratingLoadProgressValue = 0;
+  var context = document.getElementById('rating-context');
+  var chips = document.getElementById('rating-risk-chips');
+  var steps = document.getElementById('rating-steps');
+  var panel = document.getElementById('rating-panel');
+  var result = document.getElementById('rating-result');
+  if (context) context.innerHTML = '';
+  if (chips) chips.innerHTML = '';
+  if (steps) steps.innerHTML = '';
+  if (panel) panel.innerHTML = renderRatingLoadProgressPanel();
+  if (result) {
+    result.className = 'rating-status';
+    result.textContent = '正在依目前清冊資料建立分級建議，完成後會顯示評估流程。';
+  }
+  updateRatingSaveButtonState();
+  setRatingLoadProgress(0);
+  ratingLoadProgressTimer = setInterval(function() {
+    var elapsed = Date.now() - ratingLoadProgressStartedAt;
+    var next = Math.min(90, Math.floor((elapsed / 6000) * 90));
+    if (next > ratingLoadProgressValue) setRatingLoadProgress(next);
+  }, 120);
+}
+
+function finishRatingLoadProgress(callback) {
+  clearRatingLoadProgressTimer();
+  setRatingLoadProgress(100, '分級建議分析完成');
+  setTimeout(function() {
+    if (typeof callback === 'function') callback();
+  }, 260);
+}
+
+function resetRatingLoadProgress() {
+  clearRatingLoadProgressTimer();
+  ratingLoading = false;
+  ratingLoadProgressStartedAt = 0;
+  ratingLoadProgressValue = 0;
+  ratingLoadRequestSystemId = '';
+}
+
+function startRatingAssessment() {
+  if (!currentSystem || ratingLoading) return;
+  var sysId = currentSystem['系統ID'];
+  ratingLoading = true;
+  ratingLoadRequestSystemId = sysId;
+  startRatingLoadProgress();
+  google.script.run
+    .withSuccessHandler(function(rating) {
+      if (!currentSystem || currentSystem['系統ID'] !== sysId || ratingLoadRequestSystemId !== sysId) return;
+      finishRatingLoadProgress(function() {
+        if (!currentSystem || currentSystem['系統ID'] !== sysId) return;
+        ratingLoading = false;
+        ratingLoadRequestSystemId = '';
+        setRatingState(rating);
+      });
+    })
+    .withFailureHandler(function(err) {
+      if (!currentSystem || currentSystem['系統ID'] !== sysId || ratingLoadRequestSystemId !== sysId) return;
+      resetRatingLoadProgress();
+      var msg = err && err.message ? err.message : '載入分級評估資料失敗，請稍後再試。';
+      renderRatingStartPanel('分級建議分析失敗：' + msg, true);
+    })
+    .getRating(sysId);
+}
+
 function setRatingState(rating) {
   ratingSaving = false;
   resetRatingSaveProgress();
+  resetRatingLoadProgress();
   ratingState = rating || {
     systemId: currentSystem ? currentSystem['系統ID'] : '',
     systemName: currentSystem ? currentSystem['系統名稱'] : '',
