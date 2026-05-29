@@ -396,7 +396,7 @@
     .progress-bar .fill{height:100%;border-radius:10px;transition:width .3s}
     .fill.green{background:var(--success)} .fill.orange{background:var(--warning)} .fill.red{background:var(--danger)}
 
-    .system-load-progress-shell{display:flex;justify-content:center;align-items:center;min-height:360px;padding:32px 18px}
+    .system-load-progress-shell{grid-column:1/-1;display:flex;justify-content:center;align-items:center;min-height:calc(100vh - 220px);padding:32px 18px}
     .system-load-progress-panel{width:min(520px,100%);padding:22px;border-radius:24px;background:radial-gradient(circle at top right,rgba(233,243,255,.95) 0%,rgba(233,243,255,0) 48%),rgba(255,255,255,.88);border:1px solid rgba(207,224,255,.9);box-shadow:0 18px 48px rgba(23,78,166,.12),inset 0 1px 0 rgba(255,255,255,.9);animation:stageIn 260ms cubic-bezier(.2,.8,.2,1)}
     .system-load-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;color:#174ea6;font-size:14px;font-weight:900}
     .system-load-progress-percent{font-variant-numeric:tabular-nums;white-space:nowrap}
