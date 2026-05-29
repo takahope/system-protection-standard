@@ -1237,11 +1237,37 @@ function getRatingDetails_(systemId) {
         overrideReason: data[i][8],
         assessor: data[i][9],
         assessDate: data[i][10],
-        ruleVersion: data[i][11]
+        ruleVersion: data[i][11],
+        rowNum: i + 1
       });
     }
   }
   return results;
+}
+
+function getLatestRatingDetailMeta_(detailRows, summary) {
+  var latest = null;
+  (detailRows || []).forEach(function(row) {
+    if (!row || !row.assessor) return;
+    var assessDate = String(row.assessDate || '');
+    var rowNum = Number(row.rowNum || 0);
+    if (!latest || assessDate > latest.assessDate || (assessDate === latest.assessDate && rowNum > latest.rowNum)) {
+      latest = {
+        assessor: row.assessor || '',
+        assessDate: assessDate,
+        rowNum: rowNum
+      };
+    }
+  });
+  if (latest) return latest;
+  if (summary && (summary.assessor || summary.assessDate)) {
+    return {
+      assessor: summary.assessor || '',
+      assessDate: summary.assessDate || '',
+      rowNum: 0
+    };
+  }
+  return {assessor: '', assessDate: '', rowNum: 0};
 }
 
 function migrateLegacyRatings_() {
@@ -1294,6 +1320,7 @@ function buildRatingPayload_(systemId) {
   if (!system) return null;
   var summary = getSummaryRatingRow_(systemId);
   var detailRows = getRatingDetails_(systemId);
+  var latestDetailMeta = getLatestRatingDetailMeta_(detailRows, summary);
   var recommendations = buildRatingRecommendations_(system);
   var currentEvaluator = getCurrentEvaluator();
   var details = {};
@@ -1344,6 +1371,8 @@ function buildRatingPayload_(systemId) {
     systemName: system['系統名稱'],
     assessor: summary ? (summary.assessor || '') : '',
     assessDate: summary ? (summary.assessDate || '') : '',
+    previousAssessor: latestDetailMeta.assessor || '',
+    previousAssessDate: latestDetailMeta.assessDate || '',
     finalLevel: finalLevel,
     details: details,
     currentEvaluator: currentEvaluator
@@ -1639,6 +1668,8 @@ function saveRating(ratingData) {
     finalLevel: maxLevel,
     assessDate: assessDate,
     assessor: assessor,
+    previousAssessDate: assessDate,
+    previousAssessor: assessor,
     currentEvaluator: evaluator
   };
 }

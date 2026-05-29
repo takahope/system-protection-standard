@@ -1871,6 +1871,8 @@ function setRatingState(rating) {
     systemName: currentSystem ? currentSystem['系統名稱'] : '',
     assessor: '',
     assessDate: '',
+    previousAssessor: '',
+    previousAssessDate: '',
     finalLevel: '普',
     details: {},
     currentEvaluator: null
@@ -2046,12 +2048,14 @@ function renderRatingStatus() {
   var result = document.getElementById('rating-result');
   if (!result) return;
   var evaluator = ratingState.currentEvaluator || {};
+  var previousAssessor = ratingState.previousAssessor || ratingState.assessor || '';
+  var previousAssessDate = ratingState.previousAssessDate || ratingState.assessDate || '';
   var msg = '';
-  if (evaluator.email) {
-    msg += '目前評估人員：<b>' + escH(evaluator.displayName || evaluator.email) + '</b>。';
+  if (previousAssessor) {
+    msg += '前次評估人員：<b>' + escH(previousAssessor) + '</b>。';
   }
-  if (ratingState.assessDate) {
-    msg += (msg ? ' ' : '') + '目前資料日期：<b>' + escH(ratingState.assessDate) + '</b>，總等級為 <span class="sys-badge ' + getLevelClass(ratingState.finalLevel) + '">' + escH(ratingState.finalLevel) + '</span>';
+  if (previousAssessDate) {
+    msg += (msg ? ' ' : '') + '前次評估日期：<b>' + escH(previousAssessDate) + '</b>，總等級為 <span class="sys-badge ' + getLevelClass(ratingState.finalLevel) + '">' + escH(ratingState.finalLevel) + '</span>';
   } else if (!msg) {
     msg = '尚未儲存本系統的分級評估。';
   }
@@ -2203,8 +2207,10 @@ function submitRating() {
       finishRatingSaveProgress(function() {
         var cls=getLevelClass(r.finalLevel);
         ratingState.assessDate = r.assessDate || '';
+        ratingState.previousAssessDate = r.previousAssessDate || r.assessDate || ratingState.previousAssessDate || '';
         ratingState.finalLevel = r.finalLevel;
         ratingState.assessor = r.assessor || ratingState.assessor;
+        ratingState.previousAssessor = r.previousAssessor || r.assessor || ratingState.previousAssessor || ratingState.assessor;
         ratingState.currentEvaluator = r.currentEvaluator || ratingState.currentEvaluator;
         ratingSaving = false;
         syncRatingEvaluator();
