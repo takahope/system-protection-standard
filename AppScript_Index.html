@@ -690,10 +690,6 @@
                 <span class="rating-inline-note" id="rating-step-note"></span>
               </div>
               <div class="right">
-                <div class="rating-field" style="min-width:220px">
-                  <label>評估人員</label>
-                  <input type="text" id="rating-assessor" readonly>
-                </div>
                 <button class="btn btn-outline" id="rating-next-btn" onclick="nextRatingStep()">下一步</button>
                 <button class="btn btn-primary hidden" id="rating-save-btn" onclick="submitRating()">儲存評估結果</button>
               </div>
@@ -1731,9 +1727,11 @@ function setRatingState(rating) {
 }
 
 function syncRatingEvaluator() {
+  var input = document.getElementById('rating-assessor');
+  if (!input) return;
   var evaluator = ratingState && ratingState.currentEvaluator ? ratingState.currentEvaluator : null;
   var display = evaluator && (evaluator.displayName || evaluator.email) ? (evaluator.displayName || evaluator.email) : (ratingState.assessor || '');
-  document.getElementById('rating-assessor').value = display;
+  input.value = display;
 }
 
 function renderRatingContext() {
