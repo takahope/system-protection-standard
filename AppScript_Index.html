@@ -308,9 +308,9 @@
     .system-auto-card span{font-size:11px;color:#475467;line-height:1.5}
     .system-modal-body{padding:18px 24px 8px;overflow-y:auto}
     .system-form-section{margin-bottom:18px;border:1px solid #e5eaf2;border-radius:18px;background:linear-gradient(180deg,#fff 0%,#fbfcff 100%);overflow:visible}
-    .system-form-section-head{padding:14px 16px 12px;border-bottom:1px solid #e8eef6;background:#f8fafc}
-    .system-form-section-head h3{font-size:13px;margin:0 0 4px;color:#0f172a}
-    .system-form-section-head p{font-size:11px;line-height:1.6;color:#64748b;margin:0}
+    .system-form-section-head{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;border-bottom:1px solid #e8eef6;background:#f8fafc}
+    .system-form-section-head h3{font-size:13px;margin:0;color:#0f172a;white-space:nowrap}
+    .system-form-section-head p{font-size:11px;line-height:1.6;color:#64748b;margin:0;padding-left:10px;border-left:1px solid #d8e2ef}
     .system-form-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;padding:14px 16px}
     .system-field{display:flex;flex-direction:column;gap:5px;min-width:0}
     .system-field.compact{grid-column:span 3}
@@ -371,6 +371,8 @@
     @media (max-width:720px){
       .modal{width:96vw;max-height:92vh}
       .system-modal-head,.system-modal-body{padding-left:16px;padding-right:16px}
+      .system-form-section-head{align-items:flex-start;flex-direction:column;gap:4px}
+      .system-form-section-head p{padding-left:0;border-left:none}
       .system-form-grid{grid-template-columns:1fr;padding:12px}
       .system-field.compact,.system-field.medium,.system-field.wide,.system-field.full,.system-field[class*='span-']{grid-column:1/-1}
       .modal .modal-actions{align-items:stretch;flex-wrap:wrap;padding-left:16px;padding-right:16px}
