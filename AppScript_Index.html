@@ -822,6 +822,7 @@ var RATING_LABELS = {
 var ratingState = null;
 var ratingSaving = false, ratingSaveProgressTimer = null, ratingSaveProgressStartedAt = 0, ratingSaveProgressValue = 0;
 var ratingLoading = false, ratingLoadProgressTimer = null, ratingLoadProgressStartedAt = 0, ratingLoadProgressValue = 0, ratingLoadRequestSystemId = '';
+var ratingHistoryMeta = null, ratingHistoryMetaLoading = false, ratingHistoryMetaRequestSystemId = '';
 var ratingTabTemplate = '';
 var assessTabTemplate = '';
 var ruleState = {rows: [], adminStatus: null};
@@ -1702,10 +1703,38 @@ function openSystem(sysId) {
 
   resetRatingLoadProgress();
   ratingState = null;
+  ratingHistoryMeta = null;
+  ratingHistoryMetaLoading = true;
   renderRatingStartPanel();
+  loadRatingHistoryMeta(sysId);
 }
 
 // ===== Rating =====
+function getRatingHistoryDisplay(field) {
+  if (ratingHistoryMetaLoading) return '讀取中...';
+  if (ratingHistoryMeta && ratingHistoryMeta.error) return '前次紀錄讀取失敗';
+  var value = ratingHistoryMeta ? ratingHistoryMeta[field] : '';
+  return value || '尚無前次紀錄';
+}
+
+function loadRatingHistoryMeta(sysId) {
+  ratingHistoryMetaRequestSystemId = sysId;
+  google.script.run
+    .withSuccessHandler(function(meta) {
+      if (!currentSystem || currentSystem['系統ID'] !== sysId || ratingHistoryMetaRequestSystemId !== sysId) return;
+      ratingHistoryMetaLoading = false;
+      ratingHistoryMeta = meta || {};
+      if (!ratingLoading && !ratingState) renderRatingStartPanel();
+    })
+    .withFailureHandler(function() {
+      if (!currentSystem || currentSystem['系統ID'] !== sysId || ratingHistoryMetaRequestSystemId !== sysId) return;
+      ratingHistoryMetaLoading = false;
+      ratingHistoryMeta = {error: true};
+      if (!ratingLoading && !ratingState) renderRatingStartPanel();
+    })
+    .getRatingHistoryMeta(sysId);
+}
+
 function renderRatingStartPanel(message, isError) {
   clearRatingLoadProgressTimer();
   ratingLoading = false;
@@ -1730,7 +1759,8 @@ function renderRatingStartPanel(message, isError) {
 
   var alertHtml = message ? '<div class="rating-status' + (isError ? ' warn' : '') + '" style="margin-bottom:12px">' + escH(message) + '</div>' : '';
   var lv = String(currentSystem['防護需求等級'] || '未設定');
-  var systemType = String(currentSystem['系統屬性'] || '-');
+  var previousAssessor = getRatingHistoryDisplay('previousAssessor');
+  var previousAssessDate = getRatingHistoryDisplay('previousAssessDate');
   var owner = String(currentSystem['系統負責人'] || '-');
   var html = alertHtml;
   html += '<section class="rating-start-card">';
@@ -1739,7 +1769,8 @@ function renderRatingStartPanel(message, isError) {
   html += '<p>為節省後端資源並降低頁面干擾，系統會在你按下開始後，才依目前清冊資料讀取規則、分析四個構面並產生建議等級。</p>';
   html += '<div class="rating-start-meta">';
   html += '<div class="item"><label>目前防護需求等級</label><div>' + escH(lv) + '</div></div>';
-  html += '<div class="item"><label>系統屬性</label><div>' + escH(systemType) + '</div></div>';
+  html += '<div class="item"><label>前次評估人員</label><div>' + escH(previousAssessor) + '</div></div>';
+  html += '<div class="item"><label>前次評估時間</label><div>' + escH(previousAssessDate) + '</div></div>';
   html += '<div class="item"><label>系統負責人</label><div>' + escH(owner) + '</div></div>';
   html += '</div>';
   html += '<div class="rating-start-actions">';
@@ -1835,6 +1866,7 @@ function resetRatingLoadProgress() {
   ratingLoadProgressStartedAt = 0;
   ratingLoadProgressValue = 0;
   ratingLoadRequestSystemId = '';
+  ratingHistoryMetaRequestSystemId = '';
 }
 
 function startRatingAssessment() {

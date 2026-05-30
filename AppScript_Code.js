@@ -1245,6 +1245,24 @@ function getRatingDetails_(systemId) {
   return results;
 }
 
+function getRatingDetailsReadOnly_(systemId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('防護需求分級評估明細');
+  if (!sheet || sheet.getLastRow() <= 1) return [];
+  var data = sheet.getDataRange().getDisplayValues();
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] == systemId) {
+      results.push({
+        assessor: data[i][9],
+        assessDate: data[i][10],
+        rowNum: i + 1
+      });
+    }
+  }
+  return results;
+}
+
 function getLatestRatingDetailMeta_(detailRows, summary) {
   var latest = null;
   (detailRows || []).forEach(function(row) {
@@ -1676,6 +1694,18 @@ function saveRating(ratingData) {
 
 function getRating(systemId) {
   return buildRatingPayload_(systemId);
+}
+
+function getRatingHistoryMeta(systemId) {
+  var summary = getSummaryRatingRow_(systemId);
+  var detailRows = getRatingDetailsReadOnly_(systemId);
+  var latestDetailMeta = getLatestRatingDetailMeta_(detailRows, summary);
+  return {
+    systemId: systemId,
+    previousAssessor: latestDetailMeta.assessor || '',
+    previousAssessDate: latestDetailMeta.assessDate || '',
+    finalLevel: summary ? (summary.finalLevel || '') : ''
+  };
 }
 
 // ===== 防護基準自評 =====
