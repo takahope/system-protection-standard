@@ -42,6 +42,9 @@
 
     /* System grid */
     .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+    .sys-group-head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 -4px;padding:8px 2px;border-bottom:1px solid #dbe4ee;color:#0f172a}
+    .sys-group-head strong{font-size:13px}
+    .sys-group-head span{font-size:11px;color:var(--text2);font-weight:700}
     .sys-card{background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);border-radius:18px;box-shadow:0 12px 28px rgba(15,23,42,.06);padding:16px;cursor:pointer;transition:.2s;border:1px solid #dbe4ee;border-left:5px solid var(--border);display:grid;gap:12px}
     .sys-card:hover{box-shadow:0 18px 36px rgba(15,23,42,.11);transform:translateY(-2px)}
     .sys-card.level-high{border-left-color:var(--high)} .sys-card.level-mid{border-left-color:var(--mid)} .sys-card.level-low{border-left-color:var(--low)}
@@ -72,7 +75,9 @@
 
     /* Action bar */
     .action-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+    .list-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .search{padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:220px}
+    .filter-select{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;color:var(--text)}
     .refresh-hint{font-size:12px;color:var(--text2);min-height:18px;display:flex;align-items:center}
     .refresh-hint.updating{color:var(--primary)}
     .refresh-hint.error{color:var(--danger)}
@@ -594,7 +599,17 @@
   <div id="page-list">
     <div class="stats-bar" id="global-stats"></div>
     <div class="action-bar">
-      <input type="text" id="system-search" class="search" placeholder="搜尋系統名稱..." oninput="filterSystems(this.value)">
+      <div class="list-tools">
+        <input type="text" id="system-search" class="search" placeholder="搜尋系統名稱..." oninput="filterSystems(this.value)">
+        <select id="system-build-filter" class="filter-select" onchange="filterSystems()" aria-label="依建置方式篩選">
+          <option value="">全部建置方式</option>
+          <option value="package">套裝軟體</option>
+          <option value="self">自行開發</option>
+          <option value="outsourced">委外開發</option>
+          <option value="rental">租用服務</option>
+          <option value="other">其他 / 未填寫</option>
+        </select>
+      </div>
       <div style="display:flex;gap:6px">
         <button class="btn btn-primary hidden" id="add-system-btn" onclick="openAddSystemModal()">+ 新增系統</button>
         <button class="btn btn-outline" id="system-refresh-btn" onclick="refreshData()">重新整理</button>
@@ -827,7 +842,7 @@ var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData
 var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
 var systemLoadProgressTimer = null, systemLoadProgressStartedAt = 0, systemLoadProgressValue = 0;
 var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, toastProgressValue = 0;
-var lastSystemQuery = '', listScrollTop = 0, listScrollRestorePending = false;
+var lastSystemQuery = '', lastSystemBuildFilter = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
 var systemSubmitTimer = null, systemSubmitProgress = 0, systemModalSubmitting = false;
@@ -1358,12 +1373,15 @@ function showTab(tabId) {
 // ===== System List =====
 function captureListViewState() {
   lastSystemQuery = getSystemSearchValue();
+  lastSystemBuildFilter = getSystemBuildFilterValue();
   listScrollTop = window.scrollY || window.pageYOffset || 0;
 }
 
 function restoreListViewState() {
   var searchEl = document.getElementById('system-search');
+  var filterEl = document.getElementById('system-build-filter');
   if (searchEl) searchEl.value = lastSystemQuery || '';
+  if (filterEl) filterEl.value = lastSystemBuildFilter || '';
   listScrollRestorePending = systemsLoaded;
 }
 
@@ -1372,12 +1390,53 @@ function getSystemSearchValue() {
   return searchEl ? String(searchEl.value || '') : String(lastSystemQuery || '');
 }
 
+function getSystemBuildFilterValue() {
+  var filterEl = document.getElementById('system-build-filter');
+  return filterEl ? String(filterEl.value || '') : String(lastSystemBuildFilter || '');
+}
+
+var SYSTEM_BUILD_GROUPS = [
+  {key:'package', label:'套裝軟體', values:['本機關購置套裝軟體']},
+  {key:'self', label:'自行開發', values:['本機關自行開發']},
+  {key:'outsourced', label:'委外開發', values:['本機關委外開發']},
+  {key:'rental', label:'租用服務', values:['本機關租用服務']},
+  {key:'other', label:'其他 / 未填寫', values:[]}
+];
+
+function getSystemBuildGroup(sys) {
+  var method = String(sys && sys['建置方式'] ? sys['建置方式'] : '').trim();
+  for (var i = 0; i < SYSTEM_BUILD_GROUPS.length; i++) {
+    if (SYSTEM_BUILD_GROUPS[i].values.indexOf(method) >= 0) return SYSTEM_BUILD_GROUPS[i];
+  }
+  return SYSTEM_BUILD_GROUPS[SYSTEM_BUILD_GROUPS.length - 1];
+}
+
+function getSystemBuildGroupOrder(sys) {
+  var group = getSystemBuildGroup(sys);
+  for (var i = 0; i < SYSTEM_BUILD_GROUPS.length; i++) {
+    if (SYSTEM_BUILD_GROUPS[i].key === group.key) return i;
+  }
+  return SYSTEM_BUILD_GROUPS.length;
+}
+
+function sortSystemsForList(systems) {
+  return (systems || []).slice().sort(function(a, b) {
+    var orderDiff = getSystemBuildGroupOrder(a) - getSystemBuildGroupOrder(b);
+    if (orderDiff !== 0) return orderDiff;
+    return String(a['系統名稱'] || '').localeCompare(String(b['系統名稱'] || ''), 'zh-Hant');
+  });
+}
+
 function getFilteredSystems() {
   var kw = String(lastSystemQuery || '').trim();
-  if (!kw) return allSystems;
-  return allSystems.filter(function(s){
-    return (s['系統名稱'] || '').indexOf(kw) >= 0;
+  var buildFilter = String(lastSystemBuildFilter || '').trim();
+  var filtered = (allSystems || []).filter(function(s){
+    var nameMatched = !kw || String(s['系統名稱'] || '').indexOf(kw) >= 0;
+    var group = getSystemBuildGroup(s);
+    var buildMatched = !buildFilter || group.key === buildFilter;
+    return nameMatched && buildMatched;
   });
+  return sortSystemsForList(filtered);
 }
 
 function renderSystemRefreshHint(message, state) {
@@ -1671,18 +1730,32 @@ function formatRefreshTime(date) {
 
 function renderSystems(systems) {
   var grid = document.getElementById('system-grid');
+  systems = sortSystemsForList(systems || []);
   if(!systems||systems.length===0){
-    grid.innerHTML='<div class="card" style="grid-column:1/-1;text-align:center;padding:30px"><p>尚無系統資料，請至「系統設定」匯入。</p></div>';
+    var hasFilter = !!String(lastSystemQuery || '').trim() || !!String(lastSystemBuildFilter || '').trim();
+    var emptyText = hasFilter ? '沒有符合條件的系統。' : '尚無系統資料，請至「系統設定」匯入。';
+    grid.innerHTML='<div class="card" style="grid-column:1/-1;text-align:center;padding:30px"><p>'+emptyText+'</p></div>';
     restoreListScrollIfNeeded();
     return;
   }
   var html='';
+  var currentGroupKey = '';
+  var groupCounts = {};
   systems.forEach(function(sys){
+    var group = getSystemBuildGroup(sys);
+    groupCounts[group.key] = (groupCounts[group.key] || 0) + 1;
+  });
+  systems.forEach(function(sys){
+    var group = getSystemBuildGroup(sys);
+    if (group.key !== currentGroupKey) {
+      currentGroupKey = group.key;
+      html+='<div class="sys-group-head"><strong>'+escH(group.label)+'</strong><span>'+groupCounts[group.key]+' 筆</span></div>';
+    }
     var missingFields = getMissingSystemFields(sys);
     var lv = sys['防護需求等級']||'未設定';
     var lc = lv==='高'?'level-high':lv==='中'?'level-mid':lv==='普'?'level-low':'';
     var bc = lv==='高'?'high':lv==='中'?'mid':lv==='普'?'low':'na';
-    html+='<div class="sys-card '+lc+'" onclick="openSystem(\''+sys['系統ID']+'\')">';
+    html+='<div class="sys-card '+lc+'" onclick="openSystem(&quot;'+escH(sys['系統ID'])+'&quot;)">';
     html+='<div class="sys-card-head">';
     html+='<div class="sys-card-main">';
     html+='<div class="sys-name">'+escH(sys['系統名稱']||'未命名')+'</div>';
@@ -1717,9 +1790,12 @@ function renderGlobalStats(systems) {
 }
 
 function filterSystems(kw) {
-  lastSystemQuery = kw || '';
+  if (kw !== undefined) lastSystemQuery = kw || '';
+  else lastSystemQuery = getSystemSearchValue();
+  lastSystemBuildFilter = getSystemBuildFilterValue();
   renderSystems(getFilteredSystems());
 }
+
 
 // ===== Dashboard =====
 function renderDashboardEmptyState(message) {
