@@ -2265,6 +2265,32 @@ function buildAssessmentReportCsv_(report) {
   }).join('\r\n');
 }
 
+function exportSpreadsheetAsXlsxBlob_(spreadsheetId, fileName) {
+  var exportMimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  var url = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(spreadsheetId) +
+    '/export?mimeType=' + encodeURIComponent(exportMimeType);
+  var response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    headers: {
+      Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
+    },
+    muteHttpExceptions: true
+  });
+  var code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
+    var body = response.getContentText() || '';
+    var message = body;
+    try {
+      var parsed = JSON.parse(body);
+      if (parsed && parsed.error && parsed.error.message) message = parsed.error.message;
+    } catch (err) {
+      // Keep the raw response text when Drive does not return JSON.
+    }
+    throw new Error('Drive API 匯出 XLSX 失敗（HTTP ' + code + '）：' + message);
+  }
+  return response.getBlob().setName(fileName);
+}
+
 function exportAssessmentFile(systemId, format) {
   var fileFormat = String(format || '').toLowerCase();
   if (fileFormat !== 'csv' && fileFormat !== 'xlsx') return {success: false, message: '不支援的匯出格式'};
@@ -2291,7 +2317,7 @@ function exportAssessmentFile(systemId, format) {
     populateAssessmentReportSheet_(ws, report);
     SpreadsheetApp.flush();
     var xlsxName = getAssessmentReportFileName_(report.system['系統名稱'], 'xlsx');
-    var xlsxBlob = tempFile.getAs(MimeType.MICROSOFT_EXCEL).setName(xlsxName);
+    var xlsxBlob = exportSpreadsheetAsXlsxBlob_(tempSpreadsheet.getId(), xlsxName);
     return {
       success: true,
       fileName: xlsxName,
