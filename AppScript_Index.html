@@ -452,8 +452,13 @@
     .spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .hidden{display:none!important}
-    .toast{position:fixed;bottom:20px;right:20px;background:#323232;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
-    .toast.show{opacity:1}
+    .toast{position:fixed;bottom:20px;right:20px;min-width:280px;max-width:min(420px,calc(100vw - 32px));background:#263238;color:#fff;padding:12px 14px;border-radius:12px;font-size:12px;z-index:300;opacity:0;transform:translateY(8px);transition:opacity .24s ease,transform .24s ease,background .24s ease;pointer-events:none;box-shadow:0 16px 38px rgba(15,23,42,.22);overflow:hidden}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .toast.success{background:#153d2a}.toast.error{background:#5c1d18}.toast.syncing{background:#1f3f66}
+    .toast-title{font-size:12px;font-weight:800;line-height:1.5}.toast-message{margin-top:2px;color:rgba(255,255,255,.82);font-size:11px;line-height:1.6}
+    .toast-progress-track{height:4px;margin-top:9px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden}
+    .toast-progress-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#8ec5ff 0%,#f4c15d 100%);transition:width .2s ease}
+    .toast.success .toast-progress-fill{background:#7bd88f}.toast.error .toast-progress-fill{background:#ff9b8f}
     .code-tag{display:inline-block;padding:1px 6px;background:#fce4ec;color:var(--danger);border-radius:4px;font-size:11px;font-weight:600;margin:1px}
 
     /* ===== Compare Page ===== */
@@ -813,6 +818,7 @@
 var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData = null;
 var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
 var systemLoadProgressTimer = null, systemLoadProgressStartedAt = 0, systemLoadProgressValue = 0;
+var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, toastProgressValue = 0;
 var lastSystemQuery = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
@@ -1628,7 +1634,8 @@ function beginOptimisticSystemUpdate(submittedData) {
   var index = findSystemIndexById(systemId);
   var previousSystem = index >= 0 ? copySystemRecord(allSystems[index]) : copySystemRecord(currentSystem || {});
   var optimisticSystem = buildLocalSavedSystemRecord(null, submittedData, previousSystem);
-  applySystemRecordToLocalState(optimisticSystem, '已套用畫面，正在同步後端...', '畫面已更新，正在同步後端');
+  applySystemRecordToLocalState(optimisticSystem, '已套用畫面，正在同步後端...', '');
+  showProgressToast({title:'畫面已更新', message:'正在同步後端資料', state:'syncing'});
   return {
     systemId: systemId,
     index: index,
@@ -1638,7 +1645,8 @@ function beginOptimisticSystemUpdate(submittedData) {
 
 function rollbackOptimisticSystemUpdate(tx, message) {
   if (!tx || !tx.previousSystem || !tx.previousSystem['系統ID']) return;
-  applySystemRecordToLocalState(tx.previousSystem, '同步失敗，已還原畫面', message);
+  applySystemRecordToLocalState(tx.previousSystem, '同步失敗，已還原畫面', '');
+  failProgressToast(message || '儲存失敗，已還原畫面');
 }
 
 function formatRefreshTime(date) {
@@ -3231,11 +3239,11 @@ function submitEditSystem() {
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
       if (r.system) {
-        applySystemRecordToLocalState(r.system, '已同步後端 ' + formatRefreshTime(new Date()), r.message || '系統已更新');
+        applySystemRecordToLocalState(r.system, '已同步後端 ' + formatRefreshTime(new Date()), '');
       } else {
         renderSystemRefreshHint('已同步後端 ' + formatRefreshTime(new Date()), '');
-        showToast(r.message || '系統已更新');
       }
+      finishProgressToast(r.message || '系統已更新');
     } else {
       rollbackOptimisticSystemUpdate(optimisticTx, '儲存失敗，已還原畫面：' + (r.message || '請稍後再試。'));
     }
@@ -3755,7 +3763,83 @@ function renderComparePage() {
 
 // ===== Utils =====
 function escH(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+
+function clearToastTimers() {
+  if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+  if (toastProgressTimer) { clearInterval(toastProgressTimer); toastProgressTimer = null; }
+}
+
+function renderToastContent(title, message, progress) {
+  var html = '<div class="toast-title">' + escH(title || '') + '</div>';
+  if (message) html += '<div class="toast-message">' + escH(message) + '</div>';
+  if (progress !== null && progress !== undefined) {
+    html += '<div class="toast-progress-track"><div id="toast-progress-fill" class="toast-progress-fill" style="width:' + Math.max(0, Math.min(100, Math.round(progress))) + '%"></div></div>';
+  }
+  return html;
+}
+
+function setToastState(state) {
+  var t = document.getElementById('toast');
+  if (!t) return null;
+  t.className = 'toast show' + (state ? ' ' + state : '');
+  return t;
+}
+
+function showToast(msg){
+  clearToastTimers();
+  var t = setToastState('');
+  if (!t) return;
+  t.textContent = msg;
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+function setProgressToastValue(percent) {
+  toastProgressValue = Math.max(0, Math.min(100, percent || 0));
+  var fill = document.getElementById('toast-progress-fill');
+  if (fill) fill.style.width = Math.round(toastProgressValue) + '%';
+}
+
+function showProgressToast(options) {
+  options = options || {};
+  clearToastTimers();
+  toastProgressStartedAt = new Date().getTime();
+  toastProgressValue = 0;
+  var t = setToastState(options.state || 'syncing');
+  if (!t) return;
+  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', 0);
+  toastProgressTimer = setInterval(function() {
+    var elapsed = new Date().getTime() - toastProgressStartedAt;
+    var pct = Math.min(90, elapsed / 4000 * 90);
+    if (pct > toastProgressValue) setProgressToastValue(pct);
+    if (pct >= 90 && toastProgressTimer) {
+      clearInterval(toastProgressTimer);
+      toastProgressTimer = null;
+    }
+  }, 120);
+}
+
+function updateProgressToast(options) {
+  options = options || {};
+  var t = setToastState(options.state || 'syncing');
+  if (!t) return;
+  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', toastProgressValue);
+  if (options.progress !== undefined) setProgressToastValue(options.progress);
+}
+
+function finishProgressToast(message) {
+  clearToastTimers();
+  var detail = message && message !== '系統已更新' ? message : '';
+  updateProgressToast({title:'系統已更新', message:detail, state:'success', progress:100});
+  var t = document.getElementById('toast');
+  toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 1500);
+}
+
+function failProgressToast(message) {
+  clearToastTimers();
+  updateProgressToast({title:'同步失敗', message:message || '儲存失敗，請稍後再試。', state:'error', progress:100});
+  var t = document.getElementById('toast');
+  toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 4500);
+}
 
 document.addEventListener('DOMContentLoaded',function(){
   ratingTabTemplate = document.getElementById('tab-rating').innerHTML;
