@@ -1560,8 +1560,12 @@ function enrichLocalSystemMeta(sys, previousSystem) {
 
 function buildLocalSavedSystemRecord(savedSystem, submittedData, previousSystem) {
   var next = copySystemRecord(previousSystem || {});
+  var previousOwner = previousSystem ? previousSystem['系統負責人'] : '';
   Object.keys(submittedData || {}).forEach(function(key) { next[key] = submittedData[key]; });
   Object.keys(savedSystem || {}).forEach(function(key) { next[key] = savedSystem[key]; });
+  if (next['系統負責人'] !== previousOwner && !(savedSystem && savedSystem._ownerDisplayName)) {
+    delete next._ownerDisplayName;
+  }
   return enrichLocalSystemMeta(next, previousSystem);
 }
 
@@ -1599,6 +1603,42 @@ function applySavedSystemToLocalState(savedSystem, submittedData, toastText) {
   renderSystemRefreshHint('畫面已套用 ' + lastSystemsRefreshAt, '');
   renderCurrentSystemDetailShell();
   if (toastText) showToast(toastText);
+}
+
+function applySystemRecordToLocalState(systemRecord, hintText, toastText) {
+  if (!systemRecord) return;
+  var systemId = systemRecord['系統ID'];
+  var index = findSystemIndexById(systemId);
+  var previousSystem = index >= 0 ? allSystems[index] : currentSystem;
+  var nextSystem = enrichLocalSystemMeta(copySystemRecord(systemRecord), previousSystem);
+  if (index >= 0) allSystems[index] = nextSystem;
+  else allSystems.push(nextSystem);
+  currentSystem = nextSystem;
+  systemsLoaded = true;
+  lastSystemsRefreshAt = formatRefreshTime(new Date());
+  renderSystems(getFilteredSystems());
+  renderGlobalStats(allSystems);
+  renderSystemRefreshHint(hintText || ('畫面已套用 ' + lastSystemsRefreshAt), '');
+  renderCurrentSystemDetailShell();
+  if (toastText) showToast(toastText);
+}
+
+function beginOptimisticSystemUpdate(submittedData) {
+  var systemId = submittedData['系統ID'] || (currentSystem ? currentSystem['系統ID'] : '');
+  var index = findSystemIndexById(systemId);
+  var previousSystem = index >= 0 ? copySystemRecord(allSystems[index]) : copySystemRecord(currentSystem || {});
+  var optimisticSystem = buildLocalSavedSystemRecord(null, submittedData, previousSystem);
+  applySystemRecordToLocalState(optimisticSystem, '已套用畫面，正在同步後端...', '畫面已更新，正在同步後端');
+  return {
+    systemId: systemId,
+    index: index,
+    previousSystem: previousSystem
+  };
+}
+
+function rollbackOptimisticSystemUpdate(tx, message) {
+  if (!tx || !tx.previousSystem || !tx.previousSystem['系統ID']) return;
+  applySystemRecordToLocalState(tx.previousSystem, '同步失敗，已還原畫面', message);
 }
 
 function formatRefreshTime(date) {
@@ -3180,26 +3220,29 @@ function submitEditSystem() {
   if (systemModalSubmitting) return;
   var data = getModalData();
   data['系統ID'] = currentSystem['系統ID'];
+  var targetRow = currentSystem._row;
   if (data._ownerInputUnresolved) showToast('系統負責人尚未對應人員主檔，請稍後確認');
   delete data._ownerInputUnresolved;
   var missing = getIncompleteRecommendedFields(data);
   if (missing.length) showToast('尚有 ' + missing.length + ' 項資料待補齊，可稍後回來完成');
   if (!startSystemSubmitProgress('edit')) return;
+  var optimisticTx = beginOptimisticSystemUpdate(data);
+  closeModal(true);
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
-      completeSystemSubmitProgress(true, '已寫入，正在更新畫面', function(){
-        var toastText = r.message || '系統已更新';
-        closeModal(true);
-        applySavedSystemToLocalState(r.system || null, data, toastText);
-      });
+      if (r.system) {
+        applySystemRecordToLocalState(r.system, '已同步後端 ' + formatRefreshTime(new Date()), r.message || '系統已更新');
+      } else {
+        renderSystemRefreshHint('已同步後端 ' + formatRefreshTime(new Date()), '');
+        showToast(r.message || '系統已更新');
+      }
     } else {
-      completeSystemSubmitProgress(false, r.message || '更新失敗，請稍後再試。');
+      rollbackOptimisticSystemUpdate(optimisticTx, '儲存失敗，已還原畫面：' + (r.message || '請稍後再試。'));
     }
   }).withFailureHandler(function(e){
-    completeSystemSubmitProgress(false, '更新失敗：'+e.message);
-    showToast('更新失敗：'+e.message);
+    rollbackOptimisticSystemUpdate(optimisticTx, '儲存失敗，已還原畫面：' + e.message);
   })
-  .updateSystem(currentSystem._row, data);
+  .updateSystem(targetRow, data);
 }
 
 function deleteCurrentSystem() {
