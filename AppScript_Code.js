@@ -1737,16 +1737,36 @@ function getAssessmentCompareChangeMeta_(index) {
   };
 }
 
+function getControlMeasureExampleMap_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('控制措施基準');
+  var map = {};
+  if (!sheet || sheet.getLastRow() <= 1) return map;
+
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getDisplayValues();
+  for (var i = 0; i < data.length; i++) {
+    var index = String(data[i][0] || '').trim();
+    if (!index) continue;
+    map[index] = {
+      currentStatus: data[i][6] || '',
+      evidence: data[i][7] || ''
+    };
+  }
+  return map;
+}
+
 function getAssessment(systemId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) return [];
 
+  var exampleMap = getControlMeasureExampleMap_();
   var data = sheet.getDataRange().getDisplayValues();
   var results = [];
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] == systemId) {
       var meta = getAssessmentCompareChangeMeta_(data[i][2]);
+      var examples = exampleMap[String(data[i][2] || '').trim()] || {};
       results.push({
         systemId: data[i][0],
         systemName: data[i][1],
@@ -1765,6 +1785,8 @@ function getAssessment(systemId) {
         compareChangeType: meta.compareChangeType,
         compareChangeLabel: meta.compareChangeLabel,
         compareChangeColor: meta.compareChangeColor,
+        exampleCurrentStatus: examples.currentStatus || '',
+        exampleEvidence: examples.evidence || '',
         _row: i + 1
       });
     }
