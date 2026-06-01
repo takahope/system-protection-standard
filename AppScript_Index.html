@@ -391,6 +391,26 @@
     .owner-input-wrap datalist{display:none}
     .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .export-modal{width:min(92vw,680px)}
+    .export-modal-head{padding:24px 24px 18px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border-bottom:1px solid #dbe7f6}
+    .export-modal-head h2{margin:0 0 8px;font-size:18px;color:#0f172a}
+    .export-modal-head p{font-size:12px;line-height:1.8;color:#52677a;margin:0}
+    .export-meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:16px 24px 0}
+    .export-meta-item{padding:11px 12px;border-radius:14px;background:#fff;border:1px solid #e2eaf4}
+    .export-meta-item label{display:block;font-size:10px;color:#64748b;margin-bottom:4px;font-weight:800}
+    .export-meta-item div{font-size:12px;font-weight:800;color:#0f172a;overflow-wrap:anywhere}
+    .export-format-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 24px 22px}
+    .export-format-card{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start;text-align:left;padding:16px;border-radius:18px;border:1px solid #d7e3f3;background:#fff;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;color:inherit;font-family:inherit}
+    .export-format-card:hover{transform:translateY(-1px);border-color:#1a73e8;box-shadow:0 16px 34px rgba(23,78,166,.12);background:#f8fbff}
+    .export-format-card:disabled{cursor:not-allowed;opacity:.55;transform:none;box-shadow:none;background:#f8fafc}
+    .export-format-icon{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:14px;background:#e8f0fe;color:#174ea6;font-size:13px;font-weight:900;letter-spacing:.04em;flex-shrink:0}
+    .export-format-card.xlsx .export-format-icon{background:#e7f6ec;color:#18794e}
+    .export-format-copy strong{display:block;font-size:14px;color:#0f172a;margin-bottom:5px}
+    .export-format-copy span{display:block;font-size:12px;line-height:1.65;color:#64748b}
+    .export-warning{margin:0 24px 18px;padding:12px 14px;border-radius:14px;background:#fff8ee;border:1px solid #fed7aa;color:#9a3412;font-size:12px;line-height:1.7}
+    .export-result-link{display:none;margin:0 24px 18px;padding:12px 14px;border-radius:14px;background:#f3fbf6;border:1px solid #c6ead5;font-size:12px;line-height:1.7;color:#18794e}
+    .export-result-link a{font-weight:800;color:#0d6f3f;text-decoration:none}
+    .export-result-link a:hover{text-decoration:underline}
     .system-submit-progress{display:none;flex:1;flex-direction:column;align-items:stretch;gap:7px;min-width:280px;max-width:460px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9)}
     .system-submit-progress.active{display:flex}
     .system-submit-progress.error{background:#fff7f5;border-color:#f4c7c3;box-shadow:0 10px 24px rgba(217,48,37,.08)}
@@ -425,6 +445,9 @@
     }
     @media (max-width:720px){
       .modal{width:96vw;max-height:92vh}
+      .export-meta-grid,.export-format-grid{grid-template-columns:1fr;padding-left:16px;padding-right:16px}
+      .export-modal-head{padding-left:16px;padding-right:16px}
+      .export-warning,.export-result-link{margin-left:16px;margin-right:16px}
       .system-modal-head,.system-modal-body{padding-left:16px;padding-right:16px}
       .system-form-section-head{align-items:flex-start;flex-direction:column;gap:4px}
       .system-form-section-head p{padding-left:0;border-left:none}
@@ -846,6 +869,7 @@ var lastSystemQuery = '', lastSystemBuildFilter = '', listScrollTop = 0, listScr
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
 var systemSubmitTimer = null, systemSubmitProgress = 0, systemModalSubmitting = false;
+var assessmentExportSubmitting = false;
 var SYSTEM_SUBMIT_MESSAGES = [
   {pct:0, text:'檢查欄位資料'},
   {pct:20, text:'整理系統清冊'},
@@ -2817,12 +2841,105 @@ function recalculateCurrentSystemCompliance() {
 
 function exportReport() {
   if(!currentSystem){showToast('請先選擇系統');return;}
-  showToast('匯出中...');
+  openAssessmentExportModal();
+}
+
+function openAssessmentExportModal() {
+  if (!currentSystem) return;
+  var dirtyCount = getAssessmentDirtyCount();
+  var itemCount = currentAssessment && currentAssessment.length ? currentAssessment.length : 0;
+  var hasData = itemCount > 0;
+  var disabled = dirtyCount > 0 || !hasData;
+  var warning = '';
+  if (dirtyCount > 0) warning = '目前有 ' + dirtyCount + ' 項自評內容尚未儲存。請先儲存所有變更，再下載正式報告。';
+  else if (!hasData) warning = '此系統尚無自評資料，請先初始化自評項目。';
+
+  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal export-modal">';
+  html += '<div class="export-modal-head"><h2>匯出防護基準自評報告</h2>';
+  html += '<p>選擇要下載的檔案格式。XLSX 會保留報告版面與標色，CSV 適合後續資料彙整。</p></div>';
+  html += '<div class="export-meta-grid">';
+  html += '<div class="export-meta-item"><label>系統名稱</label><div>' + escH(currentSystem['系統名稱'] || '-') + '</div></div>';
+  html += '<div class="export-meta-item"><label>防護需求等級</label><div>' + escH(currentSystem['防護需求等級'] || '-') + '</div></div>';
+  html += '<div class="export-meta-item"><label>自評項目</label><div>' + itemCount + ' 項</div></div>';
+  html += '</div>';
+  if (warning) html += '<div class="export-warning">' + escH(warning) + '</div>';
+  html += '<div id="assessment-export-result" class="export-result-link"></div>';
+  html += '<div class="export-format-grid">';
+  html += '<button type="button" class="export-format-card csv" onclick="downloadAssessmentReportFile(\'csv\')" ' + (disabled ? 'disabled' : '') + '>';
+  html += '<span class="export-format-icon">CSV</span><span class="export-format-copy"><strong>下載 CSV</strong><span>純資料格式，適合匯入分析工具、彙整跨系統自評狀態。</span></span></button>';
+  html += '<button type="button" class="export-format-card xlsx" onclick="downloadAssessmentReportFile(\'xlsx\')" ' + (disabled ? 'disabled' : '') + '>';
+  html += '<span class="export-format-icon">XLSX</span><span class="export-format-copy"><strong>下載 XLSX</strong><span>保留檢核表標題、欄寬、表頭與異動標色，適合正式留存。</span></span></button>';
+  html += '</div>';
+  html += '<div class="modal-actions"><div class="modal-action-left"></div><div class="modal-action-right"><button class="btn btn-outline" onclick="closeModal()">關閉</button></div></div>';
+  html += '</div></div>';
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function setAssessmentExportButtonsDisabled(disabled) {
+  document.querySelectorAll('.export-format-card').forEach(function(btn) {
+    btn.disabled = !!disabled;
+  });
+}
+
+function base64ToBlob(base64, mimeType) {
+  var binary = atob(base64 || '');
+  var len = binary.length;
+  var bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], {type: mimeType || 'application/octet-stream'});
+}
+
+function triggerAssessmentFileDownload(file) {
+  var blob = base64ToBlob(file.base64, file.mimeType);
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = file.fileName || 'assessment-report';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  var result = document.getElementById('assessment-export-result');
+  if (result) {
+    result.style.display = 'block';
+    result.innerHTML = '檔案已產生。若瀏覽器未自動下載，請點擊 <a href="' + url + '" download="' + escH(file.fileName || 'assessment-report') + '">這裡下載</a>。';
+  } else {
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 15000);
+  }
+}
+
+function downloadAssessmentReportFile(format) {
+  if (!currentSystem || assessmentExportSubmitting) return;
+  if (getAssessmentDirtyCount() > 0) {
+    openAssessmentExportModal();
+    showToast('請先儲存自評變更後再匯出');
+    return;
+  }
+  assessmentExportSubmitting = true;
+  setAssessmentExportButtonsDisabled(true);
+  showProgressToast({
+    title: '正在產生報告',
+    message: format === 'xlsx' ? '正在建立 XLSX 檢核表' : '正在整理 CSV 資料',
+    summary: '準備匯出檔案'
+  });
   google.script.run.withSuccessHandler(function(r){
-    if(r.success) showToast('已匯出至工作表「'+r.sheetName+'」');
-    else showToast('匯出失敗：'+r.message);
-  }).withFailureHandler(function(e){showToast('匯出失敗：'+e.message);})
-  .exportAssessmentReport(currentSystem['系統ID']);
+    assessmentExportSubmitting = false;
+    setAssessmentExportButtonsDisabled(false);
+    if (r && r.success) {
+      triggerAssessmentFileDownload(r);
+      clearToastTimers();
+      updateProgressToast({title:'報告已產生', message:r.fileName || '', state:'success', progress:100, summary:'檔案已開始下載'});
+      var t = document.getElementById('toast');
+      toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 2200);
+    } else {
+      failProgressToast(r && r.message ? r.message : '匯出失敗，請稍後再試。');
+    }
+  }).withFailureHandler(function(e){
+    assessmentExportSubmitting = false;
+    setAssessmentExportButtonsDisabled(false);
+    failProgressToast('匯出失敗：' + e.message);
+  }).exportAssessmentFile(currentSystem['系統ID'], format);
 }
 
 // ===== System CRUD Modal =====

@@ -2148,41 +2148,16 @@ function batchSaveAssessment(items) {
   return {success: true, updated: updated};
 }
 
-// ===== 匯出自評報告至新工作表 =====
-function exportAssessmentReport(systemId) {
+// ===== 匯出自評報告 =====
+function buildAssessmentReportPayload_(systemId) {
   var sys = getSystems().filter(function(s) { return s['系統ID'] == systemId; })[0];
   if (!sys) return {success: false, message: '找不到系統'};
 
   var assessment = getAssessment(systemId);
   if (assessment.length === 0) return {success: false, message: '尚無自評資料'};
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheetName = '自評報告_' + (sys['系統名稱'] || '').substring(0, 15);
-  var existing = ss.getSheetByName(sheetName);
-  if (existing) ss.deleteSheet(existing);
-
-  var ws = ss.insertSheet(sheetName);
-
-  // Title
-  ws.getRange('A1').setValue('資通系統防護基準檢核表（依據附表十修正規定）');
-  ws.getRange('A1:K1').merge().setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
-
-  ws.getRange('A2').setValue('機關單位名稱'); ws.getRange('B2').setValue('人體生物資料庫');
-  ws.getRange('D2').setValue('檢核日期'); ws.getRange('E2').setValue(new Date().toLocaleDateString('zh-TW'));
-  ws.getRange('A3').setValue('資通系統名稱'); ws.getRange('B3').setValue(sys['系統名稱']);
-  ws.getRange('D3').setValue('安全等級'); ws.getRange('E3').setValue(sys['防護需求等級']);
-  ws.getRange('A2:A3').setFontWeight('bold');
-  ws.getRange('D2:D3').setFontWeight('bold');
-
-  // Headers
   var headers = ['構面','類別','項次','最低要求等級','安全控制措施','符合性','現況說明','佐證資料','矯正作為','目標日期','備註'];
-  ws.getRange(5, 1, 1, headers.length).setValues([headers])
-    .setFontWeight('bold').setBackground('#4472C4').setFontColor('#FFFFFF');
-  ws.setFrozenRows(5);
-
-  // Data
   var prevDim = '', prevCat = '';
-
   var rows = assessment.map(function(item) {
     var dim = item.dimension !== prevDim ? item.dimension : '';
     var cat = item.category !== prevCat ? item.category : '';
@@ -2191,6 +2166,39 @@ function exportAssessmentReport(systemId) {
       item.compliance || '', item.currentStatus || '', item.evidence || '',
       item.corrective || '', item.targetDate || '', item.note || ''];
   });
+
+  return {
+    success: true,
+    system: sys,
+    assessment: assessment,
+    headers: headers,
+    rows: rows,
+    title: '資通系統防護基準檢核表（依據附表十修正規定）',
+    agencyName: '人體生物資料庫',
+    checkDate: Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyy/MM/dd'),
+    nonComplianceCodes: sys['不符合防護基準項目代碼'] || '無（全部符合）'
+  };
+}
+
+function populateAssessmentReportSheet_(ws, report) {
+  var sys = report.system;
+  var rows = report.rows;
+  var headers = report.headers;
+  var assessment = report.assessment;
+
+  ws.getRange('A1').setValue('資通系統防護基準檢核表（依據附表十修正規定）');
+  ws.getRange('A1:K1').merge().setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
+
+  ws.getRange('A2').setValue('機關單位名稱'); ws.getRange('B2').setValue(report.agencyName);
+  ws.getRange('D2').setValue('檢核日期'); ws.getRange('E2').setValue(report.checkDate);
+  ws.getRange('A3').setValue('資通系統名稱'); ws.getRange('B3').setValue(sys['系統名稱']);
+  ws.getRange('D3').setValue('安全等級'); ws.getRange('E3').setValue(sys['防護需求等級']);
+  ws.getRange('A2:A3').setFontWeight('bold');
+  ws.getRange('D2:D3').setFontWeight('bold');
+
+  ws.getRange(5, 1, 1, headers.length).setValues([headers])
+    .setFontWeight('bold').setBackground('#4472C4').setFontColor('#FFFFFF');
+  ws.setFrozenRows(5);
 
   if (rows.length > 0) {
     ws.getRange(6, 1, rows.length, 11).setValues(rows);
@@ -2223,7 +2231,89 @@ function exportAssessmentReport(systemId) {
   var summaryRow = 6 + rows.length + 2;
   ws.getRange(summaryRow, 1).setValue('不符合防護基準項目代碼：');
   ws.getRange(summaryRow, 1).setFontWeight('bold');
-  ws.getRange(summaryRow, 3).setValue(sys['不符合防護基準項目代碼'] || '無（全部符合）');
+  ws.getRange(summaryRow, 3).setValue(report.nonComplianceCodes);
+}
+
+function getAssessmentReportFileName_(systemName, extension) {
+  var base = String(systemName || '未命名系統').replace(/[\\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim();
+  if (!base) base = '未命名系統';
+  if (base.length > 48) base = base.substring(0, 48);
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyyMMdd_HHmm');
+  return '防護基準自評_' + base + '_' + stamp + '.' + extension;
+}
+
+function escapeCsvCell_(value) {
+  var text = String(value === null || value === undefined ? '' : value);
+  if (/[",\r\n]/.test(text)) text = '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+
+function buildAssessmentReportCsv_(report) {
+  var csvRows = [
+    [report.title],
+    [],
+    ['機關單位名稱', report.agencyName, '', '檢核日期', report.checkDate],
+    ['資通系統名稱', report.system['系統名稱'] || '', '', '安全等級', report.system['防護需求等級'] || ''],
+    [],
+    report.headers
+  ];
+  report.rows.forEach(function(row) { csvRows.push(row); });
+  csvRows.push([]);
+  csvRows.push(['不符合防護基準項目代碼：', '', report.nonComplianceCodes]);
+  return '\ufeff' + csvRows.map(function(row) {
+    return row.map(escapeCsvCell_).join(',');
+  }).join('\r\n');
+}
+
+function exportAssessmentFile(systemId, format) {
+  var fileFormat = String(format || '').toLowerCase();
+  if (fileFormat !== 'csv' && fileFormat !== 'xlsx') return {success: false, message: '不支援的匯出格式'};
+
+  var report = buildAssessmentReportPayload_(systemId);
+  if (!report.success) return report;
+
+  if (fileFormat === 'csv') {
+    var csvName = getAssessmentReportFileName_(report.system['系統名稱'], 'csv');
+    var csvBlob = Utilities.newBlob(buildAssessmentReportCsv_(report), 'text/csv;charset=utf-8', csvName);
+    return {
+      success: true,
+      fileName: csvName,
+      mimeType: 'text/csv;charset=utf-8',
+      base64: Utilities.base64Encode(csvBlob.getBytes())
+    };
+  }
+
+  var tempSpreadsheet = SpreadsheetApp.create(getAssessmentReportFileName_(report.system['系統名稱'], 'xlsx').replace(/\.xlsx$/, ''));
+  var tempFile = DriveApp.getFileById(tempSpreadsheet.getId());
+  try {
+    var ws = tempSpreadsheet.getSheets()[0];
+    ws.setName('自評報告');
+    populateAssessmentReportSheet_(ws, report);
+    SpreadsheetApp.flush();
+    var xlsxName = getAssessmentReportFileName_(report.system['系統名稱'], 'xlsx');
+    var xlsxBlob = tempFile.getAs(MimeType.MICROSOFT_EXCEL).setName(xlsxName);
+    return {
+      success: true,
+      fileName: xlsxName,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      base64: Utilities.base64Encode(xlsxBlob.getBytes())
+    };
+  } finally {
+    tempFile.setTrashed(true);
+  }
+}
+
+function exportAssessmentReport(systemId) {
+  var report = buildAssessmentReportPayload_(systemId);
+  if (!report.success) return report;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetName = '自評報告_' + (report.system['系統名稱'] || '').substring(0, 15);
+  var existing = ss.getSheetByName(sheetName);
+  if (existing) ss.deleteSheet(existing);
+
+  var ws = ss.insertSheet(sheetName);
+  populateAssessmentReportSheet_(ws, report);
 
   return {success: true, sheetName: sheetName};
 }
