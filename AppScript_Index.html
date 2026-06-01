@@ -603,9 +603,9 @@
         <input type="text" id="system-search" class="search" placeholder="搜尋系統名稱..." oninput="filterSystems(this.value)">
         <select id="system-build-filter" class="filter-select" onchange="filterSystems()" aria-label="依建置方式篩選">
           <option value="">全部建置方式</option>
-          <option value="package">套裝軟體</option>
-          <option value="self">自行開發</option>
           <option value="outsourced">委外開發</option>
+          <option value="self">自行開發</option>
+          <option value="package">套裝軟體</option>
           <option value="rental">租用服務</option>
           <option value="other">其他 / 未填寫</option>
         </select>
@@ -1396,9 +1396,9 @@ function getSystemBuildFilterValue() {
 }
 
 var SYSTEM_BUILD_GROUPS = [
-  {key:'package', label:'套裝軟體', values:['本機關購置套裝軟體']},
-  {key:'self', label:'自行開發', values:['本機關自行開發']},
   {key:'outsourced', label:'委外開發', values:['本機關委外開發']},
+  {key:'self', label:'自行開發', values:['本機關自行開發']},
+  {key:'package', label:'套裝軟體', values:['本機關購置套裝軟體']},
   {key:'rental', label:'租用服務', values:['本機關租用服務']},
   {key:'other', label:'其他 / 未填寫', values:[]}
 ];
