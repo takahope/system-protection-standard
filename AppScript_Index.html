@@ -1623,17 +1623,18 @@ function applySystemRecordToLocalState(systemRecord, hintText, toastText) {
   if (!systemRecord) return;
   var systemId = systemRecord['系統ID'];
   var index = findSystemIndexById(systemId);
-  var previousSystem = index >= 0 ? allSystems[index] : currentSystem;
+  var isCurrentDetail = !!(currentSystem && currentSystem['系統ID'] === systemId);
+  var previousSystem = index >= 0 ? allSystems[index] : (isCurrentDetail ? currentSystem : {});
   var nextSystem = enrichLocalSystemMeta(copySystemRecord(systemRecord), previousSystem);
   if (index >= 0) allSystems[index] = nextSystem;
   else allSystems.push(nextSystem);
-  currentSystem = nextSystem;
+  if (isCurrentDetail) currentSystem = nextSystem;
   systemsLoaded = true;
   lastSystemsRefreshAt = formatRefreshTime(new Date());
   renderSystems(getFilteredSystems());
   renderGlobalStats(allSystems);
   renderSystemRefreshHint(hintText || ('畫面已套用 ' + lastSystemsRefreshAt), '');
-  renderCurrentSystemDetailShell();
+  if (isCurrentDetail) renderCurrentSystemDetailShell();
   if (toastText) showToast(toastText);
 }
 
@@ -1642,19 +1643,22 @@ function beginOptimisticSystemUpdate(submittedData) {
   var index = findSystemIndexById(systemId);
   var previousSystem = index >= 0 ? copySystemRecord(allSystems[index]) : copySystemRecord(currentSystem || {});
   var optimisticSystem = buildLocalSavedSystemRecord(null, submittedData, previousSystem);
+  var systemName = optimisticSystem['系統名稱'] || previousSystem['系統名稱'] || systemId || '未命名系統';
   applySystemRecordToLocalState(optimisticSystem, '已套用畫面，正在同步後端...', '');
   showProgressToast({title:'畫面已更新', message:'正在同步後端資料', state:'syncing'});
   return {
     systemId: systemId,
+    systemName: systemName,
     index: index,
     previousSystem: previousSystem
   };
 }
 
-function rollbackOptimisticSystemUpdate(tx, message) {
+function rollbackOptimisticSystemUpdate(tx, reason) {
   if (!tx || !tx.previousSystem || !tx.previousSystem['系統ID']) return;
+  var systemName = tx.systemName || tx.previousSystem['系統名稱'] || tx.systemId || '未命名系統';
   applySystemRecordToLocalState(tx.previousSystem, '同步失敗，已還原畫面', '');
-  failProgressToast(message || '儲存失敗，已還原畫面');
+  failProgressToast('「' + systemName + '」更新失敗，已還原暫存資料：' + (reason || '請稍後再試。'));
 }
 
 function formatRefreshTime(date) {
@@ -3246,17 +3250,19 @@ function submitEditSystem() {
   closeModal(true);
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
+      var isStillViewingSavedSystem = !!(currentSystem && currentSystem['系統ID'] === optimisticTx.systemId);
       if (r.system) {
         applySystemRecordToLocalState(r.system, '已同步後端 ' + formatRefreshTime(new Date()), '');
       } else {
         renderSystemRefreshHint('已同步後端 ' + formatRefreshTime(new Date()), '');
       }
-      finishProgressToast(r.message || '系統已更新');
+      var successTitle = isStillViewingSavedSystem ? '系統已更新' : ('「' + optimisticTx.systemName + '」已更新');
+      finishProgressToast(r.message || '', successTitle);
     } else {
-      rollbackOptimisticSystemUpdate(optimisticTx, '儲存失敗，已還原畫面：' + (r.message || '請稍後再試。'));
+      rollbackOptimisticSystemUpdate(optimisticTx, r.message || '請稍後再試。');
     }
   }).withFailureHandler(function(e){
-    rollbackOptimisticSystemUpdate(optimisticTx, '儲存失敗，已還原畫面：' + e.message);
+    rollbackOptimisticSystemUpdate(optimisticTx, e.message);
   })
   .updateSystem(targetRow, data);
 }
@@ -3855,10 +3861,11 @@ function updateProgressToast(options) {
   setProgressToastValue(progress, options.summary);
 }
 
-function finishProgressToast(message) {
+function finishProgressToast(message, title) {
   clearToastTimers();
-  var detail = message && message !== '系統已更新' ? message : '';
-  updateProgressToast({title:'系統已更新', message:detail, state:'success', progress:100, summary:'系統資料已更新'});
+  title = title || '系統已更新';
+  var detail = message && message !== title && message !== '系統已更新' ? message : '';
+  updateProgressToast({title:title, message:detail, state:'success', progress:100, summary:'系統資料已更新'});
   var t = document.getElementById('toast');
   toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 1500);
 }
