@@ -2462,6 +2462,20 @@ function markDirty(el) {
   updateAssessmentDirtyUI();
 }
 
+function setCurrentStatusExampleButtonMode(btn, mode) {
+  if (!btn) return;
+  btn.dataset.exampleMode = mode;
+  if (mode === 'plain') {
+    btn.textContent = '載入白話文範例';
+    btn.classList.add('plain-ready');
+    btn.title = '載入控制措施基準 I 欄的白話文範例';
+  } else {
+    btn.textContent = '載入範例';
+    btn.classList.remove('plain-ready');
+    btn.title = '載入控制措施基準 G 欄的現況說明範例';
+  }
+}
+
 function loadAssessmentExample(btn, field) {
   var row = btn ? btn.closest('tr') : null;
   if (!row) return;
@@ -2480,16 +2494,14 @@ function loadAssessmentExample(btn, field) {
   }
 
   var originalValue = String(textarea.value || '');
-  var shouldConfirm = originalValue.trim() && !(field === 'currentStatus' && mode === 'plain' && originalValue === String(item.exampleCurrentStatus || ''));
+  var alternateExample = mode === 'plain' ? item.exampleCurrentStatus : item.examplePlainCurrentStatus;
+  var shouldConfirm = originalValue.trim() && !(field === 'currentStatus' && originalValue === String(alternateExample || ''));
   var applyExample = function() {
     textarea.value = example;
     item[field] = example;
     markDirty(textarea);
-    if (field === 'currentStatus' && mode !== 'plain' && item.examplePlainCurrentStatus && btn) {
-      btn.dataset.exampleMode = 'plain';
-      btn.textContent = '載入白話文範例';
-      btn.classList.add('plain-ready');
-      btn.title = '載入控制措施基準 I 欄的白話文範例';
+    if (field === 'currentStatus' && item.examplePlainCurrentStatus && btn) {
+      setCurrentStatusExampleButtonMode(btn, mode === 'plain' ? 'standard' : 'plain');
     }
     showToast('已載入' + label + '，請記得儲存變更');
   };
