@@ -2919,9 +2919,11 @@ function downloadAssessmentReportFile(format) {
   assessmentExportSubmitting = true;
   setAssessmentExportButtonsDisabled(true);
   showProgressToast({
-    title: '正在產生報告',
-    message: format === 'xlsx' ? '正在建立 XLSX 檢核表' : '正在整理 CSV 資料',
-    summary: '準備匯出檔案'
+    title: '正在匯出報告',
+    message: format === 'xlsx' ? '正在準備 Excel 匯出檔' : '正在準備 CSV 匯出資料',
+    summary: '檢查自評資料',
+    durationMs: 10000,
+    summaryProvider: getToastExportProgressSummary
   });
   google.script.run.withSuccessHandler(function(r){
     assessmentExportSubmitting = false;
@@ -3986,7 +3988,22 @@ function getToastSyncProgressSummary(percent) {
   return '正在檢查欄位資料';
 }
 
-function renderToastContent(title, message, progress, summary) {
+function getToastExportProgressSummary(percent) {
+  if (percent >= 100) return '檔案已開始下載';
+  if (percent >= 90) return '等待匯出作業完成';
+  if (percent >= 80) return '準備瀏覽器下載';
+  if (percent >= 60) return '封裝下載檔案';
+  if (percent >= 40) return '建立匯出內容';
+  if (percent >= 20) return '整理報告欄位';
+  return '檢查自評資料';
+}
+
+function getToastProgressSummary(percent, summaryProvider) {
+  if (typeof summaryProvider === 'function') return summaryProvider(percent);
+  return getToastSyncProgressSummary(percent);
+}
+
+function renderToastContent(title, message, progress, summary, summaryProvider) {
   var hasProgress = progress !== null && progress !== undefined;
   var pct = Math.max(0, Math.min(100, Math.round(progress || 0)));
   var html = '<div class="toast-head"><div class="toast-title">' + escH(title || '') + '</div>';
@@ -3995,7 +4012,7 @@ function renderToastContent(title, message, progress, summary) {
   if (message) html += '<div class="toast-message">' + escH(message) + '</div>';
   if (hasProgress) {
     html += '<div class="toast-progress-track"><div id="toast-progress-fill" class="toast-progress-fill" style="width:' + pct + '%"></div></div>';
-    html += '<div id="toast-progress-summary" class="toast-summary">' + escH(summary || getToastSyncProgressSummary(pct)) + '</div>';
+    html += '<div id="toast-progress-summary" class="toast-summary">' + escH(summary || getToastProgressSummary(pct, summaryProvider)) + '</div>';
   }
   return html;
 }
@@ -4015,7 +4032,7 @@ function showToast(msg){
   toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3000);
 }
 
-function setProgressToastValue(percent, forcedSummary) {
+function setProgressToastValue(percent, forcedSummary, summaryProvider) {
   toastProgressValue = Math.max(0, Math.min(100, percent || 0));
   var pct = Math.round(toastProgressValue);
   var fill = document.getElementById('toast-progress-fill');
@@ -4023,7 +4040,7 @@ function setProgressToastValue(percent, forcedSummary) {
   var summary = document.getElementById('toast-progress-summary');
   if (fill) fill.style.width = pct + '%';
   if (pctEl) pctEl.textContent = pct + '%';
-  if (summary) summary.textContent = forcedSummary || getToastSyncProgressSummary(pct);
+  if (summary) summary.textContent = forcedSummary || getToastProgressSummary(pct, summaryProvider);
 }
 
 function showProgressToast(options) {
@@ -4033,11 +4050,13 @@ function showProgressToast(options) {
   toastProgressValue = 0;
   var t = setToastState(options.state || 'syncing');
   if (!t) return;
-  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', 0, options.summary || getToastSyncProgressSummary(0));
+  var durationMs = options.durationMs || 4000;
+  var summaryProvider = options.summaryProvider;
+  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', 0, options.summary || getToastProgressSummary(0, summaryProvider), summaryProvider);
   toastProgressTimer = setInterval(function() {
     var elapsed = new Date().getTime() - toastProgressStartedAt;
-    var pct = Math.min(90, elapsed / 4000 * 90);
-    if (pct > toastProgressValue) setProgressToastValue(pct);
+    var pct = Math.min(90, elapsed / durationMs * 90);
+    if (pct > toastProgressValue) setProgressToastValue(pct, null, summaryProvider);
     if (pct >= 90 && toastProgressTimer) {
       clearInterval(toastProgressTimer);
       toastProgressTimer = null;
@@ -4050,8 +4069,8 @@ function updateProgressToast(options) {
   var t = setToastState(options.state || 'syncing');
   if (!t) return;
   var progress = options.progress !== undefined ? options.progress : toastProgressValue;
-  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', progress, options.summary);
-  setProgressToastValue(progress, options.summary);
+  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', progress, options.summary, options.summaryProvider);
+  setProgressToastValue(progress, options.summary, options.summaryProvider);
 }
 
 function finishProgressToast(message, title) {
