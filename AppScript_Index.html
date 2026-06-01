@@ -455,10 +455,18 @@
     .toast{position:fixed;bottom:20px;right:20px;min-width:280px;max-width:min(420px,calc(100vw - 32px));background:#263238;color:#fff;padding:12px 14px;border-radius:12px;font-size:12px;z-index:300;opacity:0;transform:translateY(8px);transition:opacity .24s ease,transform .24s ease,background .24s ease;pointer-events:none;box-shadow:0 16px 38px rgba(15,23,42,.22);overflow:hidden}
     .toast.show{opacity:1;transform:translateY(0)}
     .toast.success{background:#153d2a}.toast.error{background:#5c1d18}.toast.syncing{background:#1f3f66}
-    .toast-title{font-size:12px;font-weight:800;line-height:1.5}.toast-message{margin-top:2px;color:rgba(255,255,255,.82);font-size:11px;line-height:1.6}
-    .toast-progress-track{height:4px;margin-top:9px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden}
-    .toast-progress-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#8ec5ff 0%,#f4c15d 100%);transition:width .2s ease}
+    .toast-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .toast-title{font-size:12px;font-weight:800;line-height:1.5;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .toast-percent{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:11px;font-weight:900;color:rgba(255,255,255,.92)}
+    .toast-message,.toast-summary{margin-top:2px;color:rgba(255,255,255,.82);font-size:11px;line-height:1.6}
+    .toast-summary{display:flex;align-items:center;gap:8px;min-height:18px}
+    .toast-summary:before{content:"";width:7px;height:7px;border-radius:999px;background:#f4c15d;box-shadow:0 0 0 4px rgba(244,193,93,.18);flex-shrink:0}
+    .toast.success .toast-summary:before{background:#7bd88f;box-shadow:0 0 0 4px rgba(123,216,143,.18)}.toast.error .toast-summary:before{background:#ff9b8f;box-shadow:0 0 0 4px rgba(255,155,143,.18)}
+    .toast-progress-track{height:6px;margin-top:9px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.14)}
+    .toast-progress-fill{position:relative;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#8ec5ff 0%,#72b7ff 58%,#f4c15d 100%);box-shadow:0 0 14px rgba(142,197,255,.28);transition:width .2s ease}
+    .toast-progress-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.72) 50%,transparent 100%);transform:translateX(-100%);animation:loadBarShimmer 1.3s ease-in-out infinite}
     .toast.success .toast-progress-fill{background:#7bd88f}.toast.error .toast-progress-fill{background:#ff9b8f}
+    .toast.success .toast-progress-fill:after,.toast.error .toast-progress-fill:after{display:none}
     .code-tag{display:inline-block;padding:1px 6px;background:#fce4ec;color:var(--danger);border-radius:4px;font-size:11px;font-weight:600;margin:1px}
 
     /* ===== Compare Page ===== */
@@ -3769,11 +3777,26 @@ function clearToastTimers() {
   if (toastProgressTimer) { clearInterval(toastProgressTimer); toastProgressTimer = null; }
 }
 
-function renderToastContent(title, message, progress) {
-  var html = '<div class="toast-title">' + escH(title || '') + '</div>';
+function getToastSyncProgressSummary(percent) {
+  if (percent >= 100) return '系統資料已更新';
+  if (percent >= 90) return '等待後端確認';
+  if (percent >= 80) return '正在校正畫面狀態';
+  if (percent >= 60) return '正在寫入後端資料';
+  if (percent >= 40) return '正在同步負責人資訊';
+  if (percent >= 20) return '正在整理系統清冊';
+  return '正在檢查欄位資料';
+}
+
+function renderToastContent(title, message, progress, summary) {
+  var hasProgress = progress !== null && progress !== undefined;
+  var pct = Math.max(0, Math.min(100, Math.round(progress || 0)));
+  var html = '<div class="toast-head"><div class="toast-title">' + escH(title || '') + '</div>';
+  if (hasProgress) html += '<div id="toast-progress-percent" class="toast-percent">' + pct + '%</div>';
+  html += '</div>';
   if (message) html += '<div class="toast-message">' + escH(message) + '</div>';
-  if (progress !== null && progress !== undefined) {
-    html += '<div class="toast-progress-track"><div id="toast-progress-fill" class="toast-progress-fill" style="width:' + Math.max(0, Math.min(100, Math.round(progress))) + '%"></div></div>';
+  if (hasProgress) {
+    html += '<div class="toast-progress-track"><div id="toast-progress-fill" class="toast-progress-fill" style="width:' + pct + '%"></div></div>';
+    html += '<div id="toast-progress-summary" class="toast-summary">' + escH(summary || getToastSyncProgressSummary(pct)) + '</div>';
   }
   return html;
 }
@@ -3793,10 +3816,15 @@ function showToast(msg){
   toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3000);
 }
 
-function setProgressToastValue(percent) {
+function setProgressToastValue(percent, forcedSummary) {
   toastProgressValue = Math.max(0, Math.min(100, percent || 0));
+  var pct = Math.round(toastProgressValue);
   var fill = document.getElementById('toast-progress-fill');
-  if (fill) fill.style.width = Math.round(toastProgressValue) + '%';
+  var pctEl = document.getElementById('toast-progress-percent');
+  var summary = document.getElementById('toast-progress-summary');
+  if (fill) fill.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (summary) summary.textContent = forcedSummary || getToastSyncProgressSummary(pct);
 }
 
 function showProgressToast(options) {
@@ -3806,7 +3834,7 @@ function showProgressToast(options) {
   toastProgressValue = 0;
   var t = setToastState(options.state || 'syncing');
   if (!t) return;
-  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', 0);
+  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', 0, options.summary || getToastSyncProgressSummary(0));
   toastProgressTimer = setInterval(function() {
     var elapsed = new Date().getTime() - toastProgressStartedAt;
     var pct = Math.min(90, elapsed / 4000 * 90);
@@ -3822,21 +3850,22 @@ function updateProgressToast(options) {
   options = options || {};
   var t = setToastState(options.state || 'syncing');
   if (!t) return;
-  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', toastProgressValue);
-  if (options.progress !== undefined) setProgressToastValue(options.progress);
+  var progress = options.progress !== undefined ? options.progress : toastProgressValue;
+  t.innerHTML = renderToastContent(options.title || '處理中', options.message || '', progress, options.summary);
+  setProgressToastValue(progress, options.summary);
 }
 
 function finishProgressToast(message) {
   clearToastTimers();
   var detail = message && message !== '系統已更新' ? message : '';
-  updateProgressToast({title:'系統已更新', message:detail, state:'success', progress:100});
+  updateProgressToast({title:'系統已更新', message:detail, state:'success', progress:100, summary:'系統資料已更新'});
   var t = document.getElementById('toast');
   toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 1500);
 }
 
 function failProgressToast(message) {
   clearToastTimers();
-  updateProgressToast({title:'同步失敗', message:message || '儲存失敗，請稍後再試。', state:'error', progress:100});
+  updateProgressToast({title:'同步失敗', message:message || '儲存失敗，請稍後再試。', state:'error', progress:100, summary:'已還原畫面資料'});
   var t = document.getElementById('toast');
   toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 4500);
 }
