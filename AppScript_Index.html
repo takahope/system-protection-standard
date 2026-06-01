@@ -1022,15 +1022,19 @@ function getPersistedRuleBool(group, key, fallback) {
   return row ? row.enabled !== false && parseRuleBool(row.value) : fallback;
 }
 
-function isPackageSystem() {
-  if (!currentSystem) return false;
+function isPackageSystemRecord(sys) {
+  if (!sys) return false;
   var fieldName = getPersistedRuleValue('package_exemption', 'field_name', '防護需求等級');
   var operator = getPersistedRuleValue('package_exemption', 'operator', 'equals');
   var targetValue = getPersistedRuleValue('package_exemption', 'target_value', '套裝軟體');
-  var actual = String(currentSystem[fieldName] || '');
+  var actual = String(sys[fieldName] || '');
   if (operator === 'not_equals') return actual !== targetValue;
   if (operator === 'contains') return actual.indexOf(targetValue) !== -1;
   return actual === targetValue;
+}
+
+function isPackageSystem() {
+  return isPackageSystemRecord(currentSystem);
 }
 
 function isAssessmentApplicable(ctrlLevel, systemLevel) {
@@ -1517,6 +1521,84 @@ function refreshSystemsAfterSystemSave(systemId, toastText) {
     showToast('已儲存，但重新載入資料失敗：' + err.message);
     loadSystems({force:true,silent:systemsLoaded,preserveScroll:true});
   }).getSystems();
+}
+
+function copySystemRecord(source) {
+  var copy = {};
+  Object.keys(source || {}).forEach(function(key) { copy[key] = source[key]; });
+  return copy;
+}
+
+function findSystemIndexById(systemId) {
+  for (var i = 0; i < (allSystems || []).length; i++) {
+    if (allSystems[i] && allSystems[i]['系統ID'] === systemId) return i;
+  }
+  return -1;
+}
+
+function resolveOwnerDisplayNameForSystem(sys, previousSystem) {
+  var ownerEmail = sys ? sys['系統負責人'] : '';
+  var previousOwner = previousSystem ? previousSystem['系統負責人'] : '';
+  if (previousSystem && ownerEmail === previousOwner && previousSystem._ownerDisplayName) {
+    return previousSystem._ownerDisplayName;
+  }
+  var person = findHrOwnerByEmail(ownerEmail);
+  if (person && person.name) return person.name;
+  return ownerEmail || '';
+}
+
+function enrichLocalSystemMeta(sys, previousSystem) {
+  sys._row = sys._row || (previousSystem ? previousSystem._row : '');
+  sys._ownerDisplayName = sys._ownerDisplayName || resolveOwnerDisplayNameForSystem(sys, previousSystem);
+  sys._hasAssessment = previousSystem ? !!previousSystem._hasAssessment : !!sys._hasAssessment;
+  var level = String(sys['防護需求等級'] || '').trim();
+  var needsAssessment = !!level && !isPackageSystemRecord(sys);
+  sys._needsAssessment = needsAssessment;
+  sys._showAssessmentInitWarning = needsAssessment && !sys._hasAssessment;
+  return sys;
+}
+
+function buildLocalSavedSystemRecord(savedSystem, submittedData, previousSystem) {
+  var next = copySystemRecord(previousSystem || {});
+  Object.keys(submittedData || {}).forEach(function(key) { next[key] = submittedData[key]; });
+  Object.keys(savedSystem || {}).forEach(function(key) { next[key] = savedSystem[key]; });
+  return enrichLocalSystemMeta(next, previousSystem);
+}
+
+function renderCurrentSystemDetailShell() {
+  if (!currentSystem) return;
+  var title = document.getElementById('detail-title');
+  if (title) title.textContent = currentSystem['系統名稱'] || '';
+  var lv = currentSystem['防護需求等級'] || '未設定';
+  var bc = lv === '高' ? 'high' : lv === '中' ? 'mid' : lv === '普' ? 'low' : 'na';
+  var levelBadge = document.getElementById('detail-level-badge');
+  if (levelBadge) levelBadge.innerHTML = '<span class="result-badge ' + bc + '" style="font-size:14px;padding:4px 14px">' + escH(lv) + '</span>';
+  var statusBadge = document.getElementById('detail-status-badge');
+  if (statusBadge) statusBadge.innerHTML = getComplianceBadge(currentSystem['是否符合防護基準']);
+  renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
+  syncSystemCrudActions();
+  syncAssessmentComplianceActions();
+  renderAssessmentComplianceMeta();
+  renderRatingContext();
+  if (ratingState) renderRatingWizard();
+}
+
+function applySavedSystemToLocalState(savedSystem, submittedData, toastText) {
+  if (!currentSystem) return;
+  var savedSystemId = (savedSystem && savedSystem['系統ID']) || submittedData['系統ID'] || currentSystem['系統ID'];
+  var index = findSystemIndexById(savedSystemId);
+  var previousSystem = index >= 0 ? allSystems[index] : currentSystem;
+  var nextSystem = buildLocalSavedSystemRecord(savedSystem, submittedData, previousSystem);
+  if (index >= 0) allSystems[index] = nextSystem;
+  else allSystems.push(nextSystem);
+  currentSystem = nextSystem;
+  systemsLoaded = true;
+  lastSystemsRefreshAt = formatRefreshTime(new Date());
+  renderSystems(getFilteredSystems());
+  renderGlobalStats(allSystems);
+  renderSystemRefreshHint('畫面已套用 ' + lastSystemsRefreshAt, '');
+  renderCurrentSystemDetailShell();
+  if (toastText) showToast(toastText);
 }
 
 function formatRefreshTime(date) {
@@ -3105,10 +3187,10 @@ function submitEditSystem() {
   if (!startSystemSubmitProgress('edit')) return;
   google.script.run.withSuccessHandler(function(r){
     if(r.success){
-      completeSystemSubmitProgress(true, '已完成，即將關閉', function(){
-        var savedSystemId = currentSystem['系統ID'];
+      completeSystemSubmitProgress(true, '已寫入，正在更新畫面', function(){
+        var toastText = r.message || '系統已更新';
         closeModal(true);
-        refreshSystemsAfterSystemSave(savedSystemId, r.message || '系統已更新');
+        applySavedSystemToLocalState(r.system || null, data, toastText);
       });
     } else {
       completeSystemSubmitProgress(false, r.message || '更新失敗，請稍後再試。');
