@@ -282,6 +282,8 @@
     .assess-cell-label{display:block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b}
     .assess-example-btn{border:1px solid #b8c7d9;background:#fff;color:#1f5f99;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;line-height:1.4;white-space:nowrap;cursor:pointer;box-shadow:0 1px 2px rgba(15,95,168,.08)}
     .assess-example-btn:hover{border-color:#0f5fa8;background:#eef6ff;color:#0f5fa8}
+    .assess-example-btn.plain-ready{border-color:#9ccbbf;background:#f2fbf7;color:#17684f}
+    .assess-example-btn.plain-ready:hover{border-color:#14795a;background:#e6f7ef;color:#0f6248}
     .assess-example-btn:focus{outline:2px solid rgba(15,95,168,.22);outline-offset:2px}
     #assessment-save-btn.has-dirty{background:#b85f00;box-shadow:0 8px 18px rgba(184,95,0,.18)}
     #assessment-save-btn.has-dirty:hover{background:#9f5200}
@@ -2390,7 +2392,7 @@ function renderAssessmentRows(items) {
     if (applicable) {
       html+='<div class="assess-workgrid">';
       html+='<div class="assess-subfield"><div class="assess-subfield-head"><span class="assess-cell-label">現況說明</span>';
-      if (!readOnly && item.exampleCurrentStatus) html+='<button type="button" class="assess-example-btn" onclick="loadAssessmentExample(this,\'currentStatus\')" title="載入控制措施基準的現況說明範例">載入範例</button>';
+      if (!readOnly && item.exampleCurrentStatus) html+='<button type="button" class="assess-example-btn" data-example-mode="standard" onclick="loadAssessmentExample(this,\'currentStatus\')" title="載入控制措施基準 G 欄的現況說明範例">載入範例</button>';
       html+='</div><textarea class="assess-inline-textarea" data-field="currentStatus" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.currentStatus||'')+'</textarea></div>';
       html+='<div class="assess-subfield"><div class="assess-subfield-head"><span class="assess-cell-label">佐證資料</span>';
       if (!readOnly && item.exampleEvidence) html+='<button type="button" class="assess-example-btn" onclick="loadAssessmentExample(this,\'evidence\')" title="載入控制措施基準的佐證資料範例">載入範例</button>';
@@ -2468,26 +2470,36 @@ function loadAssessmentExample(btn, field) {
 
   var item = currentAssessment[idx];
   var textarea = row.querySelector('[data-field="' + field + '"]');
-  var exampleField = field === 'evidence' ? 'exampleEvidence' : 'exampleCurrentStatus';
+  var mode = btn && btn.dataset ? (btn.dataset.exampleMode || 'standard') : 'standard';
+  var exampleField = field === 'evidence' ? 'exampleEvidence' : (mode === 'plain' ? 'examplePlainCurrentStatus' : 'exampleCurrentStatus');
   var example = item[exampleField] || '';
+  var label = mode === 'plain' ? '白話文範例' : '範例';
   if (!textarea || !example) {
-    showToast('此項目尚無範例內容');
+    showToast('此項目尚無' + label + '內容');
     return;
   }
 
+  var originalValue = String(textarea.value || '');
+  var shouldConfirm = originalValue.trim() && !(field === 'currentStatus' && mode === 'plain' && originalValue === String(item.exampleCurrentStatus || ''));
   var applyExample = function() {
     textarea.value = example;
     item[field] = example;
     markDirty(textarea);
-    showToast('已載入範例，請記得儲存變更');
+    if (field === 'currentStatus' && mode !== 'plain' && item.examplePlainCurrentStatus && btn) {
+      btn.dataset.exampleMode = 'plain';
+      btn.textContent = '載入白話文範例';
+      btn.classList.add('plain-ready');
+      btn.title = '載入控制措施基準 I 欄的白話文範例';
+    }
+    showToast('已載入' + label + '，請記得儲存變更');
   };
 
-  if (String(textarea.value || '').trim()) {
+  if (shouldConfirm) {
     openConfirmModal(
       '覆寫此欄位內容？',
-      '載入範例會取代目前已填寫的內容。',
+      '載入' + label + '會取代目前已填寫的內容。',
       '請確認目前文字已不需要保留。',
-      '載入範例',
+      '載入' + label,
       'btn-primary',
       applyExample
     );

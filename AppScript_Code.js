@@ -1743,13 +1743,14 @@ function getControlMeasureExampleMap_() {
   var map = {};
   if (!sheet || sheet.getLastRow() <= 1) return map;
 
-  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getDisplayValues();
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 9).getDisplayValues();
   for (var i = 0; i < data.length; i++) {
     var index = String(data[i][0] || '').trim();
     if (!index) continue;
     map[index] = {
       currentStatus: data[i][6] || '',
-      evidence: data[i][7] || ''
+      evidence: data[i][7] || '',
+      plainCurrentStatus: data[i][8] || ''
     };
   }
   return map;
@@ -1787,6 +1788,7 @@ function getAssessment(systemId) {
         compareChangeColor: meta.compareChangeColor,
         exampleCurrentStatus: examples.currentStatus || '',
         exampleEvidence: examples.evidence || '',
+        examplePlainCurrentStatus: examples.plainCurrentStatus || '',
         _row: i + 1
       });
     }
