@@ -95,6 +95,8 @@
     .btn-warning{background:var(--warning);color:#fff}
     .btn-danger{background:var(--danger);color:#fff}
     .btn-outline{background:none;border:1px solid var(--border);color:var(--text)} .btn-outline:hover{background:var(--bg)}
+    .btn-assessment-import{background:#0f766e;color:#fff;box-shadow:0 8px 18px rgba(15,118,110,.18)}
+    .btn-assessment-import:hover{background:#0b5f59;transform:translateY(-1px);box-shadow:0 12px 24px rgba(15,118,110,.24)}
     .btn-sm{padding:4px 10px;font-size:11px}
 
     /* Tabs */
@@ -236,7 +238,7 @@
     .assess-topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
     .assess-topbar h2{margin:0}
     .assess-topbar p{font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px}
-    .assess-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .assess-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
     .assess-meta,.dashboard-meta{margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6}
     .dashboard-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
     .dashboard-toolbar h2{margin:0 0 4px}
@@ -307,8 +309,8 @@
     }
     @media (max-width:960px){
       .assess-topbar{flex-direction:column}
-      .assess-actions{width:100%}
-      .assess-actions .btn{flex:1}
+      .assess-actions{width:100%;justify-content:flex-end}
+      .assess-actions .btn{flex:0 0 auto}
     }
     @media (max-width:960px){
       .detail-info{grid-template-columns:1fr}
@@ -825,7 +827,7 @@
             <div class="assess-actions">
               <button class="btn btn-outline btn-sm hidden" id="init-assessment-btn" onclick="initAssessment()">初始化自評項目</button>
               <button class="btn btn-outline btn-sm hidden" id="recalc-compliance-btn" onclick="recalculateCurrentSystemCompliance()">更新符合性結果</button>
-              <button class="btn btn-outline btn-sm hidden" id="assessment-import-btn" onclick="openAssessmentImportModal()">匯入自評</button>
+              <button class="btn btn-assessment-import btn-sm hidden" id="assessment-import-btn" onclick="openAssessmentImportModal()">匯入自評</button>
               <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
               <button class="btn btn-primary btn-sm hidden" id="assessment-save-btn" onclick="saveAllAssessment()">儲存所有變更</button>
             </div>
