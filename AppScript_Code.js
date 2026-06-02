@@ -59,11 +59,13 @@ function createPasscodeOutput_(access) {
     '<div class="eyebrow">SECURE ACCESS</div><h1>輸入通行碼</h1>' +
     '<p class="copy">你已通過人員名單檢查。請輸入通行碼後進入資通系統防護基準管理頁面。</p>' +
     '<div class="user"><strong>' + escapeHtml_(displayName) + '</strong>' + escapeHtml_(access.email || '') + '</div>' +
-    '<form id="passcode-form"><label for="passcode">通行碼</label><div class="field"><input id="passcode" type="password" autocomplete="current-password" autofocus><button id="submit-btn" type="submit">進入</button></div><div id="msg" class="msg"></div></form>' +
+    '<form id="passcode-form"><label for="passcode">通行碼</label><div class="field"><input id="passcode" type="password" autocomplete="current-password"><button id="submit-btn" type="submit">進入</button></div><div id="msg" class="msg"></div></form>' +
     '</main><script>' +
     'var form=document.getElementById("passcode-form"),input=document.getElementById("passcode"),btn=document.getElementById("submit-btn"),msg=document.getElementById("msg");' +
     'function setMsg(t,c){msg.textContent=t||"";msg.className="msg"+(c?" "+c:"");}' +
-    'form.addEventListener("submit",function(e){e.preventDefault();var v=input.value||"";if(!v.trim()){setMsg("請輸入通行碼。","error");input.focus();return;}btn.disabled=true;input.disabled=true;setMsg("正在驗證通行碼...","");google.script.run.withSuccessHandler(function(res){if(res&&res.success){setMsg("驗證成功，正在進入頁面。","ok");location.reload();return;}btn.disabled=false;input.disabled=false;setMsg((res&&res.message)||"通行碼錯誤，請重新輸入。","error");input.focus();input.select();}).withFailureHandler(function(err){btn.disabled=false;input.disabled=false;setMsg((err&&err.message)||"驗證失敗，請稍後再試。","error");input.focus();input.select();}).verifyPagePasscode(v);});' +
+    'function restore(){btn.disabled=false;input.disabled=false;}' +
+    'function focusInput(){try{input.focus();input.select();}catch(e){}}' +
+    'form.addEventListener("submit",function(e){e.preventDefault();var v=input.value||"";if(!v.trim()){setMsg("請輸入通行碼。","error");focusInput();return;}btn.disabled=true;input.disabled=true;setMsg("正在驗證通行碼...","");google.script.run.withSuccessHandler(function(res){if(res&&res.success){if(res.appUrl){setMsg("驗證成功，正在進入頁面。","ok");window.open(res.appUrl,"_top");return;}restore();setMsg("無法取得系統網址，請重新開啟部署連結。","error");return;}restore();setMsg((res&&res.message)||"通行碼錯誤，請重新輸入。","error");focusInput();}).withFailureHandler(function(err){restore();setMsg((err&&err.message)||"驗證失敗，請稍後再試。","error");focusInput();}).verifyPagePasscode(v);});' +
     '</script></body></html>';
   return HtmlService.createHtmlOutput(html)
     .setTitle('通行碼驗證')
@@ -263,7 +265,11 @@ function verifyPagePasscode(passcode) {
   if (incoming !== expected) return {success: false, message: '通行碼錯誤，請重新輸入。'};
 
   CacheService.getScriptCache().put(getPasscodeCacheKey_(status.email), 'ok', PAGE_PASSCODE_TTL_SECONDS);
-  return {success: true};
+  return {success: true, appUrl: ScriptApp.getService().getUrl()};
+}
+
+function getWebAppUrl() {
+  return ScriptApp.getService().getUrl();
 }
 
 function parseOrgLevel_(raw) {

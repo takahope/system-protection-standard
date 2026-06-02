@@ -969,7 +969,17 @@ function renderAccessDeniedPage() {
 }
 
 function renderPasscodeRequiredPage() {
-  document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f9fa;color:#202124;font-family:&quot;Microsoft JhengHei&quot;,&quot;Segoe UI&quot;,sans-serif;padding:24px"><div style="width:min(420px,100%);padding:28px 32px;border:1px solid #dadce0;border-radius:18px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,.08)"><div style="font-size:16px;font-weight:800;margin-bottom:8px">' + PASSCODE_REQUIRED_MESSAGE + '</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:18px">請重新整理頁面並輸入通行碼後繼續使用。</div><button onclick="location.reload()" style="height:42px;border:0;border-radius:12px;padding:0 16px;background:#174ea6;color:#fff;font-size:13px;font-weight:800;cursor:pointer">重新驗證</button></div></div>';
+  document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f9fa;color:#202124;font-family:&quot;Microsoft JhengHei&quot;,&quot;Segoe UI&quot;,sans-serif;padding:24px"><div style="width:min(420px,100%);padding:28px 32px;border:1px solid #dadce0;border-radius:18px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,.08)"><div style="font-size:16px;font-weight:800;margin-bottom:8px">' + PASSCODE_REQUIRED_MESSAGE + '</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:18px">請重新開啟驗證頁並輸入通行碼後繼續使用。</div><button id="passcode-reopen-btn" style="height:42px;border:0;border-radius:12px;padding:0 16px;background:#174ea6;color:#fff;font-size:13px;font-weight:800;cursor:pointer">重新驗證</button></div></div>';
+  var btn = document.getElementById('passcode-reopen-btn');
+  if (btn) btn.onclick = function() {
+    btn.disabled = true;
+    google.script.run.withSuccessHandler(function(url) {
+      if (url) window.open(url, '_top');
+      else btn.disabled = false;
+    }).withFailureHandler(function() {
+      btn.disabled = false;
+    }).getWebAppUrl();
+  };
 }
 
 var RULE_GROUP_META = {
