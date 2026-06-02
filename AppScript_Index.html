@@ -901,6 +901,7 @@ var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, to
 var lastSystemQuery = '', lastSystemBuildFilter = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
+var BACKUP_CONTROL_URL = 'https://script.google.com/a/macros/as.edu.tw/s/AKfycbxQUi6vpkTEOKbCd__sdJREfaYLDdfsbINrZAGeQCXDdtk7rAMkFLpRHdwXnCaayC_Q/exec';
 var systemSubmitTimer = null, systemSubmitProgress = 0, systemModalSubmitting = false;
 var assessmentExportSubmitting = false;
 var assessmentImportSubmitting = false, assessmentImportPreview = null;
@@ -3430,9 +3431,12 @@ function applySystemModalConditionalFields(clearWhenEnabled) {
 function initSystemModalConditionalFields() {
   var sensitive = document.getElementById('modal-sensitive');
   var external = document.getElementById('modal-external');
+  var backup = document.getElementById('modal-backup');
   if (sensitive) sensitive.onchange = function() { applySystemModalConditionalFields(true); };
   if (external) external.onchange = function() { applySystemModalConditionalFields(true); };
+  if (backup) backup.onchange = updateBackupControlButton;
   applySystemModalConditionalFields(false);
+  updateBackupControlButton();
 }
 
 function openSystemModal(title, currentData, options) {
@@ -3587,6 +3591,7 @@ function renderRequirementBadge(field, ui) {
 function renderVendorQuickFillButton(fieldKey) {
   if (fieldKey === '建置廠商') return '<button type="button" class="field-quick-fill-btn" onclick="fillAcademiaSinicaVendor(&quot;builder&quot;)">自行開發</button>';
   if (fieldKey === '維運廠商') return '<button type="button" class="field-quick-fill-btn" onclick="fillAcademiaSinicaVendor(&quot;operator&quot;)">自行維運</button>';
+  if (fieldKey === '系統是否備份') return '<button type="button" id="backup-control-btn" class="field-quick-fill-btn" style="display:none" onclick="openBackupControlWindow()">備份管制</button>';
   return '';
 }
 
@@ -3597,6 +3602,22 @@ function fillAcademiaSinicaVendor(type) {
   var codeEl = document.getElementById(codeId);
   if (nameEl) nameEl.value = '中央研究院';
   if (codeEl) codeEl.value = '2.16.886.101.20002.20001';
+}
+
+function updateBackupControlButton() {
+  var backup = document.getElementById('modal-backup');
+  var btn = document.getElementById('backup-control-btn');
+  if (!btn) return;
+  btn.style.display = backup && backup.value === '是' ? 'inline-flex' : 'none';
+}
+
+function openBackupControlWindow() {
+  if (!BACKUP_CONTROL_URL) {
+    showToast('備份管制連結尚未設定');
+    return;
+  }
+  var opened = window.open(BACKUP_CONTROL_URL, '_blank');
+  if (!opened) showToast('瀏覽器封鎖了新視窗，請允許彈出視窗後再試。');
 }
 
 function renderSystemModalFieldLabel(field, ui) {
