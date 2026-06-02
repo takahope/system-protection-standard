@@ -13,7 +13,7 @@
 var PAGE_ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 var PAGE_PASSCODE_PROPERTY = 'PAGE_ACCESS_PASSCODE';
 var PAGE_PASSCODE_CACHE_PREFIX = 'page_passcode_';
-var PAGE_PASSCODE_TTL_SECONDS = 600;
+var PAGE_PASSCODE_TTL_SECONDS = 8 * 60 * 60;
 var PAGE_PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
 
 function doGet(e) {
