@@ -1073,10 +1073,10 @@ var SYSTEM_FIELD_HELP_TEXT = {
   '維運廠商統一編號': '1.若廠商無統一編號請填寫「0」\n2.系統建置方式為「套裝軟體」者請填「2」\n3.若為機關建置，請填寫該機關之OID',
   '最大可容忍中斷時間': '1.限填整數，不含逗號\n2.請機關自行評估該系統對於機關之最大可容忍中斷時間',
   '系統是否對外': '1.限填「是」、「否」\n2.「系統對外」係指以網際網路即可連線檢視或使用之系統',
-  '備妥流量清洗機制': '非為對外之系統，本項請填「非對外系統」',
-  '備妥CDN啟用作業程序': '非為對外之系統，本項請填「非對外系統」',
-  '備妥靜態網頁': '非為對外之系統，本項請填「非對外系統」',
-  '10分鐘內切換至靜態網頁': '非為對外之系統，本項請填「非對外系統」'
+  '備妥流量清洗機制': '流量清洗機制 — 實作方案\n目標：把惡意流量擋掉，只讓正常使用者進來\n\nCloudflare（免費/付費）\n最常見選擇，開啟 DDoS Protection 與 WAF（網頁應用防火牆），自動識別並封鎖異常流量\nAWS Shield / Azure DDoS Protection\n雲端原生的流量清洗服務，適合已在用 AWS/Azure 的單位\n專線清洗服務\n中華電信、遠傳等 ISP 提供的上游清洗，流量在進到你的機房前就先過濾',
+  '備妥CDN啟用作業程序': 'CDN 啟用作業程序 — 實作方案\n目標：把流量分散到各地節點，不讓單一伺服器承受全部壓力\n\nCloudflare CDN\n將 DNS 指向 Cloudflare，靜態資源自動快取於全球節點\nAWS CloudFront / Azure CDN / GCP Cloud CDN\n搭配原有雲端服務使用，設定 Origin 指向你的主機\n作業程序文件化\n重點不只是技術設定，而是要寫清楚：\n\n誰有權下令切換\n切換步驟的 SOP 文件\n相關帳號密碼的緊急存取方式（如 KeePass、1Password Teams）',
+  '備妥靜態網頁': '備妥靜態網頁 — 實作方案\n目標：準備一個不依賴資料庫、超輕量的備用網頁\n\n手動製作靜態 HTML\n將現有網站輸出成純 HTML/CSS，去除所有動態功能，只保留基本資訊\n靜態網站產生器\n用 Hugo、Jekyll、Astro 等工具，從現有內容自動產出靜態版本\n存放位置建議\n\nGitHub Pages（免費、穩定）\nCloudflare Pages\nAWS S3 靜態網站托管\n\n放在與主站完全不同的基礎設施上，才能確保主站掛掉時備援站還活著',
+  '10分鐘內切換至靜態網頁': '10分鐘內切換 — 實作方案\n目標：確保切換動作快速、不慌亂、有人負責\n\nDNS TTL 預先調低\n平時就把 DNS 的 TTL 設為 300 秒（5分鐘）以下，確保切換後能快速生效，不用等幾小時\n預先建立 DNS 切換腳本\n用 Cloudflare API 或各家 DNS 服務的 API，寫好一鍵切換指令'
 };
 
 var SYSTEM_DETAIL_GROUPS = ['基本概況','管理責任與供應商','資安與資料特性','韌性與對外服務'];
@@ -3364,6 +3364,74 @@ function renderSystemSubmitProgress() {
   return html;
 }
 
+function setSystemModalFieldValueAndDisabled(formKey, value, disabled) {
+  var el = document.getElementById('modal-' + formKey);
+  if (!el) return;
+  el.value = value;
+  el.disabled = !!disabled;
+}
+
+function setSystemModalFieldDisabled(formKey, disabled) {
+  var el = document.getElementById('modal-' + formKey);
+  if (!el) return;
+  el.disabled = !!disabled;
+}
+
+function applySystemModalConditionalFields(clearWhenEnabled) {
+  var sensitive = document.getElementById('modal-sensitive');
+  var external = document.getElementById('modal-external');
+  if (sensitive) {
+    if (sensitive.value === '否') {
+      setSystemModalFieldValueAndDisabled('encrypt', '無機敏資訊', true);
+      setSystemModalFieldValueAndDisabled('sensitiveType', '無機敏資訊', true);
+    } else if (sensitive.value === '是') {
+      if (clearWhenEnabled) {
+        setSystemModalFieldValueAndDisabled('encrypt', '', false);
+        setSystemModalFieldValueAndDisabled('sensitiveType', '', false);
+      } else {
+        setSystemModalFieldDisabled('encrypt', false);
+        setSystemModalFieldDisabled('sensitiveType', false);
+      }
+    } else {
+      setSystemModalFieldDisabled('encrypt', false);
+      setSystemModalFieldDisabled('sensitiveType', false);
+    }
+  }
+  if (external) {
+    if (external.value === '否') {
+      setSystemModalFieldValueAndDisabled('trafficWash', '非對外系統', true);
+      setSystemModalFieldValueAndDisabled('cdnReady', '非對外系統', true);
+      setSystemModalFieldValueAndDisabled('staticSite', '非對外系統', true);
+      setSystemModalFieldValueAndDisabled('switchStatic10m', '非對外系統', true);
+    } else if (external.value === '是') {
+      if (clearWhenEnabled) {
+        setSystemModalFieldValueAndDisabled('trafficWash', '', false);
+        setSystemModalFieldValueAndDisabled('cdnReady', '', false);
+        setSystemModalFieldValueAndDisabled('staticSite', '', false);
+        setSystemModalFieldValueAndDisabled('switchStatic10m', '', false);
+      } else {
+        setSystemModalFieldDisabled('trafficWash', false);
+        setSystemModalFieldDisabled('cdnReady', false);
+        setSystemModalFieldDisabled('staticSite', false);
+        setSystemModalFieldDisabled('switchStatic10m', false);
+      }
+    } else {
+      setSystemModalFieldDisabled('trafficWash', false);
+      setSystemModalFieldDisabled('cdnReady', false);
+      setSystemModalFieldDisabled('staticSite', false);
+      setSystemModalFieldDisabled('switchStatic10m', false);
+    }
+  }
+}
+
+function initSystemModalConditionalFields() {
+  var sensitive = document.getElementById('modal-sensitive');
+  var external = document.getElementById('modal-external');
+  if (sensitive) sensitive.onchange = function() { applySystemModalConditionalFields(true); };
+  if (external) external.onchange = function() { applySystemModalConditionalFields(true); };
+  applySystemModalConditionalFields(false);
+}
+
 function openSystemModal(title, currentData, options) {
   options = options || {};
   resetSystemSubmitProgress();
@@ -3376,6 +3444,7 @@ function openSystemModal(title, currentData, options) {
   html += '<button id="system-modal-submit-btn" class="btn ' + escH(options.submitClass || 'btn-primary') + '" onclick="' + escH(options.submitAction || 'submitAddSystem()') + '">' + escH(options.submitLabel || '儲存') + '</button>';
   html += '</div></div></div></div>';
   document.getElementById('modal-container').innerHTML=html;
+  initSystemModalConditionalFields();
   return activeSystemModalRequest;
 }
 
