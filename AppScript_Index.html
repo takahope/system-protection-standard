@@ -236,9 +236,10 @@
     /* Assessment workspace */
     .assess-shell{display:grid;gap:14px}
     .assess-topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .assess-topbar > div:first-child{flex:1 1 520px;min-width:0}
     .assess-topbar h2{margin:0}
     .assess-topbar p{font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px}
-    .assess-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .assess-actions{display:flex;justify-content:flex-end;gap:8px;flex:1 1 360px;margin-left:auto;flex-wrap:wrap}
     .assess-meta,.dashboard-meta{margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6}
     .dashboard-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
     .dashboard-toolbar h2{margin:0 0 4px}
@@ -309,7 +310,7 @@
     }
     @media (max-width:960px){
       .assess-topbar{flex-direction:column}
-      .assess-actions{width:100%;justify-content:flex-end}
+      .assess-actions{width:100%;flex-basis:auto;justify-content:flex-end}
       .assess-actions .btn{flex:0 0 auto}
     }
     @media (max-width:960px){
