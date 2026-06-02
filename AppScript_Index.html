@@ -3085,7 +3085,7 @@ function renderTopbarUserInfo() {
   var name = getTopbarUserPrimaryName(evaluator);
   var email = evaluator.email || '';
   var roleClass = email ? (admin.isAdmin ? 'admin' : (admin.roleKey === 'viewer' ? 'unknown' : 'member')) : 'unknown';
-  var roleText = email ? (admin.roleLabel || (admin.isAdmin ? '管理者' : '一般使用者')) : '未連線';
+  var roleText = email ? (admin.isAdmin ? '開發測試人員' : (admin.roleLabel || '一般使用者')) : '未連線';
   var subText = email || (evaluator.warning || '請檢查 Web App 部署權限或網域設定');
   var primaryText = name || '未取得登入資訊';
   var avatarSource = name || email || primaryText;
