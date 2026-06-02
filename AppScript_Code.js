@@ -10,9 +10,23 @@
  */
 
 // ===== 網頁服務 =====
+var PAGE_ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
+
 function doGet(e) {
+  if (!getPageAccessStatus_().allowed) return createAccessDeniedOutput_();
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('資通系統防護基準管理系統')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+function createAccessDeniedOutput_() {
+  var html = '<!DOCTYPE html><html><head><base target="_top"><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f9fa;color:#202124;font-family:"Microsoft JhengHei","Segoe UI",sans-serif}.access-denied{padding:28px 32px;border:1px solid #dadce0;border-radius:18px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,.08);font-size:16px;font-weight:700}</style>' +
+    '</head><body><div class="access-denied">' + PAGE_ACCESS_DENIED_MESSAGE + '</div></body></html>';
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('權限不足')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
@@ -96,6 +110,30 @@ function loadHrDirectory_() {
   }
 }
 
+function getSessionEmail_() {
+  try {
+    return normalizeEmail_(Session.getActiveUser().getEmail() || '');
+  } catch (err) {
+    return '';
+  }
+}
+
+function getPageAccessStatus_() {
+  var email = getSessionEmail_();
+  var directory = email ? loadHrDirectory_() : {map: {}, warning: ''};
+  return {
+    allowed: !!(email && directory.map && directory.map[email]),
+    email: email,
+    warning: directory.warning || ''
+  };
+}
+
+function assertPageAccess_() {
+  var status = getPageAccessStatus_();
+  if (!status.allowed) throw new Error(PAGE_ACCESS_DENIED_MESSAGE);
+  return status;
+}
+
 function parseOrgLevel_(raw) {
   var str = String(raw || '').trim();
   if (!str) return null;
@@ -153,6 +191,7 @@ function loadOrgAdminDirectory_() {
 }
 
 function getActiveHrEmployees() {
+  assertPageAccess_();
   var directory = loadHrDirectory_();
   return {
     employees: directory.activeEmployees || [],
@@ -161,6 +200,7 @@ function getActiveHrEmployees() {
 }
 
 function getCurrentEvaluator() {
+  assertPageAccess_();
   var email = '';
   try {
     email = Session.getActiveUser().getEmail() || '';
@@ -374,6 +414,7 @@ function getLegacySystemValue_(source, row, key) {
 }
 
 function debugGetSystemData() {
+  assertPageAccess_();
   var result = {
     spreadsheet: null,
     systemColumnConstants: getSystemColumnConstantDebug_(),
@@ -638,6 +679,7 @@ function isAssessmentControlApplicable_(ctrlLevel, systemLevel) {
 }
 
 function getRuleAdminStatus() {
+  assertPageAccess_();
   var evaluator = getCurrentEvaluator();
   var prop = PropertiesService.getScriptProperties().getProperty('RULE_ADMIN_EMAILS') || '';
   var admins = prop.split(',').map(function(email) { return String(email || '').trim().toLowerCase(); }).filter(function(email) { return !!email; });
@@ -754,6 +796,7 @@ function assertSystemOwnerOrAdmin_(systemId) {
 }
 
 function getRuleSettings() {
+  assertPageAccess_();
   var rows = getRuleRows_().sort(function(a, b) {
     if (a.group !== b.group) return a.group > b.group ? 1 : -1;
     return a.sort - b.sort;
@@ -855,6 +898,7 @@ function resetRuleSettings() {
 }
 
 function getRuleAuditLogs() {
+  assertPageAccess_();
   var sheet = ensureRuleAuditSheet_();
   if (sheet.getLastRow() <= 1) return [];
   var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, RULE_AUDIT_HEADERS.length).getDisplayValues();
@@ -1415,6 +1459,7 @@ function updateSystemLevel_(systemId, level) {
 
 // ===== 控制措施資料 (附表十) =====
 function getControlMeasures() {
+  assertPageAccess_();
   return [
     {index:1, dimension:"存取控制", category:"帳號管理", level:"普", description:"建立帳號管理機制，包含帳號之申請、建立、修改、啟用、停用及刪除之程序。"},
     {index:2, dimension:"存取控制", category:"帳號管理", level:"中", description:"已逾期之臨時或緊急帳號應刪除或禁用。"},
@@ -1501,6 +1546,7 @@ function getControlMeasures() {
 
 // ===== 系統清冊 CRUD =====
 function getSystems() {
+  assertPageAccess_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('系統清冊');
   if (!sheet) return [];
@@ -1693,10 +1739,12 @@ function saveRating(ratingData) {
 }
 
 function getRating(systemId) {
+  assertPageAccess_();
   return buildRatingPayload_(systemId);
 }
 
 function getRatingHistoryMeta(systemId) {
+  assertPageAccess_();
   var summary = getSummaryRatingRow_(systemId);
   var detailRows = getRatingDetailsReadOnly_(systemId);
   var latestDetailMeta = getLatestRatingDetailMeta_(detailRows, summary);
@@ -1757,6 +1805,7 @@ function getControlMeasureExampleMap_() {
 }
 
 function getAssessment(systemId) {
+  assertPageAccess_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) return [];
@@ -1807,9 +1856,7 @@ function isAssessmentNa_(item, sysLevel) {
   return !isAssessmentControlApplicable_(item.level, sysLevel);
 }
 
-function saveAssessmentItem(item, opts) {
-  opts = opts || {};
-  if (!opts.skipAuth) assertCanEditSystem_(item.systemId);
+function saveAssessmentItem_(item) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
@@ -1842,6 +1889,11 @@ function saveAssessmentItem(item, opts) {
   return {success: true};
 }
 
+function saveAssessmentItem(item) {
+  assertCanEditSystem_(item.systemId);
+  return saveAssessmentItem_(item);
+}
+
 function initAssessmentForSystem(systemId, systemName, systemLevel) {
   assertCanEditSystem_(systemId);
   var controls = getControlMeasures();
@@ -1853,7 +1905,7 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
   controls.forEach(function(ctrl) {
     if (existingIndexes.indexOf(ctrl.index) === -1) {
       var applicable = isAssessmentControlApplicable_(ctrl.level, systemLevel);
-      saveAssessmentItem({
+      saveAssessmentItem_({
         systemId: systemId,
         systemName: systemName,
         index: ctrl.index,
@@ -1867,7 +1919,7 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
         corrective: '',
         targetDate: '',
         note: applicable ? '' : appRule.naNote
-      }, {skipAuth:true});
+      });
       count++;
     }
   });
@@ -1877,6 +1929,7 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
 
 // ===== 統計 =====
 function getSystemStats(systemId) {
+  assertPageAccess_();
   var assessment = getAssessment(systemId);
   if (assessment.length === 0) return null;
 
@@ -1896,6 +1949,7 @@ function getSystemStats(systemId) {
 
 // ===== 全域儀表板統計 =====
 function getGlobalDashboard() {
+  assertPageAccess_();
   return buildGlobalDashboardPayload_();
 }
 
@@ -1972,6 +2026,7 @@ function unique(arr) {
 
 // ===== 不符合代碼計算 =====
 function getCodeMap() {
+  assertPageAccess_();
   var config = getRuleConfig_();
   var rows = config.code_map || [];
   var map = {};
@@ -2041,6 +2096,7 @@ function recalculateSystemCompliance(systemId) {
 }
 
 function getNonComplianceCodes(systemId) {
+  assertPageAccess_();
   var result = computeComplianceResult_(systemId);
   return {codes: result.codes || [], codeString: result.codeString || '', status: result.status || ''};
 }
@@ -2079,6 +2135,7 @@ function upsertDashboardSnapshot_(payload, evaluator) {
 }
 
 function getDashboardSnapshot() {
+  assertPageAccess_();
   var sheet = ensureDashboardSnapshotSheet_();
   if (sheet.getLastRow() <= 1) return {hasSnapshot: false, data: []};
   var data = sheet.getDataRange().getDisplayValues();
@@ -2105,6 +2162,7 @@ function rebuildDashboardSnapshot() {
 
 // ===== 批次儲存自評 =====
 function batchSaveAssessment(items) {
+  assertPageAccess_();
   var checked = {};
   (items || []).forEach(function(item) {
     var systemId = String(item && item.systemId || '');
@@ -2292,6 +2350,7 @@ function exportSpreadsheetAsXlsxBlob_(spreadsheetId, fileName) {
 }
 
 function exportAssessmentFile(systemId, format) {
+  assertPageAccess_();
   var fileFormat = String(format || '').toLowerCase();
   if (fileFormat !== 'csv' && fileFormat !== 'xlsx') return {success: false, message: '不支援的匯出格式'};
 
@@ -2330,6 +2389,7 @@ function exportAssessmentFile(systemId, format) {
 }
 
 function exportAssessmentReport(systemId) {
+  assertPageAccess_();
   var report = buildAssessmentReportPayload_(systemId);
   if (!report.success) return report;
 

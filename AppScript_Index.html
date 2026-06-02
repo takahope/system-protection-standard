@@ -906,6 +906,7 @@ var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
+var ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 
 var SYSTEM_MODAL_GROUP_META = {
   '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
@@ -953,6 +954,14 @@ var SYSTEM_FIELD_UI_META = {
   '備妥靜態網頁': {order:80, span:3},
   '10分鐘內切換至靜態網頁': {order:90, span:3}
 };
+
+function isAccessDeniedError(err) {
+  return err && String(err.message || '').indexOf(ACCESS_DENIED_MESSAGE) >= 0;
+}
+
+function renderAccessDeniedPage() {
+  document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f9fa;color:#202124;font-family:&quot;Microsoft JhengHei&quot;,&quot;Segoe UI&quot;,sans-serif"><div style="padding:28px 32px;border:1px solid #dadce0;border-radius:18px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,.08);font-size:16px;font-weight:700">' + ACCESS_DENIED_MESSAGE + '</div></div>';
+}
 
 var RULE_GROUP_META = {
   rating_confidentiality: {title:'機密性建議規則', desc:'管理個資門檻、機敏資訊類別關鍵字與提示顯示。'},
@@ -1595,6 +1604,10 @@ function loadSystems(opts) {
       renderLoadedSystems();
     }
   }).withFailureHandler(function(err){
+    if (isAccessDeniedError(err)) {
+      renderAccessDeniedPage();
+      return;
+    }
     resetSystemLoadProgress();
     systemsLoading = false;
     setSystemRefreshButtonState(false);
@@ -3676,6 +3689,10 @@ function loadRuleSettings(force) {
     renderRuleConsole();
     loadRuleAuditLogs();
   }).withFailureHandler(function(err) {
+    if (isAccessDeniedError(err)) {
+      renderAccessDeniedPage();
+      return;
+    }
     if (consoleEl) consoleEl.innerHTML = '<div class="rating-status warn">載入規則失敗：' + escH(err.message) + '</div>';
   }).getRuleSettings();
 }
