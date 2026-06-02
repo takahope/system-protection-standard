@@ -417,6 +417,24 @@
     .export-result-link{display:none;margin:0 24px 18px;padding:12px 14px;border-radius:14px;background:#f3fbf6;border:1px solid #c6ead5;font-size:12px;line-height:1.7;color:#18794e}
     .export-result-link a{font-weight:800;color:#0d6f3f;text-decoration:none}
     .export-result-link a:hover{text-decoration:underline}
+    .import-dropzone{margin:16px 24px 0;padding:18px;border:1px dashed #b7c7dc;border-radius:18px;background:#f8fafc}
+    .import-dropzone label{display:block;font-size:12px;font-weight:800;color:#334155;margin-bottom:8px}
+    .import-dropzone input{width:100%;font-size:13px;color:#334155}
+    .import-dropzone p{margin:10px 0 0;font-size:12px;line-height:1.7;color:#64748b}
+    .import-preview{display:none;margin:16px 24px 0}
+    .import-preview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .import-preview-stat{padding:11px 12px;border-radius:14px;background:#fff;border:1px solid #e2eaf4}
+    .import-preview-stat label{display:block;font-size:10px;color:#64748b;font-weight:800;margin-bottom:4px}
+    .import-preview-stat strong{display:block;font-size:18px;color:#0f172a;font-variant-numeric:tabular-nums}
+    .import-message-list{display:grid;gap:8px;margin-top:10px}
+    .import-message{padding:10px 12px;border-radius:12px;font-size:12px;line-height:1.65}
+    .import-message.error{background:#fff7f5;border:1px solid #f4c7c3;color:#b42318}
+    .import-message.warn{background:#fff8ee;border:1px solid #fed7aa;color:#9a3412}
+    .import-change-list{max-height:220px;overflow:auto;border:1px solid #e2eaf4;border-radius:14px;background:#fff}
+    .import-change-item{padding:11px 12px;border-bottom:1px solid #edf2f7}
+    .import-change-item:last-child{border-bottom:0}
+    .import-change-title{font-size:12px;font-weight:900;color:#0f172a;margin-bottom:5px}
+    .import-change-fields{font-size:12px;line-height:1.7;color:#52677a}
     .system-submit-progress{display:none;flex:1;flex-direction:column;align-items:stretch;gap:7px;min-width:280px;max-width:460px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border:1px solid #cfe0ff;box-shadow:0 10px 24px rgba(23,78,166,.08),inset 0 1px 0 rgba(255,255,255,.9)}
     .system-submit-progress.active{display:flex}
     .system-submit-progress.error{background:#fff7f5;border-color:#f4c7c3;box-shadow:0 10px 24px rgba(217,48,37,.08)}
@@ -452,6 +470,8 @@
     @media (max-width:720px){
       .modal{width:96vw;max-height:92vh}
       .export-meta-grid,.export-format-grid{grid-template-columns:1fr;padding-left:16px;padding-right:16px}
+      .import-dropzone,.import-preview{margin-left:16px;margin-right:16px}
+      .import-preview-grid{grid-template-columns:1fr 1fr}
       .export-modal-head{padding-left:16px;padding-right:16px}
       .export-warning,.export-result-link{margin-left:16px;margin-right:16px}
       .system-modal-head,.system-modal-body{padding-left:16px;padding-right:16px}
@@ -805,6 +825,7 @@
             <div class="assess-actions">
               <button class="btn btn-outline btn-sm hidden" id="init-assessment-btn" onclick="initAssessment()">初始化自評項目</button>
               <button class="btn btn-outline btn-sm hidden" id="recalc-compliance-btn" onclick="recalculateCurrentSystemCompliance()">更新符合性結果</button>
+              <button class="btn btn-outline btn-sm hidden" id="assessment-import-btn" onclick="openAssessmentImportModal()">匯入自評</button>
               <button class="btn btn-warning btn-sm" onclick="exportReport()">匯出報告</button>
               <button class="btn btn-primary btn-sm hidden" id="assessment-save-btn" onclick="saveAllAssessment()">儲存所有變更</button>
             </div>
@@ -876,6 +897,7 @@ var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
 var systemSubmitTimer = null, systemSubmitProgress = 0, systemModalSubmitting = false;
 var assessmentExportSubmitting = false;
+var assessmentImportSubmitting = false, assessmentImportPreview = null;
 var SYSTEM_SUBMIT_MESSAGES = [
   {pct:0, text:'檢查欄位資料'},
   {pct:20, text:'整理系統清冊'},
@@ -1216,6 +1238,8 @@ function syncAssessmentComplianceActions() {
   if (btn) btn.classList.toggle('hidden', !isCurrentSystemOwnerOrAdmin() || isPackageSystem());
   var initBtn = document.getElementById('init-assessment-btn');
   if (initBtn && !canEditCurrentSystem()) initBtn.classList.add('hidden');
+  var importBtn = document.getElementById('assessment-import-btn');
+  if (importBtn) importBtn.classList.toggle('hidden', !canEditCurrentSystem() || isPackageSystem());
 }
 
 function renderAssessmentComplianceMeta() {
@@ -2984,6 +3008,187 @@ function downloadAssessmentReportFile(format) {
     setAssessmentExportButtonsDisabled(false);
     failProgressToast('匯出失敗：' + e.message);
   }).exportAssessmentFile(currentSystem['系統ID'], format);
+}
+
+function openAssessmentImportModal() {
+  if (!currentSystem) {
+    showToast('請先選擇系統');
+    return;
+  }
+  if (!canEditCurrentSystem() || isPackageSystem()) {
+    showToast('目前沒有匯入此系統自評的權限');
+    return;
+  }
+  if (getAssessmentDirtyCount() > 0) {
+    showToast('請先儲存自評變更後再匯入');
+    return;
+  }
+  var itemCount = currentAssessment && currentAssessment.length ? currentAssessment.length : 0;
+  var disabled = itemCount === 0;
+  assessmentImportSubmitting = false;
+  assessmentImportPreview = null;
+
+  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal export-modal">';
+  html += '<div class="export-modal-head"><h2>匯入防護基準自評</h2>';
+  html += '<p>支援匯入本系統匯出的 CSV 或 XLSX 報告。匯入只會更新符合性、現況說明、佐證資料、矯正作為、目標日期與備註，不會覆蓋控制措施基準欄位。</p></div>';
+  html += '<div class="export-meta-grid">';
+  html += '<div class="export-meta-item"><label>系統名稱</label><div>' + escH(currentSystem['系統名稱'] || '-') + '</div></div>';
+  html += '<div class="export-meta-item"><label>防護需求等級</label><div>' + escH(currentSystem['防護需求等級'] || '-') + '</div></div>';
+  html += '<div class="export-meta-item"><label>目前自評項目</label><div>' + itemCount + ' 項</div></div>';
+  html += '</div>';
+  if (disabled) html += '<div class="export-warning">此系統尚無自評資料，請先初始化自評項目後再匯入。</div>';
+  html += '<div class="import-dropzone">';
+  html += '<label for="assessment-import-file">選擇匯入檔案</label>';
+  html += '<input type="file" id="assessment-import-file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ' + (disabled ? 'disabled' : '') + ' onchange="onAssessmentImportFileChange()">';
+  html += '<p>建議先由此頁匯出報告，離線填寫後再匯入。送出前會先產生預覽，不會直接寫入資料。</p>';
+  html += '</div>';
+  html += '<div id="assessment-import-preview" class="import-preview"></div>';
+  html += '<div class="modal-actions"><div class="modal-action-left"></div><div class="modal-action-right">';
+  html += '<button class="btn btn-outline" onclick="closeModal()">關閉</button>';
+  html += '<button class="btn btn-primary" id="assessment-import-check-btn" onclick="previewAssessmentImportFile()" disabled>檢查匯入內容</button>';
+  html += '<button class="btn btn-primary hidden" id="assessment-import-apply-btn" onclick="applyAssessmentImportPreview()">套用更新</button>';
+  html += '</div></div>';
+  html += '</div></div>';
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function onAssessmentImportFileChange() {
+  var input = document.getElementById('assessment-import-file');
+  var checkBtn = document.getElementById('assessment-import-check-btn');
+  var applyBtn = document.getElementById('assessment-import-apply-btn');
+  var preview = document.getElementById('assessment-import-preview');
+  assessmentImportPreview = null;
+  if (preview) {
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+  }
+  if (applyBtn) applyBtn.classList.add('hidden');
+  if (checkBtn) checkBtn.disabled = !(input && input.files && input.files.length);
+}
+
+function readAssessmentImportFile(file, callback) {
+  var reader = new FileReader();
+  reader.onload = function() {
+    var result = String(reader.result || '');
+    var base64 = result.indexOf(',') >= 0 ? result.split(',').pop() : result;
+    callback(null, {
+      fileName: file.name || 'assessment-import',
+      mimeType: file.type || '',
+      base64: base64
+    });
+  };
+  reader.onerror = function() {
+    callback(new Error('讀取檔案失敗'));
+  };
+  reader.readAsDataURL(file);
+}
+
+function setAssessmentImportBusy(busy) {
+  assessmentImportSubmitting = !!busy;
+  var fileInput = document.getElementById('assessment-import-file');
+  var checkBtn = document.getElementById('assessment-import-check-btn');
+  var applyBtn = document.getElementById('assessment-import-apply-btn');
+  if (fileInput) fileInput.disabled = !!busy;
+  if (checkBtn) checkBtn.disabled = !!busy || !(fileInput && fileInput.files && fileInput.files.length);
+  if (applyBtn) applyBtn.disabled = !!busy;
+}
+
+function renderAssessmentImportMessages(items, type) {
+  if (!items || !items.length) return '';
+  var html = '<div class="import-message-list">';
+  var limit = Math.min(items.length, 8);
+  for (var i = 0; i < limit; i++) {
+    var item = items[i];
+    var title = item.index ? ('項次 ' + item.index + '：') : '';
+    html += '<div class="import-message ' + type + '">' + escH(title + (item.message || '')) + (item.row ? '（第 ' + item.row + ' 列）' : '') + '</div>';
+  }
+  if (items.length > limit) html += '<div class="import-message ' + type + '">另有 ' + (items.length - limit) + ' 筆未顯示。</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderAssessmentImportPreview(preview) {
+  var el = document.getElementById('assessment-import-preview');
+  var applyBtn = document.getElementById('assessment-import-apply-btn');
+  if (!el) return;
+  var html = '<div class="import-preview-grid">';
+  html += '<div class="import-preview-stat"><label>可更新</label><strong>' + (preview.updateCount || 0) + '</strong></div>';
+  html += '<div class="import-preview-stat"><label>未變更</label><strong>' + (preview.unchangedCount || 0) + '</strong></div>';
+  html += '<div class="import-preview-stat"><label>已略過</label><strong>' + (preview.skippedCount || 0) + '</strong></div>';
+  html += '<div class="import-preview-stat"><label>錯誤</label><strong>' + (preview.errorCount || 0) + '</strong></div>';
+  html += '</div>';
+  html += renderAssessmentImportMessages(preview.errors || [], 'error');
+  html += renderAssessmentImportMessages(preview.warnings || [], 'warn');
+  if (preview.previewChanges && preview.previewChanges.length) {
+    html += '<div class="import-change-list">';
+    preview.previewChanges.forEach(function(change) {
+      var labels = (change.fields || []).map(function(field) { return field.label; }).join('、');
+      html += '<div class="import-change-item">';
+      html += '<div class="import-change-title">項次 ' + escH(change.index) + '｜' + escH(change.category || change.dimension || '-') + '</div>';
+      html += '<div class="import-change-fields">將更新：' + escH(labels || '-') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  } else if (!(preview.errors && preview.errors.length)) {
+    html += '<div class="import-message warn">匯入檔與目前自評資料相同，沒有需要套用的變更。</div>';
+  }
+  el.innerHTML = html;
+  el.style.display = 'block';
+  if (applyBtn) {
+    applyBtn.classList.toggle('hidden', !preview.canApply);
+    applyBtn.disabled = !preview.canApply;
+  }
+}
+
+function previewAssessmentImportFile() {
+  if (!currentSystem || assessmentImportSubmitting) return;
+  var input = document.getElementById('assessment-import-file');
+  if (!input || !input.files || !input.files.length) {
+    showToast('請先選擇匯入檔案');
+    return;
+  }
+  var file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('匯入檔案過大，請使用 5MB 以下的 CSV 或 XLSX');
+    return;
+  }
+  setAssessmentImportBusy(true);
+  showToast('正在檢查匯入內容...');
+  readAssessmentImportFile(file, function(err, payload) {
+    if (err) {
+      setAssessmentImportBusy(false);
+      showToast(err.message);
+      return;
+    }
+    google.script.run.withSuccessHandler(function(res) {
+      setAssessmentImportBusy(false);
+      assessmentImportPreview = res;
+      renderAssessmentImportPreview(res || {});
+      showToast(res && res.canApply ? '匯入內容已檢查，可套用更新' : '匯入內容已檢查');
+    }).withFailureHandler(function(e) {
+      setAssessmentImportBusy(false);
+      showToast('匯入檢查失敗：' + e.message);
+    }).previewAssessmentImport(currentSystem['系統ID'], payload);
+  });
+}
+
+function applyAssessmentImportPreview() {
+  if (!currentSystem || assessmentImportSubmitting || !assessmentImportPreview || !assessmentImportPreview.importToken) return;
+  setAssessmentImportBusy(true);
+  showToast('正在套用匯入更新...');
+  google.script.run.withSuccessHandler(function(res) {
+    setAssessmentImportBusy(false);
+    if (res && res.success) {
+      closeModal();
+      showToast('已匯入 ' + (res.updated || 0) + ' 項自評內容');
+      loadAssessment(currentSystem['系統ID']);
+    } else {
+      showToast(res && res.message ? res.message : '匯入套用失敗');
+    }
+  }).withFailureHandler(function(e) {
+    setAssessmentImportBusy(false);
+    showToast('匯入套用失敗：' + e.message);
+  }).applyAssessmentImport(currentSystem['系統ID'], assessmentImportPreview.importToken);
 }
 
 // ===== System CRUD Modal =====
