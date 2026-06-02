@@ -11,9 +11,15 @@
 
 // ===== 網頁服務 =====
 var PAGE_ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
+var PAGE_PASSCODE_PROPERTY = 'PAGE_ACCESS_PASSCODE';
+var PAGE_PASSCODE_CACHE_PREFIX = 'page_passcode_';
+var PAGE_PASSCODE_TTL_SECONDS = 600;
+var PAGE_PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
 
 function doGet(e) {
-  if (!getPageAccessStatus_().allowed) return createAccessDeniedOutput_();
+  var access = getPageAccessStatus_();
+  if (!access.allowed) return createAccessDeniedOutput_();
+  if (!isPagePasscodeVerified_(access.email)) return createPasscodeOutput_(access);
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('資通系統防護基準管理系統')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -27,6 +33,40 @@ function createAccessDeniedOutput_() {
     '</head><body><div class="access-denied">' + PAGE_ACCESS_DENIED_MESSAGE + '</div></body></html>';
   return HtmlService.createHtmlOutput(html)
     .setTitle('權限不足')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+function createPasscodeOutput_(access) {
+  var evaluator = getCurrentEvaluatorWithoutPageAccess_();
+  var displayName = evaluator.displayName || evaluator.email || access.email || '已授權使用者';
+  var html = '<!DOCTYPE html><html><head><base target="_top"><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<style>' +
+    ':root{--blue:#174ea6;--ink:#1f2937;--muted:#64748b;--line:#dbe4ee;--soft:#f4f7fb;--danger:#b42318}' +
+    '*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top right,#e8f1ff 0,rgba(232,241,255,0) 42%),linear-gradient(145deg,#f8fafc 0%,#eef4f8 100%);font-family:"Microsoft JhengHei","Segoe UI",sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:28px}' +
+    '.gate{width:min(460px,100%);position:relative;padding:30px;border-radius:24px;background:rgba(255,255,255,.94);border:1px solid rgba(219,228,238,.92);box-shadow:0 24px 70px rgba(15,23,42,.14),inset 0 1px 0 rgba(255,255,255,.9);overflow:hidden}' +
+    '.gate:before{content:"";position:absolute;right:-74px;top:-92px;width:210px;height:210px;border-radius:56px;background:radial-gradient(circle at 38% 38%,rgba(23,78,166,.12),rgba(23,78,166,0) 68%);transform:rotate(16deg)}' +
+    '.eyebrow{position:relative;display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;background:#eef5ff;color:var(--blue);font-size:11px;font-weight:800;letter-spacing:.04em}' +
+    'h1{position:relative;margin:18px 0 8px;font-size:24px;line-height:1.25;color:#0f172a}.copy{position:relative;margin:0 0 20px;font-size:13px;line-height:1.8;color:var(--muted)}' +
+    '.user{position:relative;margin:0 0 16px;padding:12px 14px;border-radius:16px;background:var(--soft);border:1px solid var(--line);font-size:12px;color:#334155;line-height:1.6}.user strong{display:block;color:#0f172a;font-size:13px}' +
+    'label{position:relative;display:block;margin-bottom:8px;font-size:12px;font-weight:800;color:#334155}.field{position:relative;display:flex;gap:8px}' +
+    'input{width:100%;height:46px;border:1px solid #cbd5e1;border-radius:14px;padding:0 14px;font-size:15px;outline:none;background:#fff;color:#111827;transition:border-color .16s ease,box-shadow .16s ease}' +
+    'input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(23,78,166,.12)}button{height:46px;border:0;border-radius:14px;padding:0 18px;background:var(--blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 12px 24px rgba(23,78,166,.2);transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}' +
+    'button:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(23,78,166,.26)}button:disabled{opacity:.62;cursor:not-allowed;transform:none;box-shadow:none}' +
+    '.msg{position:relative;min-height:20px;margin-top:12px;font-size:12px;line-height:1.7;color:var(--muted)}.msg.error{color:var(--danger);font-weight:700}.msg.ok{color:#0f7a4f;font-weight:700}' +
+    '</style></head><body><main class="gate">' +
+    '<div class="eyebrow">SECURE ACCESS</div><h1>輸入通行碼</h1>' +
+    '<p class="copy">你已通過人員名單檢查。請輸入通行碼後進入資通系統防護基準管理頁面。</p>' +
+    '<div class="user"><strong>' + escapeHtml_(displayName) + '</strong>' + escapeHtml_(access.email || '') + '</div>' +
+    '<form id="passcode-form"><label for="passcode">通行碼</label><div class="field"><input id="passcode" type="password" autocomplete="current-password" autofocus><button id="submit-btn" type="submit">進入</button></div><div id="msg" class="msg"></div></form>' +
+    '</main><script>' +
+    'var form=document.getElementById("passcode-form"),input=document.getElementById("passcode"),btn=document.getElementById("submit-btn"),msg=document.getElementById("msg");' +
+    'function setMsg(t,c){msg.textContent=t||"";msg.className="msg"+(c?" "+c:"");}' +
+    'form.addEventListener("submit",function(e){e.preventDefault();var v=input.value||"";if(!v.trim()){setMsg("請輸入通行碼。","error");input.focus();return;}btn.disabled=true;input.disabled=true;setMsg("正在驗證通行碼...","");google.script.run.withSuccessHandler(function(res){if(res&&res.success){setMsg("驗證成功，正在進入頁面。","ok");location.reload();return;}btn.disabled=false;input.disabled=false;setMsg((res&&res.message)||"通行碼錯誤，請重新輸入。","error");input.focus();input.select();}).withFailureHandler(function(err){btn.disabled=false;input.disabled=false;setMsg((err&&err.message)||"驗證失敗，請稍後再試。","error");input.focus();input.select();}).verifyPagePasscode(v);});' +
+    '</script></body></html>';
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('通行碼驗證')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
@@ -61,6 +101,14 @@ function formatEvaluatorDisplayName_(name, email) {
 
 function normalizeEmail_(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function escapeHtml_(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function loadHrDirectory_() {
@@ -118,6 +166,27 @@ function getSessionEmail_() {
   }
 }
 
+function getPasscodeCacheKey_(email) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, normalizeEmail_(email));
+  var hex = digest.map(function(byte) {
+    var value = byte < 0 ? byte + 256 : byte;
+    return ('0' + value.toString(16)).slice(-2);
+  }).join('');
+  return PAGE_PASSCODE_CACHE_PREFIX + hex;
+}
+
+function getConfiguredPagePasscode_() {
+  return String(PropertiesService.getScriptProperties().getProperty(PAGE_PASSCODE_PROPERTY) || '').trim();
+}
+
+function isPagePasscodeVerified_(email) {
+  var normalized = normalizeEmail_(email);
+  if (!normalized) return false;
+  var expected = getConfiguredPagePasscode_();
+  if (!expected) return false;
+  return CacheService.getScriptCache().get(getPasscodeCacheKey_(normalized)) === 'ok';
+}
+
 function getPageAccessStatus_() {
   var email = getSessionEmail_();
   var directory = email ? loadHrDirectory_() : {map: {}, warning: ''};
@@ -131,7 +200,70 @@ function getPageAccessStatus_() {
 function assertPageAccess_() {
   var status = getPageAccessStatus_();
   if (!status.allowed) throw new Error(PAGE_ACCESS_DENIED_MESSAGE);
+  if (!isPagePasscodeVerified_(status.email)) throw new Error(PAGE_PASSCODE_REQUIRED_MESSAGE);
   return status;
+}
+
+function getCurrentEvaluatorWithoutPageAccess_() {
+  var email = '';
+  try {
+    email = Session.getActiveUser().getEmail() || '';
+  } catch (err) {}
+
+  var result = {
+    email: email,
+    name: '',
+    displayName: email || '',
+    source: email ? 'session' : 'none',
+    warning: ''
+  };
+
+  if (!email) {
+    result.warning = '無法取得目前登入帳號，請檢查 Web App 部署權限或網域設定。';
+    return result;
+  }
+
+  var cfg = getHrConfig_();
+  var orgDirectory = loadOrgAdminDirectory_();
+  if (!cfg.spreadsheetId) {
+    result.warning = '尚未設定 HR_SPREADSHEET_ID，暫時僅帶入帳號。';
+    if (orgDirectory.map[normalizeEmail_(email)] && orgDirectory.map[normalizeEmail_(email)].name) {
+      result.name = orgDirectory.map[normalizeEmail_(email)].name;
+      result.displayName = formatEvaluatorDisplayName_(result.name, email);
+      result.source = 'org';
+      result.warning = '';
+    }
+    return result;
+  }
+
+  var directory = loadHrDirectory_();
+  var person = directory.map[normalizeEmail_(email)];
+  if (person) {
+    result.name = person.name || '';
+    result.displayName = formatEvaluatorDisplayName_(result.name, email);
+    result.source = 'hr';
+  } else if (orgDirectory.map[normalizeEmail_(email)]) {
+    result.name = orgDirectory.map[normalizeEmail_(email)].name || '';
+    result.displayName = formatEvaluatorDisplayName_(result.name, email);
+    result.source = 'org';
+  } else {
+    result.warning = directory.warning || '目前帳號未在人員主檔中。';
+  }
+  return result;
+}
+
+function verifyPagePasscode(passcode) {
+  var status = getPageAccessStatus_();
+  if (!status.allowed) throw new Error(PAGE_ACCESS_DENIED_MESSAGE);
+
+  var expected = getConfiguredPagePasscode_();
+  if (!expected) return {success: false, message: '通行碼尚未設定，請聯絡負責人員'};
+
+  var incoming = String(passcode || '').trim();
+  if (incoming !== expected) return {success: false, message: '通行碼錯誤，請重新輸入。'};
+
+  CacheService.getScriptCache().put(getPasscodeCacheKey_(status.email), 'ok', PAGE_PASSCODE_TTL_SECONDS);
+  return {success: true};
 }
 
 function parseOrgLevel_(raw) {

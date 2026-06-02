@@ -907,6 +907,7 @@ var ruleDirty = false;
 var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
 var ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
+var PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
 
 var SYSTEM_MODAL_GROUP_META = {
   '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
@@ -959,8 +960,16 @@ function isAccessDeniedError(err) {
   return err && String(err.message || '').indexOf(ACCESS_DENIED_MESSAGE) >= 0;
 }
 
+function isPasscodeRequiredError(err) {
+  return err && String(err.message || '').indexOf(PASSCODE_REQUIRED_MESSAGE) >= 0;
+}
+
 function renderAccessDeniedPage() {
   document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f9fa;color:#202124;font-family:&quot;Microsoft JhengHei&quot;,&quot;Segoe UI&quot;,sans-serif"><div style="padding:28px 32px;border:1px solid #dadce0;border-radius:18px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,.08);font-size:16px;font-weight:700">' + ACCESS_DENIED_MESSAGE + '</div></div>';
+}
+
+function renderPasscodeRequiredPage() {
+  document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f9fa;color:#202124;font-family:&quot;Microsoft JhengHei&quot;,&quot;Segoe UI&quot;,sans-serif;padding:24px"><div style="width:min(420px,100%);padding:28px 32px;border:1px solid #dadce0;border-radius:18px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,.08)"><div style="font-size:16px;font-weight:800;margin-bottom:8px">' + PASSCODE_REQUIRED_MESSAGE + '</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:18px">請重新整理頁面並輸入通行碼後繼續使用。</div><button onclick="location.reload()" style="height:42px;border:0;border-radius:12px;padding:0 16px;background:#174ea6;color:#fff;font-size:13px;font-weight:800;cursor:pointer">重新驗證</button></div></div>';
 }
 
 var RULE_GROUP_META = {
@@ -1606,6 +1615,10 @@ function loadSystems(opts) {
   }).withFailureHandler(function(err){
     if (isAccessDeniedError(err)) {
       renderAccessDeniedPage();
+      return;
+    }
+    if (isPasscodeRequiredError(err)) {
+      renderPasscodeRequiredPage();
       return;
     }
     resetSystemLoadProgress();
@@ -3691,6 +3704,10 @@ function loadRuleSettings(force) {
   }).withFailureHandler(function(err) {
     if (isAccessDeniedError(err)) {
       renderAccessDeniedPage();
+      return;
+    }
+    if (isPasscodeRequiredError(err)) {
+      renderPasscodeRequiredPage();
       return;
     }
     if (consoleEl) consoleEl.innerHTML = '<div class="rating-status warn">載入規則失敗：' + escH(err.message) + '</div>';
