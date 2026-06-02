@@ -244,6 +244,9 @@
     .dashboard-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
     .dashboard-toolbar h2{margin:0 0 4px}
     .dashboard-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .dashboard-version-panel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .dashboard-version-select{min-width:280px;max-width:min(460px,100%);height:34px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-size:12px;color:var(--text);background:#fff}
+    .dashboard-version-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d7e3f5;background:#f6f9ff;color:#174ea6;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;white-space:nowrap}
     .dashboard-placeholder{padding:18px;border:1px dashed var(--border);border-radius:12px;color:var(--text2);font-size:13px;background:#fafafa}
     .assess-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
     .assess-kpi{padding:12px 14px;border-radius:14px;border:1px solid #e5e7eb;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)}
@@ -683,6 +686,13 @@
           <div id="dashboard-snapshot-meta" class="dashboard-meta">尚未計算儀表板</div>
         </div>
         <div class="dashboard-actions">
+          <div class="dashboard-version-panel">
+            <span class="dashboard-version-chip">歷史快照</span>
+            <select id="dashboard-snapshot-select" class="dashboard-version-select" onchange="selectDashboardSnapshot(this.value)" disabled>
+              <option value="">尚未載入快照</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="loadDashboardSnapshot()">重新載入</button>
+          </div>
           <button class="btn btn-outline btn-sm hidden" id="dashboard-rebuild-btn" onclick="rebuildDashboardSnapshot()">計算儀表板</button>
         </div>
       </div>
@@ -895,6 +905,7 @@
 
 <script>
 var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData = null;
+var dashboardSnapshots = [], currentDashboardSnapshotKey = '';
 var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
 var systemLoadProgressTimer = null, systemLoadProgressStartedAt = 0, systemLoadProgressValue = 0;
 var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, toastProgressValue = 0;
@@ -1280,8 +1291,9 @@ function renderDashboardSnapshotMeta(snapshot) {
     el.textContent = '尚未計算儀表板';
     return;
   }
-  var parts = ['最後計算：' + (snapshot.updatedAt || '-')];
+  var parts = ['目前顯示：' + (snapshot.updatedAt || '-')];
   if (snapshot.updatedBy) parts.push('計算人員：' + snapshot.updatedBy);
+  if (snapshot.systemCount !== undefined) parts.push('系統數：' + snapshot.systemCount);
   el.textContent = parts.join('｜');
 }
 
@@ -1895,6 +1907,32 @@ function filterSystems(kw) {
 
 
 // ===== Dashboard =====
+function renderDashboardSnapshotOptions(snapshots, selectedKey) {
+  var select = document.getElementById('dashboard-snapshot-select');
+  if (!select) return;
+  dashboardSnapshots = Array.isArray(snapshots) ? snapshots : [];
+  currentDashboardSnapshotKey = selectedKey || '';
+  if (!dashboardSnapshots.length) {
+    select.innerHTML = '<option value="">尚無歷史快照</option>';
+    select.disabled = true;
+    return;
+  }
+  var html = '';
+  dashboardSnapshots.forEach(function(snapshot) {
+    var key = snapshot.snapshotKey || '';
+    var label = (snapshot.updatedAt || '-') + '｜' + (snapshot.updatedBy || '未記錄人員') + '｜' + (snapshot.systemCount || 0) + ' 個系統';
+    html += '<option value="' + escH(key) + '"' + (key === currentDashboardSnapshotKey ? ' selected' : '') + '>' + escH(label) + '</option>';
+  });
+  select.innerHTML = html;
+  select.disabled = false;
+}
+
+function setDashboardLoadingState() {
+  document.getElementById('dashboard-chart').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('heatmap-container').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('fail-codes-summary').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+}
+
 function renderDashboardEmptyState(message) {
   document.getElementById('dashboard-chart').innerHTML = '<div class="dashboard-placeholder">' + escH(message || '尚未計算儀表板') + '</div>';
   document.getElementById('heatmap-container').innerHTML = '<div class="dashboard-placeholder">尚無熱區分析資料</div>';
@@ -1904,22 +1942,44 @@ function renderDashboardEmptyState(message) {
 function loadDashboardSnapshot() {
   syncDashboardActions();
   renderDashboardSnapshotMeta(null);
-  document.getElementById('dashboard-chart').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  document.getElementById('heatmap-container').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  document.getElementById('fail-codes-summary').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  renderDashboardSnapshotOptions([], '');
+  setDashboardLoadingState();
   google.script.run.withSuccessHandler(function(data){
     if (!data || !data.hasSnapshot) {
       dashboardData = [];
       renderDashboardSnapshotMeta(data || null);
-      renderDashboardEmptyState('尚未計算儀表板，請由管理者手動執行。');
+      renderDashboardSnapshotOptions([], '');
+      renderDashboardEmptyState(isRuleAdmin() ? '尚未計算儀表板，請先執行一次計算。' : '尚未有可查看的儀表板快照。');
       return;
     }
-    dashboardData = Array.isArray(data.data) ? data.data : [];
-    renderDashboardSnapshotMeta(data);
+    var selected = data.selectedSnapshot || {};
+    dashboardData = Array.isArray(selected.data) ? selected.data : [];
+    renderDashboardSnapshotOptions(data.snapshots || [], selected.snapshotKey || '');
+    renderDashboardSnapshotMeta(selected);
     renderDashboard(dashboardData);
   }).withFailureHandler(function(err){
+    renderDashboardSnapshotOptions([], '');
     renderDashboardEmptyState('載入失敗：' + err.message);
-  }).getDashboardSnapshot();
+  }).getDashboardSnapshots();
+}
+
+function selectDashboardSnapshot(snapshotKey) {
+  if (!snapshotKey) return;
+  currentDashboardSnapshotKey = snapshotKey;
+  setDashboardLoadingState();
+  google.script.run.withSuccessHandler(function(snapshot) {
+    if (!snapshot || !snapshot.hasSnapshot) {
+      dashboardData = [];
+      renderDashboardSnapshotMeta(null);
+      renderDashboardEmptyState(snapshot && snapshot.message ? snapshot.message : '找不到指定的儀表板快照。');
+      return;
+    }
+    dashboardData = Array.isArray(snapshot.data) ? snapshot.data : [];
+    renderDashboardSnapshotMeta(snapshot);
+    renderDashboard(dashboardData);
+  }).withFailureHandler(function(err) {
+    renderDashboardEmptyState('載入快照失敗：' + err.message);
+  }).getDashboardSnapshotByKey(snapshotKey);
 }
 
 function rebuildDashboardSnapshot() {
@@ -1929,9 +1989,7 @@ function rebuildDashboardSnapshot() {
   }
   showToast('儀表板計算中...');
   google.script.run.withSuccessHandler(function(snapshot) {
-    dashboardData = Array.isArray(snapshot.data) ? snapshot.data : [];
-    renderDashboardSnapshotMeta(snapshot);
-    renderDashboard(dashboardData);
+    loadDashboardSnapshot();
     showToast('儀表板已更新');
   }).withFailureHandler(function(err) {
     showToast('計算失敗：' + err.message);

@@ -2239,56 +2239,104 @@ function getNonComplianceCodes(systemId) {
   return {codes: result.codes || [], codeString: result.codeString || '', status: result.status || ''};
 }
 
+function buildDashboardSnapshotKey_() {
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyyMMddHHmmss');
+  var uuid = Utilities.getUuid ? Utilities.getUuid().slice(0, 8) : String(new Date().getTime());
+  return 'dash_' + stamp + '_' + uuid;
+}
+
+function parseDashboardSnapshotRow_(row) {
+  var payload = [];
+  try {
+    payload = row[4] ? JSON.parse(row[4]) : [];
+  } catch (e) {
+    payload = [];
+  }
+  return {
+    hasSnapshot: true,
+    snapshotKey: row[0] || 'main',
+    updatedAt: row[1] || '',
+    updatedBy: row[2] || '',
+    updatedByEmail: row[3] || '',
+    systemCount: Array.isArray(payload) ? payload.length : 0,
+    data: Array.isArray(payload) ? payload : []
+  };
+}
+
+function getDashboardSnapshotRows_() {
+  var sheet = ensureDashboardSnapshotSheet_();
+  if (sheet.getLastRow() <= 1) return [];
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, DASHBOARD_SNAPSHOT_HEADERS.length).getDisplayValues();
+  var snapshots = [];
+  for (var i = 0; i < values.length; i++) {
+    if (!values[i][0] && !values[i][4]) continue;
+    snapshots.push(parseDashboardSnapshotRow_(values[i]));
+  }
+  snapshots.sort(function(a, b) {
+    return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
+  });
+  return snapshots;
+}
+
+function toDashboardSnapshotMeta_(snapshot) {
+  return {
+    snapshotKey: snapshot.snapshotKey || '',
+    updatedAt: snapshot.updatedAt || '',
+    updatedBy: snapshot.updatedBy || '',
+    updatedByEmail: snapshot.updatedByEmail || '',
+    systemCount: snapshot.systemCount || 0
+  };
+}
+
 function upsertDashboardSnapshot_(payload, evaluator) {
   var sheet = ensureDashboardSnapshotSheet_();
   var updatedAt = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyy/MM/dd HH:mm:ss');
   var row = [
-    'main',
+    buildDashboardSnapshotKey_(),
     updatedAt,
     evaluator && (evaluator.displayName || evaluator.email) ? (evaluator.displayName || evaluator.email) : '',
     evaluator && evaluator.email ? evaluator.email : '',
     JSON.stringify(payload || [])
   ];
-  var data = sheet.getDataRange().getDisplayValues();
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === 'main') {
-      sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
-      return {
-        hasSnapshot: true,
-        updatedAt: row[1],
-        updatedBy: row[2],
-        updatedByEmail: row[3],
-        data: payload || []
-      };
-    }
-  }
   sheet.appendRow(row);
+  SpreadsheetApp.flush();
   return {
     hasSnapshot: true,
+    snapshotKey: row[0],
     updatedAt: row[1],
     updatedBy: row[2],
     updatedByEmail: row[3],
+    systemCount: Array.isArray(payload) ? payload.length : 0,
     data: payload || []
   };
 }
 
 function getDashboardSnapshot() {
   assertPageAccess_();
-  var sheet = ensureDashboardSnapshotSheet_();
-  if (sheet.getLastRow() <= 1) return {hasSnapshot: false, data: []};
-  var data = sheet.getDataRange().getDisplayValues();
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === 'main') {
-      return {
-        hasSnapshot: true,
-        updatedAt: data[i][1],
-        updatedBy: data[i][2],
-        updatedByEmail: data[i][3],
-        data: data[i][4] ? JSON.parse(data[i][4]) : []
-      };
-    }
-  }
+  var snapshots = getDashboardSnapshotRows_();
+  if (snapshots.length) return snapshots[0];
   return {hasSnapshot: false, data: []};
+}
+
+function getDashboardSnapshots() {
+  assertPageAccess_();
+  var snapshots = getDashboardSnapshotRows_();
+  if (!snapshots.length) return {hasSnapshot: false, snapshots: [], selectedSnapshot: null};
+  return {
+    hasSnapshot: true,
+    snapshots: snapshots.map(toDashboardSnapshotMeta_),
+    selectedSnapshot: snapshots[0]
+  };
+}
+
+function getDashboardSnapshotByKey(snapshotKey) {
+  assertPageAccess_();
+  var target = String(snapshotKey || '');
+  var snapshots = getDashboardSnapshotRows_();
+  for (var i = 0; i < snapshots.length; i++) {
+    if (String(snapshots[i].snapshotKey || '') === target) return snapshots[i];
+  }
+  return {hasSnapshot: false, data: [], message: '找不到指定的儀表板快照'};
 }
 
 function rebuildDashboardSnapshot() {
