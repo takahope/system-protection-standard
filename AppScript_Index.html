@@ -339,8 +339,8 @@
     .modal .label-with-help{display:inline-flex;align-items:center;gap:6px;position:relative;width:max-content;max-width:100%}
     .modal .label-help-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:none;background:#fff4df;color:var(--warning);font-size:12px;font-weight:800;line-height:1;cursor:help;padding:0;box-shadow:inset 0 0 0 1px rgba(227,116,0,.18)}
     .modal .label-help-icon:focus{outline:2px solid rgba(15,95,168,.24);outline-offset:2px}
-    .modal .label-help-tooltip{position:absolute;top:calc(100% + 8px);left:0;z-index:20;display:none;width:min(360px,calc(100vw - 80px));padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #f3cb7a;box-shadow:0 12px 24px rgba(15,23,42,.12);font-size:12px;font-weight:400;line-height:1.7;color:#334155;white-space:pre-line}
-    .modal .label-with-help:hover .label-help-tooltip,.modal .label-with-help:focus-within .label-help-tooltip{display:block}
+    .modal .label-help-tooltip{position:absolute;bottom:calc(100% + 8px);left:0;z-index:20;display:none;width:min(360px,calc(100vw - 80px));padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #f3cb7a;box-shadow:0 -12px 24px rgba(15,23,42,.12);font-size:12px;font-weight:400;line-height:1.7;color:#334155;white-space:pre-line}
+    .modal .label-help-icon:hover + .label-help-tooltip,.modal .label-help-icon:focus + .label-help-tooltip{display:block}
     .modal input,.modal select,.modal textarea{border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
     .modal textarea{min-height:60px;resize:vertical}
     .modal .field-help{font-size:11px;color:var(--text2);line-height:1.5}
@@ -388,6 +388,9 @@
     .field-badge.recommended{background:#fff2cc;color:#8a5100}
     .field-badge.optional{background:#edf2f7;color:#475467}
     .field-badge.auto{background:#e8f0fe;color:#174ea6}
+    .field-quick-fill-btn{display:inline-flex;align-items:center;justify-content:center;min-height:18px;border:1px solid #cfe0ff;border-radius:999px;background:#eef6ff;color:#174ea6;padding:2px 7px;font-size:10px;font-weight:800;letter-spacing:.03em;line-height:1;cursor:pointer}
+    .field-quick-fill-btn:hover{background:#e0edff;border-color:#b8d2ff}
+    .field-quick-fill-btn:focus{outline:2px solid rgba(23,78,166,.22);outline-offset:2px}
     .modal .system-field textarea{min-height:42px}
     .modal .system-field textarea.low{min-height:42px}
     .owner-input-wrap{display:grid;gap:8px}
@@ -3581,6 +3584,21 @@ function renderRequirementBadge(field, ui) {
   return '';
 }
 
+function renderVendorQuickFillButton(fieldKey) {
+  if (fieldKey === '建置廠商') return '<button type="button" class="field-quick-fill-btn" onclick="fillAcademiaSinicaVendor(&quot;builder&quot;)">自行開發</button>';
+  if (fieldKey === '維運廠商') return '<button type="button" class="field-quick-fill-btn" onclick="fillAcademiaSinicaVendor(&quot;operator&quot;)">自行維運</button>';
+  return '';
+}
+
+function fillAcademiaSinicaVendor(type) {
+  var nameId = type === 'operator' ? 'modal-operator' : 'modal-builder';
+  var codeId = type === 'operator' ? 'modal-operatorCode' : 'modal-builderCode';
+  var nameEl = document.getElementById(nameId);
+  var codeEl = document.getElementById(codeId);
+  if (nameEl) nameEl.value = '中央研究院';
+  if (codeEl) codeEl.value = '2.16.886.101.20002.20001';
+}
+
 function renderSystemModalFieldLabel(field, ui) {
   var helpText = SYSTEM_FIELD_HELP_TEXT[field.key];
   var html = '<div class="system-field-label">';
@@ -3592,6 +3610,7 @@ function renderSystemModalFieldLabel(field, ui) {
     html += '<label>' + escH(field.key) + '</label>';
   }
   html += renderRequirementBadge(field, ui);
+  html += renderVendorQuickFillButton(field.key);
   html += '</div>';
   return html;
 }
