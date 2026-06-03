@@ -59,7 +59,7 @@ function createPasscodeOutput_(access) {
     '</style></head><body><main class="gate">' +
     '<div class="eyebrow">SECURE ACCESS</div><h1>輸入通行碼</h1>' +
     '<p class="copy">你已通過人員名單檢查。請輸入通行碼後進入資通系統防護基準管理頁面。</p>' +
-    '<div class="user"><strong>' + escapeHtml_(displayName) + '</strong>' + escapeHtml_(access.email || '') + '</div>' +
+    '<div class="user"><strong>' + escapeHtml_(displayName) + '</strong></div>' +
     '<form id="passcode-form"><label for="passcode">通行碼</label><div class="field"><input id="passcode" type="password" autocomplete="current-password"><button id="submit-btn" type="submit">進入</button></div><div id="msg" class="msg"></div></form>' +
     '</main><script>' +
     'var form=document.getElementById("passcode-form"),input=document.getElementById("passcode"),btn=document.getElementById("submit-btn"),msg=document.getElementById("msg");' +
