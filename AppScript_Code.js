@@ -12,6 +12,7 @@
 // ===== 網頁服務 =====
 var PAGE_ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 var PAGE_PASSCODE_PROPERTY = 'PAGE_ACCESS_PASSCODE';
+var PAGE_PASSCODE_CACHE_VERSION_PROPERTY = 'PAGE_PASSCODE_CACHE_VERSION';
 var PAGE_PASSCODE_CACHE_PREFIX = 'page_passcode_';
 var PAGE_PASSCODE_TTL_SECONDS = 8 * 60 * 60;
 var PAGE_PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
@@ -169,12 +170,16 @@ function getSessionEmail_() {
 }
 
 function getPasscodeCacheKey_(email) {
-  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, normalizeEmail_(email));
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, getPasscodeCacheVersion_() + '|' + normalizeEmail_(email));
   var hex = digest.map(function(byte) {
     var value = byte < 0 ? byte + 256 : byte;
     return ('0' + value.toString(16)).slice(-2);
   }).join('');
   return PAGE_PASSCODE_CACHE_PREFIX + hex;
+}
+
+function getPasscodeCacheVersion_() {
+  return String(PropertiesService.getScriptProperties().getProperty(PAGE_PASSCODE_CACHE_VERSION_PROPERTY) || '1');
 }
 
 function getConfiguredPagePasscode_() {
@@ -266,6 +271,27 @@ function verifyPagePasscode(passcode) {
 
   CacheService.getScriptCache().put(getPasscodeCacheKey_(status.email), 'ok', PAGE_PASSCODE_TTL_SECONDS);
   return {success: true, appUrl: ScriptApp.getService().getUrl()};
+}
+
+function resetPagePasscodeCache() {
+  var email = normalizeEmail_(getSessionEmail_());
+  var prop = PropertiesService.getScriptProperties().getProperty('RULE_ADMIN_EMAILS') || '';
+  var admins = prop.split(',').map(function(adminEmail) {
+    return normalizeEmail_(adminEmail);
+  }).filter(function(adminEmail) {
+    return !!adminEmail;
+  });
+  if (!email || admins.indexOf(email) === -1) {
+    throw new Error('僅 RULE_ADMIN_EMAILS 管理者可清理通行碼認證暫存。');
+  }
+  var resetAt = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyy/MM/dd HH:mm:ss');
+  var version = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyyMMddHHmmss') + '_' + Utilities.getUuid().slice(0, 8);
+  PropertiesService.getScriptProperties().setProperty(PAGE_PASSCODE_CACHE_VERSION_PROPERTY, version);
+  return {
+    success: true,
+    resetAt: resetAt,
+    resetBy: email
+  };
 }
 
 function getWebAppUrl() {

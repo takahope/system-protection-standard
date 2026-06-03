@@ -767,6 +767,7 @@
           <div class="settings-toolbar" style="margin-top:0">
             <button class="btn btn-primary" onclick="saveRuleSettings()">儲存規則</button>
             <button class="btn btn-outline" onclick="resetRuleSettings()">重設預設值</button>
+            <button class="btn btn-danger hidden" id="reset-passcode-cache-btn" onclick="confirmResetPagePasscodeCache()">清理通行碼暫存</button>
           </div>
         </div>
       </aside>
@@ -3966,6 +3967,7 @@ function renderRuleStatus() {
   var adminEl = document.getElementById('rule-admin-status');
   var userEl = document.getElementById('rule-user-status');
   var propEl = document.getElementById('rule-property-status');
+  var resetPasscodeBtn = document.getElementById('reset-passcode-cache-btn');
   if (adminEl) {
     adminEl.className = 'settings-kpi' + (admin.isAdmin ? '' : ' warn');
     adminEl.innerHTML = '<label>管理權限</label><div>' + escH(admin.isAdmin ? '可編輯規則' : (getRoleDisplayLabel() + '（規則唯讀）')) + '</div>';
@@ -3977,6 +3979,7 @@ function renderRuleStatus() {
     propEl.className = 'settings-kpi' + (admin.adminEmailsConfigured ? '' : ' warn');
     propEl.innerHTML = '<label>管理者名單設定</label><div>' + (admin.adminEmailsConfigured ? '已設定 RULE_ADMIN_EMAILS' : '尚未設定 RULE_ADMIN_EMAILS') + '</div>';
   }
+  if (resetPasscodeBtn) resetPasscodeBtn.classList.toggle('hidden', !admin.isAdmin);
   renderTopbarUserInfo();
   syncInitNavVisibility();
   syncSystemCrudActions();
@@ -4166,6 +4169,27 @@ function renderRuleAuditLogs() {
 }
 
 // ===== Init =====
+function confirmResetPagePasscodeCache() {
+  if (!isRuleAdmin()) { showToast('僅管理者可清理通行碼暫存'); return; }
+  openConfirmModal(
+    '確認清理通行碼暫存',
+    '此操作會立即讓所有已通過通行碼驗證的使用者重新輸入通行碼，包含目前帳號。',
+    '這不會修改通行碼本身，也不會刪除任何系統資料；只會讓既有驗證暫存失效。',
+    '確認清理',
+    'btn-danger',
+    executeResetPagePasscodeCache
+  );
+}
+
+function executeResetPagePasscodeCache() {
+  google.script.run.withSuccessHandler(function(res) {
+    showToast('通行碼暫存已清理，請重新驗證');
+    renderPasscodeRequiredPage();
+  }).withFailureHandler(function(e) {
+    showToast('清理失敗：' + e.message);
+  }).resetPagePasscodeCache();
+}
+
 function doInit() {
   if (!isRuleAdmin()) { showToast('僅管理者可執行初始化'); return; }
   openConfirmModal(
