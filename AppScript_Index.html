@@ -423,6 +423,30 @@
     .role-picker button{height:32px;border:0;border-radius:8px;background:#174ea6;color:#fff;padding:0 12px;font-size:12px;font-weight:800;cursor:pointer}
     .role-picker button:hover{background:#0f5fa8}
     .role-readonly-note{font-size:11px;color:#64748b;line-height:1.6}
+    .system-modal-tour-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;border:1px solid #cfe0ff;border-radius:999px;background:#fff;color:#174ea6;padding:0 12px;font-size:11px;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 8px 18px rgba(23,78,166,.08)}
+    .system-modal-tour-btn:hover{background:#eef6ff;border-color:#b8d2ff}
+    .system-modal-tour-btn:focus{outline:2px solid rgba(23,78,166,.22);outline-offset:2px}
+    .system-modal-tour-overlay{position:fixed;inset:0;z-index:2400}
+    .system-modal-tour-overlay:not(.is-ready) .system-modal-tour-backdrop,
+    .system-modal-tour-overlay:not(.is-ready) .system-modal-tour-highlight,
+    .system-modal-tour-overlay:not(.is-ready) .system-modal-tour-tooltip,
+    .system-modal-tour-overlay:not(.is-ready) .system-modal-tour-arrow{opacity:0;visibility:hidden}
+    .system-modal-tour-backdrop{position:absolute;background:rgba(15,23,42,.62);transition:opacity .18s ease}
+    .system-modal-tour-backdrop.is-top,.system-modal-tour-backdrop.is-bottom{left:0;right:0}
+    .system-modal-tour-backdrop.is-left,.system-modal-tour-backdrop.is-right{top:0;bottom:0}
+    .system-modal-tour-highlight{position:absolute;border-radius:16px;border:2px solid rgba(255,255,255,.94);background:transparent;pointer-events:none;box-shadow:0 0 0 1px rgba(23,78,166,.18),0 18px 42px rgba(15,23,42,.18);transition:top .24s ease,left .24s ease,width .24s ease,height .24s ease,opacity .18s ease}
+    .system-modal-tour-tooltip{position:absolute;width:min(340px,calc(100vw - 32px));padding:18px 18px 16px;border-radius:18px;background:#fff;border:1px solid rgba(148,163,184,.24);box-shadow:0 28px 60px rgba(15,23,42,.26);transition:top .24s ease,left .24s ease,opacity .18s ease}
+    .system-modal-tour-pill{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:999px;background:#eef6ff;color:#174ea6;font-size:10px;font-weight:900;letter-spacing:.08em}
+    .system-modal-tour-title{margin-top:12px;font-size:15px;font-weight:900;color:#0f172a;line-height:1.45}
+    .system-modal-tour-content{margin-top:8px;color:#475569;font-size:12px;line-height:1.75}
+    .system-modal-tour-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}
+    .system-modal-tour-counter{color:#64748b;font-size:11px;font-weight:800}
+    .system-modal-tour-actions{display:flex;align-items:center;gap:8px}
+    .system-modal-tour-action{display:inline-flex;align-items:center;justify-content:center;min-width:82px;min-height:36px;padding:0 13px;border-radius:999px;border:1px solid rgba(23,78,166,.18);background:#fff;color:#174ea6;font-size:12px;font-weight:800;cursor:pointer;transition:transform .18s ease,background-color .18s ease,border-color .18s ease}
+    .system-modal-tour-action:hover{transform:translateY(-1px);background:#f8fbff;border-color:rgba(23,78,166,.34)}
+    .system-modal-tour-action.primary{background:linear-gradient(180deg,#1a73e8 0%,#1557b0 100%);border-color:rgba(21,87,176,.42);color:#fff}
+    .system-modal-tour-action.primary:hover{background:linear-gradient(180deg,#1557b0 0%,#0f4d9f 100%)}
+    .system-modal-tour-arrow{position:absolute;width:16px;height:16px;background:#fff;border-left:1px solid rgba(148,163,184,.24);border-top:1px solid rgba(148,163,184,.24);transform:rotate(45deg);transition:top .24s ease,left .24s ease,opacity .18s ease}
     .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
     .export-modal{width:min(92vw,680px)}
@@ -512,6 +536,8 @@
       .modal-action-left{justify-content:flex-start}
       .system-submit-progress{order:-1;width:100%;max-width:none;min-width:0;align-items:stretch;flex-direction:column}
       .system-submit-track{width:100%}
+      .system-modal-tour-footer{align-items:stretch;flex-direction:column}
+      .system-modal-tour-actions{justify-content:flex-end}
     }
 
     /* Progress bar */
@@ -921,6 +947,26 @@
 
 <!-- Modal -->
 <div id="modal-container"></div>
+<div id="system-modal-tour-overlay" class="system-modal-tour-overlay hidden" aria-hidden="true">
+  <div id="system-modal-tour-backdrop-top" class="system-modal-tour-backdrop is-top"></div>
+  <div id="system-modal-tour-backdrop-right" class="system-modal-tour-backdrop is-right"></div>
+  <div id="system-modal-tour-backdrop-bottom" class="system-modal-tour-backdrop is-bottom"></div>
+  <div id="system-modal-tour-backdrop-left" class="system-modal-tour-backdrop is-left"></div>
+  <div id="system-modal-tour-highlight" class="system-modal-tour-highlight"></div>
+  <div id="system-modal-tour-tooltip" class="system-modal-tour-tooltip" role="dialog" aria-live="polite" aria-label="系統角色欄位導覽">
+    <div class="system-modal-tour-pill">欄位導覽</div>
+    <div id="system-modal-tour-title" class="system-modal-tour-title"></div>
+    <div id="system-modal-tour-content" class="system-modal-tour-content"></div>
+    <div class="system-modal-tour-footer">
+      <div id="system-modal-tour-counter" class="system-modal-tour-counter"></div>
+      <div class="system-modal-tour-actions">
+        <button type="button" id="system-modal-tour-skip-btn" class="system-modal-tour-action">略過導覽</button>
+        <button type="button" id="system-modal-tour-next-btn" class="system-modal-tour-action primary">下一步</button>
+      </div>
+    </div>
+  </div>
+  <div id="system-modal-tour-arrow" class="system-modal-tour-arrow"></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -932,6 +978,7 @@ var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, to
 var lastSystemQuery = '', lastSystemBuildFilter = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
 var modalRequestSeq = 0, activeSystemModalRequest = 0;
+var activeSystemModalMode = '', systemModalTourState = null, systemModalTourBound = false, systemModalTourAutoStartedRequest = 0;
 var BACKUP_CONTROL_URL = 'https://script.google.com/a/macros/as.edu.tw/s/AKfycbxQUi6vpkTEOKbCd__sdJREfaYLDdfsbINrZAGeQCXDdtk7rAMkFLpRHdwXnCaayC_Q/exec';
 var systemSubmitTimer = null, systemSubmitProgress = 0, systemModalSubmitting = false;
 var assessmentExportSubmitting = false;
@@ -3498,10 +3545,11 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   var disabled = readOnly || mode === 'loading' || mode === 'error';
   var missingRoles = getMissingSystemRoleFields(currentData || {});
   var maintenanceRequired = isAcademiaSinicaMaintenanceVendor(currentData || {});
-  var html = '<div class="role-assignment-panel" id="modal-role-panel">';
+  var html = '<div class="role-assignment-panel" id="modal-role-panel" data-tour="system-modal-role-panel">';
   SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
     var list = roles[roleName] || [];
-    html += '<div class="role-row" data-role-row="' + idx + '" data-role-name="' + escH(roleName) + '">';
+    var tourKey = roleName === '系統使用窗口' ? 'system-role-user-contact' : 'system-role-maintainer';
+    html += '<div class="role-row" data-role-row="' + idx + '" data-role-name="' + escH(roleName) + '" data-tour="' + tourKey + '">';
     html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統使用窗口' ? '業務聯繫與資料確認窗口' : '部署、維護與技術處理人員') + '</span></div>';
     html += '<div>';
     html += '<div class="role-chip-list" data-role-list="' + escH(roleName) + '">';
@@ -3510,7 +3558,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
     } else {
       html += '<span class="role-empty">尚未指派</span>';
     }
-    if (!disabled) html += '<button type="button" class="role-add-btn" onclick="toggleRolePicker(' + idx + ')" title="新增' + escH(roleName) + '">+</button>';
+    if (!disabled) html += '<button type="button" class="role-add-btn" onclick="toggleRolePicker(' + idx + ')" title="新增' + escH(roleName) + '"' + (idx === 0 ? ' data-tour="system-role-add-btn"' : '') + '>+</button>';
     html += '</div>';
     if (!disabled) {
       html += '<div class="role-picker" id="role-picker-' + idx + '">';
@@ -3635,6 +3683,352 @@ function refreshRoleAssignmentFieldFromModal() {
   var data = getModalData();
   data._roleReadOnly = !canAssignOwner();
   hydrateSystemModalRoleField(data, {mode:'ready'});
+  repositionSystemModalTourStep();
+}
+
+function clampSystemModalTourValue(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getSystemModalTourDom() {
+  return {
+    overlay: document.getElementById('system-modal-tour-overlay'),
+    backdropTop: document.getElementById('system-modal-tour-backdrop-top'),
+    backdropRight: document.getElementById('system-modal-tour-backdrop-right'),
+    backdropBottom: document.getElementById('system-modal-tour-backdrop-bottom'),
+    backdropLeft: document.getElementById('system-modal-tour-backdrop-left'),
+    highlight: document.getElementById('system-modal-tour-highlight'),
+    tooltip: document.getElementById('system-modal-tour-tooltip'),
+    title: document.getElementById('system-modal-tour-title'),
+    content: document.getElementById('system-modal-tour-content'),
+    counter: document.getElementById('system-modal-tour-counter'),
+    nextBtn: document.getElementById('system-modal-tour-next-btn'),
+    skipBtn: document.getElementById('system-modal-tour-skip-btn'),
+    arrow: document.getElementById('system-modal-tour-arrow')
+  };
+}
+
+function bindSystemModalTourEvents() {
+  if (systemModalTourBound) return;
+  var dom = getSystemModalTourDom();
+  if (!dom.nextBtn || !dom.skipBtn) return;
+  dom.nextBtn.onclick = function() { nextSystemModalTourStep(); };
+  dom.skipBtn.onclick = function() { closeSystemModalRoleTour(true); };
+  window.addEventListener('resize', handleSystemModalTourViewportChange);
+  window.addEventListener('scroll', handleSystemModalTourViewportChange, true);
+  document.addEventListener('keydown', handleSystemModalTourKeydown);
+  systemModalTourBound = true;
+}
+
+function unbindSystemModalTourEvents() {
+  if (!systemModalTourBound) return;
+  window.removeEventListener('resize', handleSystemModalTourViewportChange);
+  window.removeEventListener('scroll', handleSystemModalTourViewportChange, true);
+  document.removeEventListener('keydown', handleSystemModalTourKeydown);
+  systemModalTourBound = false;
+}
+
+function getSystemModalTourStorageKey() {
+  var email = getCurrentEvaluatorEmail() || 'unknown';
+  return 'systemRoleModalTourSeen:' + email + ':v1';
+}
+
+function hasSeenSystemModalRoleTour() {
+  try {
+    return window.localStorage && localStorage.getItem(getSystemModalTourStorageKey()) === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+function markSystemModalRoleTourSeen() {
+  try {
+    if (window.localStorage) localStorage.setItem(getSystemModalTourStorageKey(), '1');
+  } catch (e) {}
+}
+
+function buildSystemModalTourSteps(mode) {
+  var isReadOnly = !canAssignOwner();
+  var verb = mode === 'edit' ? '編輯' : '新增';
+  var steps = [
+    {
+      selector: '[data-tour="system-modal-vendor"]',
+      title: '先判斷維運廠商',
+      content: '維運廠商必須是在系統運作期間有合約存在的廠商；單次叫修或沒有合約時，請視為自行維運。',
+      placements: ['bottom','top','right','left']
+    },
+    {
+      selector: '[data-tour="system-modal-operator-quickfill"]',
+      title: '自行維運可快速填入',
+      content: '按「自行維運」會填入中央研究院與 OID。當維運廠商為中央研究院時，系統部署維護人員會列入必填提醒。',
+      placements: ['bottom','top','right','left'],
+      skipIf: function() { return !document.querySelector('[data-tour="system-modal-operator-quickfill"]'); }
+    },
+    {
+      selector: '[data-tour="system-modal-role-panel"]',
+      title: '這裡管理系統角色',
+      content: '系統使用窗口與系統部署維護人員都具備原系統負責人相同權限，也都可以由多人共同擔任。',
+      placements: ['top','bottom','left','right']
+    },
+    {
+      selector: '[data-tour="system-role-user-contact"]',
+      title: '系統使用窗口至少一人',
+      content: '系統使用窗口固定列入必填提醒，請至少指派一位可協助業務聯繫與資料確認的人員。',
+      placements: ['right','left','top','bottom']
+    },
+    {
+      selector: '[data-tour="system-role-maintainer"]',
+      title: '部署維護人員採條件提醒',
+      content: '只有當維運廠商為中央研究院時，系統部署維護人員才列入必填提醒；其他維運廠商可先留空。',
+      placements: ['right','left','top','bottom']
+    },
+    {
+      selector: function() {
+        return document.querySelector(isReadOnly ? '[data-tour="system-modal-role-panel"]' : '[data-tour="system-role-add-btn"]');
+      },
+      title: isReadOnly ? '目前只能查看角色' : '用 + 加入多人',
+      content: isReadOnly ? '目前帳號可查看角色，但不可調整角色指派。' : '點擊 + 後可搜尋在勤人員或輸入 email；同一角色可加入兩位以上人員。',
+      placements: ['left','top','right','bottom'],
+      skipIf: function() { return !isReadOnly && !document.querySelector('[data-tour="system-role-add-btn"]'); }
+    },
+    {
+      selector: '[data-tour="system-modal-actions"]',
+      title: '完成後儲存' + verb + '內容',
+      content: '缺漏角色會持續提醒，但不會阻擋儲存。你可以先保存已掌握資訊，再分次補齊。',
+      placements: ['top','left','right','bottom']
+    }
+  ];
+  return steps;
+}
+
+function isVisibleForSystemModalTour(el) {
+  if (!el) return false;
+  var rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+function getCurrentSystemModalTourStep() {
+  if (!systemModalTourState || !systemModalTourState.active) return null;
+  return systemModalTourState.steps[systemModalTourState.index] || null;
+}
+
+function resolveSystemModalTourTarget(step) {
+  if (!step) return null;
+  var target = typeof step.selector === 'function' ? step.selector() : document.querySelector(step.selector);
+  return isVisibleForSystemModalTour(target) ? target : null;
+}
+
+function scrollSystemModalTourTarget(target) {
+  if (!target) return;
+  try {
+    target.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+  } catch (e) {
+    target.scrollIntoView(false);
+  }
+}
+
+function calculateSystemModalTourPlacement(placement, rect, tooltipWidth, tooltipHeight, gap) {
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var top = 0, left = 0;
+  if (placement === 'top') {
+    top = rect.top - tooltipHeight - gap;
+    left = rect.left + rect.width / 2 - tooltipWidth / 2;
+  } else if (placement === 'left') {
+    top = rect.top + rect.height / 2 - tooltipHeight / 2;
+    left = rect.left - tooltipWidth - gap;
+  } else if (placement === 'right') {
+    top = rect.top + rect.height / 2 - tooltipHeight / 2;
+    left = rect.right + gap;
+  } else {
+    top = rect.bottom + gap;
+    left = rect.left + rect.width / 2 - tooltipWidth / 2;
+    placement = 'bottom';
+  }
+  var clampedTop = clampSystemModalTourValue(top, 12, Math.max(12, vh - tooltipHeight - 12));
+  var clampedLeft = clampSystemModalTourValue(left, 12, Math.max(12, vw - tooltipWidth - 12));
+  var overflow = Math.abs(top - clampedTop) + Math.abs(left - clampedLeft);
+  var fits = top >= 12 && left >= 12 && top + tooltipHeight <= vh - 12 && left + tooltipWidth <= vw - 12;
+  return {placement: placement, top: clampedTop, left: clampedLeft, overflow: overflow, fits: fits};
+}
+
+function chooseSystemModalTourPlacement(step, rect, tooltipWidth, tooltipHeight) {
+  var placements = step.placements || [step.placement || 'bottom', 'top', 'right', 'left'];
+  var selected = null;
+  for (var i = 0; i < placements.length; i++) {
+    var candidate = calculateSystemModalTourPlacement(placements[i], rect, tooltipWidth, tooltipHeight, 18);
+    if (candidate.fits) return candidate;
+    if (!selected || candidate.overflow < selected.overflow) selected = candidate;
+  }
+  return selected || calculateSystemModalTourPlacement('bottom', rect, tooltipWidth, tooltipHeight, 18);
+}
+
+function positionSystemModalTourBackdrop(dom, hole) {
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var top = Math.max(0, hole.top);
+  var left = Math.max(0, hole.left);
+  var right = Math.min(vw, hole.left + hole.width);
+  var bottom = Math.min(vh, hole.top + hole.height);
+  dom.backdropTop.style.top = '0px';
+  dom.backdropTop.style.height = top + 'px';
+  dom.backdropBottom.style.top = bottom + 'px';
+  dom.backdropBottom.style.height = Math.max(0, vh - bottom) + 'px';
+  dom.backdropLeft.style.left = '0px';
+  dom.backdropLeft.style.top = top + 'px';
+  dom.backdropLeft.style.width = left + 'px';
+  dom.backdropLeft.style.height = Math.max(0, bottom - top) + 'px';
+  dom.backdropRight.style.left = right + 'px';
+  dom.backdropRight.style.top = top + 'px';
+  dom.backdropRight.style.width = Math.max(0, vw - right) + 'px';
+  dom.backdropRight.style.height = Math.max(0, bottom - top) + 'px';
+}
+
+function positionSystemModalTourArrow(dom, placement, rect) {
+  var arrowSize = 16;
+  if (placement.placement === 'top') {
+    dom.arrow.style.top = (placement.top + dom.tooltip.offsetHeight - arrowSize / 2) + 'px';
+    dom.arrow.style.left = clampSystemModalTourValue(rect.left + rect.width / 2 - arrowSize / 2, placement.left + 20, placement.left + dom.tooltip.offsetWidth - 28) + 'px';
+    dom.arrow.style.transform = 'rotate(225deg)';
+  } else if (placement.placement === 'left') {
+    dom.arrow.style.top = clampSystemModalTourValue(rect.top + rect.height / 2 - arrowSize / 2, placement.top + 20, placement.top + dom.tooltip.offsetHeight - 28) + 'px';
+    dom.arrow.style.left = (placement.left + dom.tooltip.offsetWidth - arrowSize / 2) + 'px';
+    dom.arrow.style.transform = 'rotate(135deg)';
+  } else if (placement.placement === 'right') {
+    dom.arrow.style.top = clampSystemModalTourValue(rect.top + rect.height / 2 - arrowSize / 2, placement.top + 20, placement.top + dom.tooltip.offsetHeight - 28) + 'px';
+    dom.arrow.style.left = (placement.left - arrowSize / 2) + 'px';
+    dom.arrow.style.transform = 'rotate(-45deg)';
+  } else {
+    dom.arrow.style.top = (placement.top - arrowSize / 2) + 'px';
+    dom.arrow.style.left = clampSystemModalTourValue(rect.left + rect.width / 2 - arrowSize / 2, placement.left + 20, placement.left + dom.tooltip.offsetWidth - 28) + 'px';
+    dom.arrow.style.transform = 'rotate(45deg)';
+  }
+}
+
+function positionSystemModalTourStep() {
+  var step = getCurrentSystemModalTourStep();
+  var dom = getSystemModalTourDom();
+  if (!step || !dom.overlay) return false;
+  var target = resolveSystemModalTourTarget(step);
+  if (!target) return false;
+  var rect = target.getBoundingClientRect();
+  var padding = 10;
+  var hole = {
+    top: clampSystemModalTourValue(rect.top - padding, 8, Math.max(8, window.innerHeight - 20)),
+    left: clampSystemModalTourValue(rect.left - padding, 8, Math.max(8, window.innerWidth - 20)),
+    width: Math.max(24, Math.min(window.innerWidth - 16, rect.width + padding * 2)),
+    height: Math.max(24, Math.min(window.innerHeight - 16, rect.height + padding * 2))
+  };
+  dom.highlight.style.top = hole.top + 'px';
+  dom.highlight.style.left = hole.left + 'px';
+  dom.highlight.style.width = hole.width + 'px';
+  dom.highlight.style.height = hole.height + 'px';
+  positionSystemModalTourBackdrop(dom, hole);
+  var tooltipWidth = Math.min(340, window.innerWidth - 32);
+  var tooltipHeight = dom.tooltip.offsetHeight || 190;
+  var placement = chooseSystemModalTourPlacement(step, rect, tooltipWidth, tooltipHeight);
+  dom.tooltip.style.top = placement.top + 'px';
+  dom.tooltip.style.left = placement.left + 'px';
+  positionSystemModalTourArrow(dom, placement, rect);
+  dom.overlay.classList.add('is-ready');
+  return true;
+}
+
+function repositionSystemModalTourStep() {
+  if (!systemModalTourState || !systemModalTourState.active) return;
+  window.requestAnimationFrame(function() {
+    if (!positionSystemModalTourStep()) renderSystemModalTourStep();
+  });
+}
+
+function renderSystemModalTourStep() {
+  if (!systemModalTourState || !systemModalTourState.active) return;
+  var dom = getSystemModalTourDom();
+  var step = getCurrentSystemModalTourStep();
+  if (!step) {
+    closeSystemModalRoleTour(true);
+    return;
+  }
+  if (typeof step.skipIf === 'function' && step.skipIf()) {
+    systemModalTourState.index += 1;
+    renderSystemModalTourStep();
+    return;
+  }
+  var target = resolveSystemModalTourTarget(step);
+  if (!target) {
+    systemModalTourState.index += 1;
+    renderSystemModalTourStep();
+    return;
+  }
+  dom.overlay.classList.remove('is-ready');
+  dom.title.textContent = step.title;
+  dom.content.textContent = step.content;
+  dom.counter.textContent = (systemModalTourState.index + 1) + ' / ' + systemModalTourState.steps.length;
+  dom.nextBtn.textContent = systemModalTourState.index === systemModalTourState.steps.length - 1 ? '完成' : '下一步';
+  scrollSystemModalTourTarget(target);
+  setTimeout(function() {
+    if (systemModalTourState && systemModalTourState.active) positionSystemModalTourStep();
+  }, 180);
+}
+
+function nextSystemModalTourStep() {
+  if (!systemModalTourState || !systemModalTourState.active) return;
+  systemModalTourState.index += 1;
+  if (systemModalTourState.index >= systemModalTourState.steps.length) {
+    closeSystemModalRoleTour(true);
+    return;
+  }
+  renderSystemModalTourStep();
+}
+
+function startSystemModalRoleTour(force, mode) {
+  var dom = getSystemModalTourDom();
+  if (!dom.overlay || !document.querySelector('#modal-container .modal')) return false;
+  if (!force && hasSeenSystemModalRoleTour()) return false;
+  if (systemModalTourState && systemModalTourState.active) return false;
+  bindSystemModalTourEvents();
+  systemModalTourState = {
+    active: true,
+    index: 0,
+    mode: mode || activeSystemModalMode || 'add',
+    steps: buildSystemModalTourSteps(mode || activeSystemModalMode || 'add')
+  };
+  dom.overlay.classList.remove('hidden');
+  dom.overlay.setAttribute('aria-hidden', 'false');
+  renderSystemModalTourStep();
+  return true;
+}
+
+function maybeStartSystemModalRoleTour(mode, requestId) {
+  if (requestId && requestId !== activeSystemModalRequest) return;
+  if (requestId && systemModalTourAutoStartedRequest === requestId) return;
+  if (hasSeenSystemModalRoleTour()) return;
+  if (startSystemModalRoleTour(false, mode)) systemModalTourAutoStartedRequest = requestId || activeSystemModalRequest;
+}
+
+function closeSystemModalRoleTour(markSeen) {
+  var dom = getSystemModalTourDom();
+  if (markSeen) markSystemModalRoleTourSeen();
+  systemModalTourState = null;
+  if (dom.overlay) {
+    dom.overlay.classList.remove('is-ready');
+    dom.overlay.classList.add('hidden');
+    dom.overlay.setAttribute('aria-hidden', 'true');
+  }
+  unbindSystemModalTourEvents();
+}
+
+function handleSystemModalTourViewportChange() {
+  repositionSystemModalTourStep();
+}
+
+function handleSystemModalTourKeydown(event) {
+  if (!systemModalTourState || !systemModalTourState.active) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeSystemModalRoleTour(false);
+  } else if (event.key === 'Enter' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    nextSystemModalTourStep();
+  }
 }
 
 function getUserInitials(display) {
@@ -3774,10 +4168,12 @@ function openSystemModal(title, currentData, options) {
   options = options || {};
   resetSystemSubmitProgress();
   activeSystemModalRequest = ++modalRequestSeq;
+  activeSystemModalMode = options.tourMode || '';
+  systemModalTourAutoStartedRequest = 0;
   var html = renderSystemModal(title, currentData, options);
   html += '<div class="modal-action-left">' + (options.extraActions || '') + '</div>';
   html += renderSystemSubmitProgress();
-  html += '<div class="modal-action-right">';
+  html += '<div class="modal-action-right" data-tour="system-modal-actions">';
   html += '<button id="system-modal-cancel-btn" class="btn btn-outline" onclick="closeModal()">取消</button>';
   html += '<button id="system-modal-submit-btn" class="btn ' + escH(options.submitClass || 'btn-primary') + '" onclick="' + escH(options.submitAction || 'submitAddSystem()') + '">' + escH(options.submitLabel || '儲存') + '</button>';
   html += '</div></div></div></div>';
@@ -3883,10 +4279,12 @@ function requestHrEmployeesForModal(currentData, requestId) {
     hrEmployeeOptions = (res && res.employees) ? res.employees : [];
     hydrateSystemModalRoleField(currentData, {mode:'ready'});
     updateHrWarningMessage(res && res.warning ? res.warning : '');
+    maybeStartSystemModalRoleTour(activeSystemModalMode, requestId);
   }).withFailureHandler(function(e){
     if (requestId !== activeSystemModalRequest || !document.getElementById('modal-container').innerHTML) return;
     hydrateSystemModalRoleField(currentData, {mode:'error', message:'載入人員名單失敗，若直接儲存，會保留既有角色指派。'});
     updateHrWarningMessage('');
+    maybeStartSystemModalRoleTour(activeSystemModalMode, requestId);
     showToast('載入人員名單失敗：'+e.message);
   }).getActiveHrEmployees();
 }
@@ -3925,7 +4323,7 @@ function renderRequirementBadge(field, ui) {
 
 function renderVendorQuickFillButton(fieldKey) {
   if (fieldKey === '建置廠商') return '<button type="button" class="field-quick-fill-btn" onclick="fillAcademiaSinicaVendor(&quot;builder&quot;)">自行開發</button>';
-  if (fieldKey === '維運廠商') return '<button type="button" class="field-quick-fill-btn" onclick="fillAcademiaSinicaVendor(&quot;operator&quot;)">自行維運</button>';
+  if (fieldKey === '維運廠商') return '<button type="button" class="field-quick-fill-btn" data-tour="system-modal-operator-quickfill" onclick="fillAcademiaSinicaVendor(&quot;operator&quot;)">自行維運</button>';
   if (fieldKey === '系統是否備份') return '<button type="button" id="backup-control-btn" class="field-quick-fill-btn" style="display:none" onclick="openBackupControlWindow()">備份管制</button>';
   return '';
 }
@@ -3978,7 +4376,7 @@ function renderSystemModalHeader(title, currentData) {
   var html = '<div class="system-modal-head">';
   html += '<div class="system-modal-title-row"><div class="system-modal-title-copy"><h2>' + escH(title) + '</h2>';
   html += '<div class="system-modal-subtitle">先保存已掌握的資訊即可；未完成欄位會持續提醒，方便分次補齊。</div></div>';
-  html += '<div class="system-modal-status-group"><div class="system-modal-reminder">可隨時更新資料，必填不影響儲存或新增</div>';
+  html += '<div class="system-modal-status-group"><button type="button" class="system-modal-tour-btn" onclick="startSystemModalRoleTour(true, activeSystemModalMode)">欄位導覽</button><div class="system-modal-reminder">可隨時更新資料，必填不影響儲存或新增</div>';
   html += '<div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div></div>';
   html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div></div></div>';
   html += '<input type="hidden" id="modal-level" value="' + escH(String(currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '')) + '">';
@@ -3993,7 +4391,8 @@ function renderSystemField(field, currentData) {
   var fieldMissing = field.type === 'role_assignments' ? isRoleAssignmentsMissing(currentData || {}) : !isFilledValue(val);
   var missingClass = ui.recommended && fieldMissing ? ' soft-missing' : '';
   var spanClass = ui.span ? (' span-' + Math.max(2, Math.min(12, parseInt(ui.span, 10) || 3))) : '';
-  var html = '<div class="system-field ' + escH(ui.size || 'medium') + escH(spanClass) + missingClass + '">';
+  var tourAttr = field.key === '維運廠商' ? ' data-tour="system-modal-vendor"' : '';
+  var html = '<div class="system-field ' + escH(ui.size || 'medium') + escH(spanClass) + missingClass + '"' + tourAttr + '>';
   html += renderSystemModalFieldLabel(field, ui);
   var placeholder = ui.placeholder ? ' placeholder="' + escH(ui.placeholder) + '"' : '';
   var dynamicAttrs = field.key === '維運廠商' ? ' oninput="refreshRoleAssignmentFieldFromModal()" onchange="refreshRoleAssignmentFieldFromModal()"' : '';
@@ -4078,7 +4477,8 @@ function openAddSystemModal() {
   }
   var requestId = openSystemModal('新增系統', modalData, {
     submitAction: 'submitAddSystem()',
-    submitLabel: '新增'
+    submitLabel: '新增',
+    tourMode: 'add'
   });
   requestHrEmployeesForModal(modalData, requestId);
 }
@@ -4093,7 +4493,8 @@ function openEditSystemModal() {
   var requestId = openSystemModal('編輯系統：'+(currentSystem['系統名稱'] || ''), modalData, {
     extraActions: canDeleteSystems() ? '<button id="system-modal-delete-btn" class="btn btn-danger" onclick="deleteCurrentSystem()">刪除系統</button>' : '',
     submitAction: 'submitEditSystem()',
-    submitLabel: '儲存'
+    submitLabel: '儲存',
+    tourMode: 'edit'
   });
   requestHrEmployeesForModal(modalData, requestId);
 }
@@ -4205,6 +4606,8 @@ function closeModal(force) {
   }
   pendingConfirmAction = null;
   activeSystemModalRequest = 0;
+  activeSystemModalMode = '';
+  closeSystemModalRoleTour(false);
   resetSystemSubmitProgress();
   document.getElementById('modal-container').innerHTML='';
 }
