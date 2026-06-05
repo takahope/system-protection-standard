@@ -394,6 +394,9 @@
     .field-quick-fill-btn{display:inline-flex;align-items:center;justify-content:center;min-height:18px;border:1px solid #cfe0ff;border-radius:999px;background:#eef6ff;color:#174ea6;padding:2px 7px;font-size:10px;font-weight:800;letter-spacing:.03em;line-height:1;cursor:pointer}
     .field-quick-fill-btn:hover{background:#e0edff;border-color:#b8d2ff}
     .field-quick-fill-btn:focus{outline:2px solid rgba(23,78,166,.22);outline-offset:2px}
+    .system-checkbox-field{display:flex!important;align-items:center;gap:8px;min-height:34px;padding:7px 10px;border:1px solid #dbe7f3;border-radius:10px;background:#f8fbff;color:#0f172a;font-size:12px;font-weight:800;line-height:1.5;cursor:pointer}
+    .system-checkbox-field input{width:16px;height:16px;flex-shrink:0;margin:0;accent-color:#174ea6}
+    .system-checkbox-field span{min-width:0}
     .modal .system-field textarea{min-height:42px}
     .modal .system-field textarea.low{min-height:42px}
     .owner-input-wrap{display:grid;gap:8px}
@@ -1040,8 +1043,9 @@ var SYSTEM_FIELD_UI_META = {
   '系統使用者(部門/單位)': {order:20, span:6, placeholder:'例如：Biobank同仁、全機關或跨機關使用者'},
   '建置廠商': {order:30, span:6},
   '建置廠商統一編號': {order:40, span:6},
-  '維運廠商': {order:50, span:6},
-  '維運廠商統一編號': {order:60, span:6},
+  '維運廠商': {order:50, span:4},
+  '系統運作部署在本地機房': {order:55, span:4},
+  '維運廠商統一編號': {order:60, span:4},
 
   '主機設置於機關內': {order:10, span:3},
   '核心系統': {order:20, span:3},
@@ -1122,6 +1126,7 @@ var SYSTEM_FIELD_SCHEMA = [
   {key:'建置廠商', group:'管理責任與供應商', countMissing:true, formKey:'builder'},
   {key:'建置廠商統一編號', group:'管理責任與供應商', countMissing:true, formKey:'builderCode'},
   {key:'維運廠商', group:'管理責任與供應商', countMissing:true, formKey:'operator'},
+  {key:'系統運作部署在本地機房', group:'管理責任與供應商', countMissing:false, formKey:'localDeployment', type:'checkbox'},
   {key:'維運廠商統一編號', group:'管理責任與供應商', countMissing:true, formKey:'operatorCode'},
   {key:'最大可容忍中斷時間', group:'韌性與對外服務', countMissing:true, formKey:'mto'},
   {key:'是否符合防護基準', summary:true},
@@ -1453,6 +1458,10 @@ function isFilledValue(val) {
   return String(val == null ? '' : val).trim() !== '';
 }
 
+function isYesValue(val) {
+  return String(val || '').trim() === '是';
+}
+
 function isRoleAssignmentsFilled(sys) {
   var roles = getSystemRoleAssignments(sys || {});
   for (var i = 0; i < SYSTEM_ROLE_NAMES.length; i++) {
@@ -1461,15 +1470,15 @@ function isRoleAssignmentsFilled(sys) {
   return false;
 }
 
-function isAcademiaSinicaMaintenanceVendor(sys) {
-  return String(sys && sys['維運廠商'] || '').trim() === '中央研究院';
+function isLocalDeploymentSystem(sys) {
+  return isYesValue(sys && sys['系統運作部署在本地機房']);
 }
 
 function getMissingSystemRoleFields(sys) {
   var missing = [];
   var roles = getSystemRoleAssignments(sys || {});
   if (!(roles['系統承辦窗口'] || []).length) missing.push('系統承辦窗口');
-  if (isAcademiaSinicaMaintenanceVendor(sys) && !(roles['系統部署維護人員'] || []).length) {
+  if (isLocalDeploymentSystem(sys) && !(roles['系統部署維護人員'] || []).length) {
     missing.push('系統部署維護人員');
   }
   return missing;
@@ -3544,13 +3553,14 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   var readOnly = !!(currentData && currentData._roleReadOnly);
   var disabled = readOnly || mode === 'loading' || mode === 'error';
   var missingRoles = getMissingSystemRoleFields(currentData || {});
-  var maintenanceRequired = isAcademiaSinicaMaintenanceVendor(currentData || {});
+  var localDeployment = isLocalDeploymentSystem(currentData || {});
   var html = '<div class="role-assignment-panel" id="modal-role-panel" data-tour="system-modal-role-panel">';
   SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
+    if (roleName === '系統部署維護人員' && !localDeployment) return;
     var list = roles[roleName] || [];
     var tourKey = roleName === '系統承辦窗口' ? 'system-role-user-contact' : 'system-role-maintainer';
     html += '<div class="role-row" data-role-row="' + idx + '" data-role-name="' + escH(roleName) + '" data-tour="' + tourKey + '">';
-    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統承辦窗口' ? '業務聯繫與資料確認窗口' : '部署、維護與技術處理人員') + '</span></div>';
+    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統承辦窗口' ? '各組業務若有涉及此系統請至少指派一位業務承辦窗口' : '部署、維護與技術處理人員') + '</span></div>';
     html += '<div>';
     html += '<div class="role-chip-list" data-role-list="' + escH(roleName) + '">';
     if (list.length) {
@@ -3578,7 +3588,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   } else if (mode === 'loading' || mode === 'error') {
     html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可指派角色。' : '目前無法更新人員名單；若直接儲存，會保留既有角色資料。')) + '</div>';
   } else {
-    html += '<div class="field-help">系統承辦窗口固定列入必填提醒；' + (maintenanceRequired ? '維運廠商為中央研究院，系統部署維護人員也列入必填提醒。' : '維運廠商非中央研究院時，系統部署維護人員可留空。') + '點擊 + 後可從在勤人員名單選擇。</div>';
+    html += '<div class="field-help">系統承辦窗口固定列入必填提醒；' + (localDeployment ? '系統運作部署在本地機房，系統部署維護人員也列入必填提醒。' : '未勾選系統運作部署在本地機房時，系統部署維護人員會保留既有資料但不顯示。') + '點擊 + 後可從在勤人員名單選擇。</div>';
   }
   return html;
 }
@@ -3650,6 +3660,15 @@ function collectRoleAssignmentsFromModal() {
     if (!roleName || !email || !result[roleName]) continue;
     result[roleName].push({email: email});
   }
+  return result;
+}
+
+function mergeHiddenRoleAssignmentsFromCurrentSystem(result, data) {
+  result = result || getEmptyRoleAssignments();
+  if (activeSystemModalMode !== 'edit') return result;
+  if (!data || isLocalDeploymentSystem(data)) return result;
+  var source = getSystemRoleAssignments(currentSystem || {});
+  result['系統部署維護人員'] = source['系統部署維護人員'] || [];
   return result;
 }
 
@@ -3760,9 +3779,15 @@ function buildSystemModalTourSteps(mode) {
     {
       selector: '[data-tour="system-modal-operator-quickfill"]',
       title: '自行維運可快速填入',
-      content: '按「自行維運」會填入中央研究院與 OID。當維運廠商為中央研究院時，系統部署維護人員會列入必填提醒。',
+      content: '按「自行維運」會填入中央研究院與 OID。部署維護人員是否必填，改由「系統運作部署在本地機房」勾選控制。',
       placements: ['bottom','top','right','left'],
       skipIf: function() { return !document.querySelector('[data-tour="system-modal-operator-quickfill"]'); }
+    },
+    {
+      selector: '[data-tour="system-modal-local-deployment"]',
+      title: '勾選本地機房部署',
+      content: '只有系統運作部署在本地機房時，才會顯示系統部署維護人員，並把該角色列入必填提醒。',
+      placements: ['bottom','top','right','left']
     },
     {
       selector: '[data-tour="system-modal-role-panel"]',
@@ -3779,8 +3804,9 @@ function buildSystemModalTourSteps(mode) {
     {
       selector: '[data-tour="system-role-maintainer"]',
       title: '部署維護人員採條件提醒',
-      content: '只有當維運廠商為中央研究院時，系統部署維護人員才列入必填提醒；其他維運廠商可先留空。',
-      placements: ['right','left','top','bottom']
+      content: '勾選系統運作部署在本地機房時，請至少指派一位系統部署維護人員；未勾選時此列會隱藏並保留既有資料。',
+      placements: ['right','left','top','bottom'],
+      skipIf: function() { return !isLocalDeploymentSystem(getModalData()); }
     },
     {
       selector: function() {
@@ -4391,7 +4417,7 @@ function renderSystemField(field, currentData) {
   var fieldMissing = field.type === 'role_assignments' ? isRoleAssignmentsMissing(currentData || {}) : !isFilledValue(val);
   var missingClass = ui.recommended && fieldMissing ? ' soft-missing' : '';
   var spanClass = ui.span ? (' span-' + Math.max(2, Math.min(12, parseInt(ui.span, 10) || 3))) : '';
-  var tourAttr = field.key === '維運廠商' ? ' data-tour="system-modal-vendor"' : '';
+  var tourAttr = field.key === '維運廠商' ? ' data-tour="system-modal-vendor"' : (field.key === '系統運作部署在本地機房' ? ' data-tour="system-modal-local-deployment"' : '');
   var html = '<div class="system-field ' + escH(ui.size || 'medium') + escH(spanClass) + missingClass + '"' + tourAttr + '>';
   html += renderSystemModalFieldLabel(field, ui);
   var placeholder = ui.placeholder ? ' placeholder="' + escH(ui.placeholder) + '"' : '';
@@ -4404,6 +4430,8 @@ function renderSystemField(field, currentData) {
     html += '<div id="modal-owner-field">';
     html += renderHrOwnerFieldContent(field.formKey, currentData, {mode:'loading'});
     html += '</div>';
+  } else if (field.type === 'checkbox') {
+    html += '<label class="system-checkbox-field"><input type="checkbox" id="modal-'+field.formKey+'" value="是"' + (isYesValue(val) ? ' checked' : '') + ' onchange="refreshRoleAssignmentFieldFromModal()"> <span>' + escH(field.key) + '</span></label>';
   } else if(field.options){
     html += '<select id="modal-'+field.formKey+'">';
     html += '<option value="">請選擇</option>';
@@ -4472,7 +4500,7 @@ function openAddSystemModal() {
     modalData._roleReadOnly = true;
     modalData._roleAssignments = {
       '系統承辦窗口': [{email: email, displayName: displayName}],
-      '系統部署維護人員': [{email: email, displayName: displayName}]
+      '系統部署維護人員': []
     };
   }
   var requestId = openSystemModal('新增系統', modalData, {
@@ -4509,8 +4537,9 @@ function getModalData() {
     }
     var el = document.getElementById('modal-'+f.formKey);
     if(!el) return;
-    data[f.key] = el.value;
+    data[f.key] = f.type === 'checkbox' ? (el.checked ? '是' : '') : el.value;
   });
+  data._roleAssignments = mergeHiddenRoleAssignmentsFromCurrentSystem(data._roleAssignments, data);
   return data;
 }
 

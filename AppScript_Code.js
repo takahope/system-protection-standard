@@ -707,7 +707,8 @@ function getSystemColumns_() {
   {key:'10分鐘內切換至靜態網頁', label:'10分鐘內切換至靜態網頁', column:SYSTEM_STATIC_PAGE_SWITCH_COLUMN},
   {key:'備註', label:'備註', column:SYSTEM_NOTE_COLUMN},
   {key:'提供之服務，是否含有人工智慧', label:'提供之服務，是否含有人工智慧', column:SYSTEM_AI_SERVICE_COLUMN},
-  {key:'系統負責人', label:'系統負責人', column:SYSTEM_OWNER_COLUMN}
+  {key:'系統負責人', label:'系統負責人', column:SYSTEM_OWNER_COLUMN},
+  {key:'系統運作部署在本地機房', label:'系統運作部署在本地機房', column:SYSTEM_LOCAL_DEPLOYMENT_COLUMN}
   ];
 }
 
@@ -718,7 +719,8 @@ function getSystemColumnConstantDebug_() {
     SYSTEM_LEVEL_COLUMN: {exists: typeof SYSTEM_LEVEL_COLUMN !== 'undefined', value: typeof SYSTEM_LEVEL_COLUMN !== 'undefined' ? SYSTEM_LEVEL_COLUMN : ''},
     SYSTEM_COMPLIANCE_STATUS_COLUMN: {exists: typeof SYSTEM_COMPLIANCE_STATUS_COLUMN !== 'undefined', value: typeof SYSTEM_COMPLIANCE_STATUS_COLUMN !== 'undefined' ? SYSTEM_COMPLIANCE_STATUS_COLUMN : ''},
     SYSTEM_NON_COMPLIANCE_CODES_COLUMN: {exists: typeof SYSTEM_NON_COMPLIANCE_CODES_COLUMN !== 'undefined', value: typeof SYSTEM_NON_COMPLIANCE_CODES_COLUMN !== 'undefined' ? SYSTEM_NON_COMPLIANCE_CODES_COLUMN : ''},
-    SYSTEM_OWNER_COLUMN: {exists: typeof SYSTEM_OWNER_COLUMN !== 'undefined', value: typeof SYSTEM_OWNER_COLUMN !== 'undefined' ? SYSTEM_OWNER_COLUMN : ''}
+    SYSTEM_OWNER_COLUMN: {exists: typeof SYSTEM_OWNER_COLUMN !== 'undefined', value: typeof SYSTEM_OWNER_COLUMN !== 'undefined' ? SYSTEM_OWNER_COLUMN : ''},
+    SYSTEM_LOCAL_DEPLOYMENT_COLUMN: {exists: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined', value: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined' ? SYSTEM_LOCAL_DEPLOYMENT_COLUMN : ''}
   };
 }
 
@@ -1363,6 +1365,8 @@ function initializeSheetsCore_() {
 
       var legacyAiText = String(getLegacySystemValue_(source, currentData[rowIndex], '提供之服務，是否含有人工智慧') || '').trim();
       var legacyNoteText = String(getLegacySystemValue_(source, currentData[rowIndex], '備註') || '').trim();
+      var legacyLocalDeploymentText = String(source['系統運作部署在本地機房'] || '').trim();
+      var legacyHostInternalText = String(getLegacySystemValue_(source, currentData[rowIndex], '主機設置於機關內') || '').trim();
       var migratedAiValue = '';
       var noteParts = [];
 
@@ -1373,6 +1377,7 @@ function initializeSheetsCore_() {
       migratedRows.push(getSystemColumnsByPosition_().map(function(col) {
         if (col.key === '備註') return noteParts.join('\n');
         if (col.key === '提供之服務，是否含有人工智慧') return migratedAiValue;
+        if (col.key === '系統運作部署在本地機房') return legacyLocalDeploymentText || (legacyHostInternalText === '是' ? '是' : '');
         return getLegacySystemValue_(source, currentData[rowIndex], col.key);
       }));
     }
@@ -2012,16 +2017,17 @@ function addSystem(systemData) {
   var id = 'SYS_' + new Date().getTime();
   var requestedOwner = systemData['系統負責人'] || '';
   var requestedRoles = systemData._roleAssignments || {};
+  var isLocalDeployment = String(systemData['系統運作部署在本地機房'] || '').trim() === '是';
   systemData['系統ID'] = id;
   if (!status.canAssignOwner) {
     requestedRoles = {
       '系統承辦窗口': [{email: status.evaluator.email || ''}],
-      '系統部署維護人員': [{email: status.evaluator.email || ''}]
+      '系統部署維護人員': isLocalDeployment ? [{email: status.evaluator.email || ''}] : []
     };
   } else if (!getPrimaryOwnerFromRoleAssignments_(requestedRoles) && requestedOwner) {
     requestedRoles = {
       '系統承辦窗口': [{email: requestedOwner}],
-      '系統部署維護人員': [{email: requestedOwner}]
+      '系統部署維護人員': isLocalDeployment ? [{email: requestedOwner}] : []
     };
   }
   systemData['系統負責人'] = getPrimaryOwnerFromRoleAssignments_(requestedRoles);
