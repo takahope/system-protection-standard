@@ -1299,10 +1299,13 @@ function getSystemRoleAssignments(sys) {
       var email = normalizeEmail(typeof person === 'string' ? person : person.email);
       if (!email || seen[email]) return;
       seen[email] = true;
+      var candidate = findHrOwnerByEmail(email, getRoleCandidateOptions(roleName)) || findHrOwnerByEmail(email);
+      var name = person && person.name ? person.name : (candidate && candidate.name ? candidate.name : '');
+      var displayName = person && person.displayName ? person.displayName : (candidate ? getHrOwnerOptionLabel(candidate) : '');
       roles[roleName].push({
         email: email,
-        name: person && person.name ? person.name : '',
-        displayName: person && person.displayName ? person.displayName : (person && person.name ? person.name + '（' + email + '）' : email)
+        name: name,
+        displayName: displayName || (name ? name + '（' + email + '）' : email)
       });
     });
   });
@@ -4335,6 +4338,17 @@ function getHrEmployeeModalState() {
   return {mode:'loading', message:'正在背景準備在勤人員名單，完成後即可指派角色。'};
 }
 
+function refreshRoleDisplaysAfterHrLoad() {
+  if (systemsLoaded && allSystems.length && document.getElementById('system-grid')) {
+    renderSystems(getFilteredSystems());
+  }
+  if (currentSystem) {
+    renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
+    var ratingPanel = document.getElementById('rating-panel');
+    if (ratingPanel) renderRatingStartPanel();
+  }
+}
+
 function ensureHrEmployeesPreloaded(callback) {
   if (callback) hrEmployeeLoadCallbacks.push(callback);
   if (hrEmployeeLoadState === 'ready' || hrEmployeeLoadState === 'error') {
@@ -4348,6 +4362,7 @@ function ensureHrEmployeesPreloaded(callback) {
     deploymentMaintainerOptions = (res && res.deploymentMaintainers) ? res.deploymentMaintainers : [];
     hrEmployeeWarning = res && res.warning ? res.warning : '';
     hrEmployeeLoadState = 'ready';
+    refreshRoleDisplaysAfterHrLoad();
     flushHrEmployeeLoadCallbacks(getHrEmployeeModalState());
   }).withFailureHandler(function(e){
     hrEmployeeLoadState = 'error';
