@@ -436,7 +436,8 @@ var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type'
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
 var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
 var SYSTEM_ROLE_ASSIGNMENT_HEADERS = ['系統ID', '系統名稱', '角色名稱', '使用者email', '指派人', '指派時間'];
-var SYSTEM_ROLE_NAMES = ['系統使用窗口', '系統維運人員'];
+var SYSTEM_ROLE_NAMES = ['系統使用窗口', '系統部署維護人員'];
+var SYSTEM_ROLE_LEGACY_NAME_MAP = {'系統維運人員': '系統部署維護人員'};
 
 function getEmptySystemRoleAssignmentMap_() {
   var map = {};
@@ -467,8 +468,13 @@ function getSystemRoleAssignmentSheetReadOnly_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SYSTEM_ROLE_ASSIGNMENT_SHEET);
 }
 
+function normalizeSystemRoleName_(roleName) {
+  roleName = String(roleName || '').trim();
+  return SYSTEM_ROLE_LEGACY_NAME_MAP[roleName] || roleName;
+}
+
 function isSystemRoleName_(roleName) {
-  return SYSTEM_ROLE_NAMES.indexOf(String(roleName || '').trim()) !== -1;
+  return SYSTEM_ROLE_NAMES.indexOf(normalizeSystemRoleName_(roleName)) !== -1;
 }
 
 function normalizeSystemRoleAssignments_(roleAssignments) {
@@ -477,6 +483,12 @@ function normalizeSystemRoleAssignments_(roleAssignments) {
   for (var r = 0; r < SYSTEM_ROLE_NAMES.length; r++) {
     var roleName = SYSTEM_ROLE_NAMES[r];
     var rows = roleAssignments[roleName] || [];
+    for (var legacyName in SYSTEM_ROLE_LEGACY_NAME_MAP) {
+      if (!SYSTEM_ROLE_LEGACY_NAME_MAP.hasOwnProperty(legacyName)) continue;
+      if (SYSTEM_ROLE_LEGACY_NAME_MAP[legacyName] === roleName && roleAssignments[legacyName]) {
+        rows = rows.concat(roleAssignments[legacyName]);
+      }
+    }
     var seen = {};
     for (var i = 0; i < rows.length; i++) {
       var raw = rows[i];
@@ -512,7 +524,7 @@ function getAllSystemRoleAssignments_(hrDirectory) {
   var seen = {};
   for (var i = 0; i < data.length; i++) {
     var systemId = String(data[i][0] || '').trim();
-    var roleName = String(data[i][2] || '').trim();
+    var roleName = normalizeSystemRoleName_(data[i][2]);
     var email = normalizeEmail_(data[i][3]);
     if (!systemId || !isSystemRoleName_(roleName) || !email) continue;
     var key = getRoleAssignmentKey_(systemId, roleName, email);
@@ -546,7 +558,7 @@ function getPrimaryOwnerFromRoleAssignments_(roleAssignments) {
   roleAssignments = normalizeSystemRoleAssignments_(roleAssignments);
   var preferred = roleAssignments['系統使用窗口'] || [];
   if (preferred.length) return preferred[0].email;
-  var fallback = roleAssignments['系統維運人員'] || [];
+  var fallback = roleAssignments['系統部署維護人員'] || [];
   return fallback.length ? fallback[0].email : '';
 }
 
@@ -559,7 +571,7 @@ function replaceSystemRoleAssignments_(systemId, systemName, roleAssignments, as
     var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, SYSTEM_ROLE_ASSIGNMENT_HEADERS.length).getDisplayValues();
     for (var i = data.length - 1; i >= 0; i--) {
       if (String(data[i][0] || '') === String(systemId || '')) {
-        var key = getRoleAssignmentKey_(data[i][0], data[i][2], data[i][3]);
+        var key = getRoleAssignmentKey_(data[i][0], normalizeSystemRoleName_(data[i][2]), data[i][3]);
         existingMeta[key] = {assigner: data[i][4] || '', assignedAt: data[i][5] || ''};
         sheet.deleteRow(i + 2);
       }
@@ -593,11 +605,12 @@ function migrateLegacyOwnersToSystemRoles_(sysSheet) {
   sysSheet = sysSheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName('系統清冊');
   if (!sysSheet || sysSheet.getLastRow() <= 1 || sysSheet.getLastColumn() < getSystemMaxColumnNumber_()) return;
   var roleSheet = ensureSystemRoleAssignmentSheet_();
+  migrateLegacySystemRoleNames_(roleSheet);
   var existing = {};
   if (roleSheet.getLastRow() > 1) {
     var roleRows = roleSheet.getRange(2, 1, roleSheet.getLastRow() - 1, SYSTEM_ROLE_ASSIGNMENT_HEADERS.length).getDisplayValues();
     for (var r = 0; r < roleRows.length; r++) {
-      existing[getRoleAssignmentKey_(roleRows[r][0], roleRows[r][2], roleRows[r][3])] = true;
+      existing[getRoleAssignmentKey_(roleRows[r][0], normalizeSystemRoleName_(roleRows[r][2]), roleRows[r][3])] = true;
     }
   }
   var data = sysSheet.getRange(2, 1, sysSheet.getLastRow() - 1, getSystemMaxColumnNumber_()).getDisplayValues();
@@ -621,6 +634,25 @@ function migrateLegacyOwnersToSystemRoles_(sysSheet) {
   }
   if (rows.length) {
     roleSheet.getRange(roleSheet.getLastRow() + 1, 1, rows.length, SYSTEM_ROLE_ASSIGNMENT_HEADERS.length).setValues(rows);
+    SpreadsheetApp.flush();
+  }
+}
+
+function migrateLegacySystemRoleNames_(roleSheet) {
+  roleSheet = roleSheet || ensureSystemRoleAssignmentSheet_();
+  if (!roleSheet || roleSheet.getLastRow() <= 1) return;
+  var roleRange = roleSheet.getRange(2, 3, roleSheet.getLastRow() - 1, 1);
+  var values = roleRange.getDisplayValues();
+  var changed = false;
+  for (var i = 0; i < values.length; i++) {
+    var normalized = normalizeSystemRoleName_(values[i][0]);
+    if (normalized !== values[i][0]) {
+      values[i][0] = normalized;
+      changed = true;
+    }
+  }
+  if (changed) {
+    roleRange.setValues(values);
     SpreadsheetApp.flush();
   }
 }
@@ -1310,7 +1342,7 @@ function initializeSheetsCore_() {
   ensureRuleSettingsSheet_();
   ensureRuleAuditSheet_();
   ensureDashboardSnapshotSheet_();
-  ensureSystemRoleAssignmentSheet_();
+  migrateLegacySystemRoleNames_(ensureSystemRoleAssignmentSheet_());
 
   // 1. 系統清冊
   var sysSheet = ss.getSheetByName('系統清冊');
@@ -1984,12 +2016,12 @@ function addSystem(systemData) {
   if (!status.canAssignOwner) {
     requestedRoles = {
       '系統使用窗口': [{email: status.evaluator.email || ''}],
-      '系統維運人員': [{email: status.evaluator.email || ''}]
+      '系統部署維護人員': [{email: status.evaluator.email || ''}]
     };
   } else if (!getPrimaryOwnerFromRoleAssignments_(requestedRoles) && requestedOwner) {
     requestedRoles = {
       '系統使用窗口': [{email: requestedOwner}],
-      '系統維運人員': [{email: requestedOwner}]
+      '系統部署維護人員': [{email: requestedOwner}]
     };
   }
   systemData['系統負責人'] = getPrimaryOwnerFromRoleAssignments_(requestedRoles);

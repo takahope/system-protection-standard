@@ -968,14 +968,14 @@ var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
 var ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 var PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
-var SYSTEM_ROLE_NAMES = ['系統使用窗口', '系統維運人員'];
+var SYSTEM_ROLE_NAMES = ['系統使用窗口', '系統部署維護人員'];
 
 var SYSTEM_MODAL_GROUP_META = {
   '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
   '管理責任與供應商': {title:'管理責任與供應商', desc:'釐清負責人、管理單位與廠商資訊，方便後續追蹤。'},
   '資安與資料特性': {title:'資安與資料特性', desc:'用於後續分級建議與防護基準自評判斷。'},
   '韌性與對外服務': {title:'韌性與對外服務', desc:'描述對外、備份與營運持續相關條件。'},
-  '系統角色': {title:'系統角色', desc:'指派使用窗口與維運人員；兩種角色都可多人擔任，並具備原系統負責人權限。'}
+  '系統角色': {title:'系統角色', desc:'指派使用窗口與部署維護人員；兩種角色都可多人擔任，並具備原系統負責人權限。'}
 };
 
 var SYSTEM_FIELD_UI_META = {
@@ -1456,7 +1456,7 @@ function formatRoleAssignmentsSummary(sys, roleName) {
 }
 
 function formatRoleAssignmentsCompact(sys) {
-  return '使用窗口：' + formatRoleAssignmentsSummary(sys, '系統使用窗口') + '｜維運：' + formatRoleAssignmentsSummary(sys, '系統維運人員');
+  return '使用窗口：' + formatRoleAssignmentsSummary(sys, '系統使用窗口') + '｜部署維護：' + formatRoleAssignmentsSummary(sys, '系統部署維護人員');
 }
 
 function isAssessmentNonCompliant(compliance) {
@@ -3482,7 +3482,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
     var list = roles[roleName] || [];
     html += '<div class="role-row" data-role-row="' + idx + '" data-role-name="' + escH(roleName) + '">';
-    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統使用窗口' ? '業務聯繫與資料確認窗口' : '日常維護與技術處理人員') + '</span></div>';
+    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統使用窗口' ? '業務聯繫與資料確認窗口' : '部署、維護與技術處理人員') + '</span></div>';
     html += '<div>';
     html += '<div class="role-chip-list" data-role-list="' + escH(roleName) + '">';
     if (list.length) {
@@ -4037,7 +4037,7 @@ function openAddSystemModal() {
     modalData._roleReadOnly = true;
     modalData._roleAssignments = {
       '系統使用窗口': [{email: email, displayName: displayName}],
-      '系統維運人員': [{email: email, displayName: displayName}]
+      '系統部署維護人員': [{email: email, displayName: displayName}]
     };
   }
   var requestId = openSystemModal('新增系統', modalData, {
