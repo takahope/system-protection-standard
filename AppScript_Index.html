@@ -1016,6 +1016,9 @@ var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
+var hrEmployeeLoadState = 'idle';
+var hrEmployeeWarning = '';
+var hrEmployeeLoadCallbacks = [];
 var ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 var PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
 var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員'];
@@ -4299,20 +4302,53 @@ function resetSystemSubmitProgress() {
   systemModalSubmitting = false;
 }
 
-function requestHrEmployeesForModal(currentData, requestId) {
+function flushHrEmployeeLoadCallbacks(state) {
+  var callbacks = hrEmployeeLoadCallbacks.slice();
+  hrEmployeeLoadCallbacks = [];
+  callbacks.forEach(function(callback) {
+    if (typeof callback === 'function') callback(state);
+  });
+}
+
+function getHrEmployeeModalState() {
+  if (hrEmployeeLoadState === 'ready') return {mode:'ready'};
+  if (hrEmployeeLoadState === 'error') {
+    return {mode:'error', message:'載入人員名單失敗；若直接儲存，會保留既有角色指派。'};
+  }
+  return {mode:'loading', message:'正在背景準備在勤人員名單，完成後即可指派角色。'};
+}
+
+function ensureHrEmployeesPreloaded(callback) {
+  if (callback) hrEmployeeLoadCallbacks.push(callback);
+  if (hrEmployeeLoadState === 'ready' || hrEmployeeLoadState === 'error') {
+    flushHrEmployeeLoadCallbacks(getHrEmployeeModalState());
+    return;
+  }
+  if (hrEmployeeLoadState === 'loading') return;
+  hrEmployeeLoadState = 'loading';
   google.script.run.withSuccessHandler(function(res){
-    if (requestId !== activeSystemModalRequest || !document.getElementById('modal-container').innerHTML) return;
     hrEmployeeOptions = (res && res.employees) ? res.employees : [];
-    hydrateSystemModalRoleField(currentData, {mode:'ready'});
-    updateHrWarningMessage(res && res.warning ? res.warning : '');
-    maybeStartSystemModalRoleTour(activeSystemModalMode, requestId);
+    hrEmployeeWarning = res && res.warning ? res.warning : '';
+    hrEmployeeLoadState = 'ready';
+    flushHrEmployeeLoadCallbacks(getHrEmployeeModalState());
   }).withFailureHandler(function(e){
-    if (requestId !== activeSystemModalRequest || !document.getElementById('modal-container').innerHTML) return;
-    hydrateSystemModalRoleField(currentData, {mode:'error', message:'載入人員名單失敗，若直接儲存，會保留既有角色指派。'});
-    updateHrWarningMessage('');
-    maybeStartSystemModalRoleTour(activeSystemModalMode, requestId);
-    showToast('載入人員名單失敗：'+e.message);
+    hrEmployeeLoadState = 'error';
+    hrEmployeeWarning = '';
+    flushHrEmployeeLoadCallbacks(getHrEmployeeModalState());
+    if (callback) showToast('載入人員名單失敗：'+e.message);
   }).getActiveHrEmployees();
+}
+
+function requestHrEmployeesForModal(currentData, requestId) {
+  ensureHrEmployeesPreloaded(function(state) {
+    if (requestId !== activeSystemModalRequest || !document.getElementById('modal-container').innerHTML) return;
+    var data = document.getElementById('modal-role-panel') ? getModalData() : currentData;
+    data._roleReadOnly = currentData && currentData._roleReadOnly;
+    data._ownerDisplayName = currentData && currentData._ownerDisplayName;
+    hydrateSystemModalRoleField(data, state);
+    updateHrWarningMessage(hrEmployeeWarning);
+    maybeStartSystemModalRoleTour(activeSystemModalMode, requestId);
+  });
 }
 
 function getSystemFieldUi(field) {
@@ -4424,7 +4460,7 @@ function renderSystemField(field, currentData) {
   var dynamicAttrs = field.key === '維運廠商' ? ' oninput="refreshRoleAssignmentFieldFromModal()" onchange="refreshRoleAssignmentFieldFromModal()"' : '';
   if (field.type === 'role_assignments') {
     html += '<div id="modal-role-field">';
-    html += renderRoleAssignmentFieldContent(currentData, {mode:'loading'});
+    html += renderRoleAssignmentFieldContent(currentData, currentData && currentData._roleLoadState ? currentData._roleLoadState : getHrEmployeeModalState());
     html += '</div>';
   } else if (field.type === 'hr_select') {
     html += '<div id="modal-owner-field">';
@@ -4486,9 +4522,10 @@ function renderSystemModal(title, currentData) {
 
 function openAddSystemModal() {
   if (!canCreateSystems()) { showToast('目前帳號僅可檢視，無法新增系統'); return; }
-  hrEmployeeOptions = [];
+  ensureHrEmployeesPreloaded();
   var modalData = {
-    _hrWarning: '',
+    _hrWarning: hrEmployeeWarning,
+    _roleLoadState: getHrEmployeeModalState(),
     '系統管理者(部門/單位)': '臺灣人體生物資料庫'
   };
   if (!canAssignOwner()) {
@@ -4514,9 +4551,10 @@ function openAddSystemModal() {
 function openEditSystemModal() {
   if(!currentSystem) return;
   if(!canEditCurrentSystem()){showToast('目前帳號無法編輯此系統');return;}
-  hrEmployeeOptions = [];
+  ensureHrEmployeesPreloaded();
   var modalData = Object.assign({}, currentSystem);
-  modalData._hrWarning = '';
+  modalData._hrWarning = hrEmployeeWarning;
+  modalData._roleLoadState = getHrEmployeeModalState();
   modalData._roleReadOnly = !canAssignOwner();
   var requestId = openSystemModal('編輯系統：'+(currentSystem['系統名稱'] || ''), modalData, {
     extraActions: canDeleteSystems() ? '<button id="system-modal-delete-btn" class="btn btn-danger" onclick="deleteCurrentSystem()">刪除系統</button>' : '',
@@ -5258,6 +5296,7 @@ document.addEventListener('DOMContentLoaded',function(){
   ratingTabTemplate = document.getElementById('tab-rating').innerHTML;
   assessTabTemplate = document.getElementById('tab-assess').innerHTML;
   renderTopbarUserInfo();
+  ensureHrEmployeesPreloaded();
   loadRuleSettings();
   loadSystems();
 });
