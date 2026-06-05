@@ -3813,19 +3813,19 @@ function buildSystemModalTourSteps(mode) {
     {
       selector: '[data-tour="system-modal-role-panel"]',
       title: '這裡管理系統角色',
-      content: '系統承辦窗口與系統部署維護人員都具備原系統負責人相同權限，也都可以由多人共同擔任。',
+      content: '系統承辦窗口與系統部署維護人員都具備原系統負責人相同權限，也都可以由多人共同擔任。已指派人員會優先顯示姓名與 email，方便確認。',
       placements: ['top','bottom','left','right']
     },
     {
       selector: '[data-tour="system-role-user-contact"]',
       title: '系統承辦窗口至少一人',
-      content: '系統承辦窗口固定列入必填提醒，請至少指派一位可協助業務聯繫與資料確認的人員。',
+      content: '系統承辦窗口固定列入必填提醒，候選名單來自人員主檔；請至少指派一位可協助業務聯繫與資料確認的人員。',
       placements: ['right','left','top','bottom']
     },
     {
       selector: '[data-tour="system-role-maintainer"]',
       title: '部署維護人員採條件提醒',
-      content: '勾選系統運作部署在本地機房時，請至少指派一位系統部署維護人員；未勾選時此列會隱藏並保留既有資料。',
+      content: '勾選系統運作部署在本地機房時，請至少指派一位系統部署維護人員；候選名單來自人員職務配置。未勾選時此列會隱藏並保留既有資料。',
       placements: ['right','left','top','bottom'],
       skipIf: function() { return !isLocalDeploymentSystem(getModalData()); }
     },
@@ -3834,7 +3834,7 @@ function buildSystemModalTourSteps(mode) {
         return document.querySelector(isReadOnly ? '[data-tour="system-modal-role-panel"]' : '[data-tour="system-role-add-btn"]');
       },
       title: isReadOnly ? '目前只能查看角色' : '用 + 加入多人',
-      content: isReadOnly ? '目前帳號可查看角色，但不可調整角色指派。' : '點擊 + 後可搜尋在勤人員或輸入 email；同一角色可加入兩位以上人員。',
+      content: isReadOnly ? '目前帳號可查看角色，但不可調整角色指派。' : '點擊 + 後會依目前角色開啟對應候選名單，也可輸入有效 email；同一角色可加入兩位以上人員。',
       placements: ['left','top','right','bottom'],
       skipIf: function() { return !isReadOnly && !document.querySelector('[data-tour="system-role-add-btn"]'); }
     },
