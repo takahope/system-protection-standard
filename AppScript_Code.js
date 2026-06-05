@@ -98,13 +98,31 @@ function getHrOrgTreeConfig_() {
 }
 
 function getHrRoleAssignmentConfig_() {
+  var defaultGroups = ['GRP-IT', 'BIOIT'];
+  var groups = typeof HR_DEPLOYMENT_MAINTAINER_GROUPS !== 'undefined' ? HR_DEPLOYMENT_MAINTAINER_GROUPS : null;
+  if (!groups && typeof HR_DEPLOYMENT_MAINTAINER_GROUP !== 'undefined') groups = [HR_DEPLOYMENT_MAINTAINER_GROUP];
+  if (!groups) groups = defaultGroups;
   return {
     spreadsheetId: typeof HR_SPREADSHEET_ID !== 'undefined' ? HR_SPREADSHEET_ID : '',
     sheetName: typeof HR_ROLE_ASSIGNMENT_SHEET_NAME !== 'undefined' ? HR_ROLE_ASSIGNMENT_SHEET_NAME : '人員職務配置',
     emailColumn: typeof HR_ROLE_ASSIGNMENT_EMAIL_COLUMN !== 'undefined' ? HR_ROLE_ASSIGNMENT_EMAIL_COLUMN : 1,
     groupColumn: typeof HR_ROLE_ASSIGNMENT_GROUP_COLUMN !== 'undefined' ? HR_ROLE_ASSIGNMENT_GROUP_COLUMN : 3,
-    deploymentMaintainerGroup: typeof HR_DEPLOYMENT_MAINTAINER_GROUP !== 'undefined' ? HR_DEPLOYMENT_MAINTAINER_GROUP : 'GRP-IT'
+    deploymentMaintainerGroups: normalizeHrRoleGroupList_(groups)
   };
+}
+
+function normalizeHrRoleGroupList_(groups) {
+  if (typeof groups === 'string') groups = groups.split(',');
+  if (!groups || !groups.length) groups = ['GRP-IT', 'BIOIT'];
+  var result = [];
+  var seen = {};
+  for (var i = 0; i < groups.length; i++) {
+    var group = String(groups[i] || '').trim();
+    if (!group || seen[group]) continue;
+    seen[group] = true;
+    result.push(group);
+  }
+  return result.length ? result : ['GRP-IT', 'BIOIT'];
 }
 
 function formatEvaluatorDisplayName_(name, email) {
@@ -195,9 +213,13 @@ function loadDeploymentMaintainerEmployees_(hrDirectory) {
     var data = sheet.getDataRange().getDisplayValues();
     var seen = {};
     var directoryMap = hrDirectory && hrDirectory.map ? hrDirectory.map : {};
+    var groupMap = {};
+    for (var g = 0; g < cfg.deploymentMaintainerGroups.length; g++) {
+      groupMap[cfg.deploymentMaintainerGroups[g]] = true;
+    }
     for (var i = 1; i < data.length; i++) {
       var group = String(data[i][cfg.groupColumn - 1] || '').trim();
-      if (group !== cfg.deploymentMaintainerGroup) continue;
+      if (!groupMap[group]) continue;
       var email = normalizeEmail_(data[i][cfg.emailColumn - 1]);
       if (!email || seen[email]) continue;
       seen[email] = true;
