@@ -3609,8 +3609,6 @@ function renderRoleAssignmentFieldContent(currentData, state) {
     html += '<div class="role-readonly-note">' + escH(message || '目前帳號可編輯系統資料，但不可調整角色指派。') + '</div>';
   } else if (mode === 'loading' || mode === 'error') {
     html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可指派角色。' : '目前無法更新人員名單；若直接儲存，會保留既有角色資料。')) + '</div>';
-  } else {
-    html += '<div class="field-help">系統承辦窗口固定列入必填提醒，候選清單來自人員主檔；' + (localDeployment ? '系統部署維護人員候選清單來自人員職務配置 GRP-IT，且列入必填提醒。' : '未勾選系統運作部署在本地機房時，系統部署維護人員會保留既有資料但不顯示。') + '點擊 + 後可從候選名單選擇。</div>';
   }
   return html;
 }
