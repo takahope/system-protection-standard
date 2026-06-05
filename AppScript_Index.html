@@ -1105,7 +1105,7 @@ var SYSTEM_FIELD_HELP_TEXT = {
   '防護需求等級': '限填「普」、「中」、「高」、「套裝軟體」',
   '建置廠商': '1.系統建置方式為「套裝軟體」者請填「套裝軟體」\n2.若為機關自行開發者，請填寫該機關名',
   '建置廠商統一編號': '1.若廠商無統一編號請填寫「0」\n2.系統建置方式為「套裝軟體」者請填「2」\n3.若為機關建置，請填寫該機關之OID',
-  '維運廠商': '1.系統建置方式為「套裝軟體」者請填「套裝軟體」\n2.若為機關自行維運者，請填寫該機關名',
+  '維運廠商': '1.系統建置方式為「套裝軟體」者請填「套裝軟體」\n2.若為機關自行維運者，請填寫該機關名\n3.維運廠商必須在系統運作期間有廠商合約存在，單次叫修或無合約存在皆屬自行維運',
   '維運廠商統一編號': '1.若廠商無統一編號請填寫「0」\n2.系統建置方式為「套裝軟體」者請填「2」\n3.若為機關建置，請填寫該機關之OID',
   '最大可容忍中斷時間': '1.限填整數，不含逗號\n2.請機關自行評估該系統對於機關之最大可容忍中斷時間',
   '系統是否對外': '1.限填「是」、「否」\n2.「系統對外」係指以網際網路即可連線檢視或使用之系統',
@@ -1414,12 +1414,30 @@ function isRoleAssignmentsFilled(sys) {
   return false;
 }
 
+function isAcademiaSinicaMaintenanceVendor(sys) {
+  return String(sys && sys['維運廠商'] || '').trim() === '中央研究院';
+}
+
+function getMissingSystemRoleFields(sys) {
+  var missing = [];
+  var roles = getSystemRoleAssignments(sys || {});
+  if (!(roles['系統使用窗口'] || []).length) missing.push('系統使用窗口');
+  if (isAcademiaSinicaMaintenanceVendor(sys) && !(roles['系統部署維護人員'] || []).length) {
+    missing.push('系統部署維護人員');
+  }
+  return missing;
+}
+
+function isRoleAssignmentsMissing(sys) {
+  return getMissingSystemRoleFields(sys || {}).length > 0;
+}
+
 function getMissingSystemFields(sys) {
   var missing = [];
   SYSTEM_FIELD_SCHEMA.forEach(function(field) {
     if (!field.countMissing) return;
     if (field.type === 'role_assignments') {
-      if (!isRoleAssignmentsFilled(sys || {})) missing.push(field.key);
+      missing = missing.concat(getMissingSystemRoleFields(sys || {}));
       return;
     }
     if (!isFilledValue(sys ? sys[field.key] : '')) missing.push(field.key);
@@ -3478,6 +3496,8 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   var message = state && state.message ? state.message : '';
   var readOnly = !!(currentData && currentData._roleReadOnly);
   var disabled = readOnly || mode === 'loading' || mode === 'error';
+  var missingRoles = getMissingSystemRoleFields(currentData || {});
+  var maintenanceRequired = isAcademiaSinicaMaintenanceVendor(currentData || {});
   var html = '<div class="role-assignment-panel" id="modal-role-panel">';
   SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
     var list = roles[roleName] || [];
@@ -3502,12 +3522,15 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   });
   if (!disabled) html += buildHrRoleDatalist();
   html += '</div>';
+  if (missingRoles.length) {
+    html += '<div class="field-help" style="color:#8a5100;font-weight:700">待補角色：' + escH(missingRoles.join('、')) + '</div>';
+  }
   if (readOnly) {
     html += '<div class="role-readonly-note">' + escH(message || '目前帳號可編輯系統資料，但不可調整角色指派。') + '</div>';
   } else if (mode === 'loading' || mode === 'error') {
     html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可指派角色。' : '目前無法更新人員名單；若直接儲存，會保留既有角色資料。')) + '</div>';
   } else {
-    html += '<div class="field-help">點擊 + 後可從在勤人員名單選擇；同一角色可加入多人，重複人員會自動略過。</div>';
+    html += '<div class="field-help">系統使用窗口固定列入必填提醒；' + (maintenanceRequired ? '維運廠商為中央研究院，系統部署維護人員也列入必填提醒。' : '維運廠商非中央研究院時，系統部署維護人員可留空。') + '點擊 + 後可從在勤人員名單選擇。</div>';
   }
   return html;
 }
@@ -3528,6 +3551,7 @@ function removeRoleAssignment(btn) {
   if (!chip || !list) return;
   chip.parentNode.removeChild(chip);
   refreshRoleListEmptyState(list);
+  refreshRoleAssignmentFieldFromModal();
 }
 
 function refreshRoleListEmptyState(list) {
@@ -3566,6 +3590,7 @@ function addRoleAssignment(idx) {
   list.insertBefore(tmp.firstChild, addBtn || null);
   refreshRoleListEmptyState(list);
   input.value = '';
+  refreshRoleAssignmentFieldFromModal();
 }
 
 function collectRoleAssignmentsFromModal() {
@@ -3602,6 +3627,14 @@ function hydrateSystemModalRoleField(currentData, state) {
   var container = document.getElementById('modal-role-field');
   if (!container) return;
   container.innerHTML = renderRoleAssignmentFieldContent(currentData, state);
+}
+
+function refreshRoleAssignmentFieldFromModal() {
+  var container = document.getElementById('modal-role-field');
+  if (!container) return;
+  var data = getModalData();
+  data._roleReadOnly = !canAssignOwner();
+  hydrateSystemModalRoleField(data, {mode:'ready'});
 }
 
 function getUserInitials(display) {
@@ -3875,7 +3908,7 @@ function getIncompleteRecommendedFields(data) {
     var ui = getSystemFieldUi(field);
     if (!ui.recommended || ui.readonlyAuto) return;
     if (field.type === 'role_assignments') {
-      if (!isRoleAssignmentsFilled(data || {})) missing.push(field.key);
+      missing = missing.concat(getMissingSystemRoleFields(data || {}));
       return;
     }
     if (!isFilledValue(data ? data[field.key] : '')) missing.push(field.key);
@@ -3904,6 +3937,7 @@ function fillAcademiaSinicaVendor(type) {
   var codeEl = document.getElementById(codeId);
   if (nameEl) nameEl.value = '中央研究院';
   if (codeEl) codeEl.value = '2.16.886.101.20002.20001';
+  refreshRoleAssignmentFieldFromModal();
 }
 
 function updateBackupControlButton() {
@@ -3956,11 +3990,13 @@ function renderSystemField(field, currentData) {
   var ui = getSystemFieldUi(field);
   if (ui.readonlyAuto) return '';
   var val = currentData && currentData[field.key] !== undefined ? currentData[field.key] : '';
-  var missingClass = ui.recommended && !isFilledValue(val) ? ' soft-missing' : '';
+  var fieldMissing = field.type === 'role_assignments' ? isRoleAssignmentsMissing(currentData || {}) : !isFilledValue(val);
+  var missingClass = ui.recommended && fieldMissing ? ' soft-missing' : '';
   var spanClass = ui.span ? (' span-' + Math.max(2, Math.min(12, parseInt(ui.span, 10) || 3))) : '';
   var html = '<div class="system-field ' + escH(ui.size || 'medium') + escH(spanClass) + missingClass + '">';
   html += renderSystemModalFieldLabel(field, ui);
   var placeholder = ui.placeholder ? ' placeholder="' + escH(ui.placeholder) + '"' : '';
+  var dynamicAttrs = field.key === '維運廠商' ? ' oninput="refreshRoleAssignmentFieldFromModal()" onchange="refreshRoleAssignmentFieldFromModal()"' : '';
   if (field.type === 'role_assignments') {
     html += '<div id="modal-role-field">';
     html += renderRoleAssignmentFieldContent(currentData, {mode:'loading'});
@@ -3977,7 +4013,7 @@ function renderSystemField(field, currentData) {
   } else if (field.type === 'textarea') {
     html += '<textarea class="' + escH(ui.textareaClass || '') + '" id="modal-'+field.formKey+'"' + placeholder + '>'+escH(String(val))+'</textarea>';
   } else {
-    html += '<input type="'+(field.type==='date'?'date':'text')+'" id="modal-'+field.formKey+'" value="'+escH(String(val))+'"' + placeholder + '>';
+    html += '<input type="'+(field.type==='date'?'date':'text')+'" id="modal-'+field.formKey+'" value="'+escH(String(val))+'"' + placeholder + dynamicAttrs + '>';
   }
   if (ui.helper) html += '<div class="field-help">' + escH(ui.helper) + '</div>';
   html += '</div>';
