@@ -1015,14 +1015,14 @@ var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
 var ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 var PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
-var SYSTEM_ROLE_NAMES = ['系統使用窗口', '系統部署維護人員'];
+var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員'];
 
 var SYSTEM_MODAL_GROUP_META = {
   '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
   '管理責任與供應商': {title:'管理責任與供應商', desc:'釐清負責人、管理單位與廠商資訊，方便後續追蹤。'},
   '資安與資料特性': {title:'資安與資料特性', desc:'用於後續分級建議與防護基準自評判斷。'},
   '韌性與對外服務': {title:'韌性與對外服務', desc:'描述對外、備份與營運持續相關條件。'},
-  '系統角色': {title:'系統角色', desc:'指派使用窗口與部署維護人員；兩種角色都可多人擔任，並具備原系統負責人權限。'}
+  '系統角色': {title:'系統角色', desc:'指派承辦窗口與部署維護人員；兩種角色都可多人擔任，並具備原系統負責人權限。'}
 };
 
 var SYSTEM_FIELD_UI_META = {
@@ -1468,7 +1468,7 @@ function isAcademiaSinicaMaintenanceVendor(sys) {
 function getMissingSystemRoleFields(sys) {
   var missing = [];
   var roles = getSystemRoleAssignments(sys || {});
-  if (!(roles['系統使用窗口'] || []).length) missing.push('系統使用窗口');
+  if (!(roles['系統承辦窗口'] || []).length) missing.push('系統承辦窗口');
   if (isAcademiaSinicaMaintenanceVendor(sys) && !(roles['系統部署維護人員'] || []).length) {
     missing.push('系統部署維護人員');
   }
@@ -1521,7 +1521,7 @@ function formatRoleAssignmentsSummary(sys, roleName) {
 }
 
 function formatRoleAssignmentsCompact(sys) {
-  return '使用窗口：' + formatRoleAssignmentsSummary(sys, '系統使用窗口') + '｜部署維護：' + formatRoleAssignmentsSummary(sys, '系統部署維護人員');
+  return '承辦窗口：' + formatRoleAssignmentsSummary(sys, '系統承辦窗口') + '｜部署維護：' + formatRoleAssignmentsSummary(sys, '系統部署維護人員');
 }
 
 function isAssessmentNonCompliant(compliance) {
@@ -3548,9 +3548,9 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   var html = '<div class="role-assignment-panel" id="modal-role-panel" data-tour="system-modal-role-panel">';
   SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
     var list = roles[roleName] || [];
-    var tourKey = roleName === '系統使用窗口' ? 'system-role-user-contact' : 'system-role-maintainer';
+    var tourKey = roleName === '系統承辦窗口' ? 'system-role-user-contact' : 'system-role-maintainer';
     html += '<div class="role-row" data-role-row="' + idx + '" data-role-name="' + escH(roleName) + '" data-tour="' + tourKey + '">';
-    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統使用窗口' ? '業務聯繫與資料確認窗口' : '部署、維護與技術處理人員') + '</span></div>';
+    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統承辦窗口' ? '業務聯繫與資料確認窗口' : '部署、維護與技術處理人員') + '</span></div>';
     html += '<div>';
     html += '<div class="role-chip-list" data-role-list="' + escH(roleName) + '">';
     if (list.length) {
@@ -3578,7 +3578,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   } else if (mode === 'loading' || mode === 'error') {
     html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可指派角色。' : '目前無法更新人員名單；若直接儲存，會保留既有角色資料。')) + '</div>';
   } else {
-    html += '<div class="field-help">系統使用窗口固定列入必填提醒；' + (maintenanceRequired ? '維運廠商為中央研究院，系統部署維護人員也列入必填提醒。' : '維運廠商非中央研究院時，系統部署維護人員可留空。') + '點擊 + 後可從在勤人員名單選擇。</div>';
+    html += '<div class="field-help">系統承辦窗口固定列入必填提醒；' + (maintenanceRequired ? '維運廠商為中央研究院，系統部署維護人員也列入必填提醒。' : '維運廠商非中央研究院時，系統部署維護人員可留空。') + '點擊 + 後可從在勤人員名單選擇。</div>';
   }
   return html;
 }
@@ -3767,13 +3767,13 @@ function buildSystemModalTourSteps(mode) {
     {
       selector: '[data-tour="system-modal-role-panel"]',
       title: '這裡管理系統角色',
-      content: '系統使用窗口與系統部署維護人員都具備原系統負責人相同權限，也都可以由多人共同擔任。',
+      content: '系統承辦窗口與系統部署維護人員都具備原系統負責人相同權限，也都可以由多人共同擔任。',
       placements: ['top','bottom','left','right']
     },
     {
       selector: '[data-tour="system-role-user-contact"]',
-      title: '系統使用窗口至少一人',
-      content: '系統使用窗口固定列入必填提醒，請至少指派一位可協助業務聯繫與資料確認的人員。',
+      title: '系統承辦窗口至少一人',
+      content: '系統承辦窗口固定列入必填提醒，請至少指派一位可協助業務聯繫與資料確認的人員。',
       placements: ['right','left','top','bottom']
     },
     {
@@ -4471,7 +4471,7 @@ function openAddSystemModal() {
     modalData._ownerDisplayName = displayName;
     modalData._roleReadOnly = true;
     modalData._roleAssignments = {
-      '系統使用窗口': [{email: email, displayName: displayName}],
+      '系統承辦窗口': [{email: email, displayName: displayName}],
       '系統部署維護人員': [{email: email, displayName: displayName}]
     };
   }

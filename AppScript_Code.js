@@ -436,8 +436,8 @@ var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type'
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
 var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
 var SYSTEM_ROLE_ASSIGNMENT_HEADERS = ['系統ID', '系統名稱', '角色名稱', '使用者email', '指派人', '指派時間'];
-var SYSTEM_ROLE_NAMES = ['系統使用窗口', '系統部署維護人員'];
-var SYSTEM_ROLE_LEGACY_NAME_MAP = {'系統維運人員': '系統部署維護人員'};
+var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員'];
+var SYSTEM_ROLE_LEGACY_NAME_MAP = {'系統使用窗口': '系統承辦窗口', '系統維運人員': '系統部署維護人員'};
 
 function getEmptySystemRoleAssignmentMap_() {
   var map = {};
@@ -556,7 +556,7 @@ function isEmailAssignedToSystemRoles_(systemId, email) {
 
 function getPrimaryOwnerFromRoleAssignments_(roleAssignments) {
   roleAssignments = normalizeSystemRoleAssignments_(roleAssignments);
-  var preferred = roleAssignments['系統使用窗口'] || [];
+  var preferred = roleAssignments['系統承辦窗口'] || [];
   if (preferred.length) return preferred[0].email;
   var fallback = roleAssignments['系統部署維護人員'] || [];
   return fallback.length ? fallback[0].email : '';
@@ -2015,12 +2015,12 @@ function addSystem(systemData) {
   systemData['系統ID'] = id;
   if (!status.canAssignOwner) {
     requestedRoles = {
-      '系統使用窗口': [{email: status.evaluator.email || ''}],
+      '系統承辦窗口': [{email: status.evaluator.email || ''}],
       '系統部署維護人員': [{email: status.evaluator.email || ''}]
     };
   } else if (!getPrimaryOwnerFromRoleAssignments_(requestedRoles) && requestedOwner) {
     requestedRoles = {
-      '系統使用窗口': [{email: requestedOwner}],
+      '系統承辦窗口': [{email: requestedOwner}],
       '系統部署維護人員': [{email: requestedOwner}]
     };
   }
