@@ -97,6 +97,16 @@ function getHrOrgTreeConfig_() {
   };
 }
 
+function getHrRoleAssignmentConfig_() {
+  return {
+    spreadsheetId: typeof HR_SPREADSHEET_ID !== 'undefined' ? HR_SPREADSHEET_ID : '',
+    sheetName: typeof HR_ROLE_ASSIGNMENT_SHEET_NAME !== 'undefined' ? HR_ROLE_ASSIGNMENT_SHEET_NAME : '人員職務配置',
+    emailColumn: typeof HR_ROLE_ASSIGNMENT_EMAIL_COLUMN !== 'undefined' ? HR_ROLE_ASSIGNMENT_EMAIL_COLUMN : 1,
+    groupColumn: typeof HR_ROLE_ASSIGNMENT_GROUP_COLUMN !== 'undefined' ? HR_ROLE_ASSIGNMENT_GROUP_COLUMN : 3,
+    deploymentMaintainerGroup: typeof HR_DEPLOYMENT_MAINTAINER_GROUP !== 'undefined' ? HR_DEPLOYMENT_MAINTAINER_GROUP : 'GRP-IT'
+  };
+}
+
 function formatEvaluatorDisplayName_(name, email) {
   if (name && email) return name + '（' + email + '）';
   return name || email || '';
@@ -157,6 +167,53 @@ function loadHrDirectory_() {
     return result;
   } catch (err) {
     result.warning = '讀取 HR 人員主檔失敗：' + err.message;
+    return result;
+  }
+}
+
+function loadDeploymentMaintainerEmployees_(hrDirectory) {
+  var cfg = getHrRoleAssignmentConfig_();
+  var result = {
+    employees: [],
+    warning: ''
+  };
+
+  if (!cfg.spreadsheetId) {
+    result.warning = '尚未設定 HR_SPREADSHEET_ID。';
+    return result;
+  }
+
+  try {
+    var ss = SpreadsheetApp.openById(cfg.spreadsheetId);
+    var sheet = ss.getSheetByName(cfg.sheetName);
+    if (!sheet) {
+      result.warning = '找不到 HR 工作表「' + cfg.sheetName + '」。';
+      return result;
+    }
+    if (sheet.getLastRow() <= 1) return result;
+
+    var data = sheet.getDataRange().getDisplayValues();
+    var seen = {};
+    var directoryMap = hrDirectory && hrDirectory.map ? hrDirectory.map : {};
+    for (var i = 1; i < data.length; i++) {
+      var group = String(data[i][cfg.groupColumn - 1] || '').trim();
+      if (group !== cfg.deploymentMaintainerGroup) continue;
+      var email = normalizeEmail_(data[i][cfg.emailColumn - 1]);
+      if (!email || seen[email]) continue;
+      seen[email] = true;
+      var person = directoryMap[email] || {};
+      result.employees.push({
+        email: email,
+        name: person.name || '',
+        displayName: person.name || email
+      });
+    }
+    result.employees.sort(function(a, b) {
+      return formatEvaluatorDisplayName_(a.name, a.email).localeCompare(formatEvaluatorDisplayName_(b.name, b.email), 'zh-Hant');
+    });
+    return result;
+  } catch (err) {
+    result.warning = '讀取 HR 人員職務配置失敗：' + err.message;
     return result;
   }
 }
@@ -357,9 +414,14 @@ function loadOrgAdminDirectory_() {
 function getActiveHrEmployees() {
   assertPageAccess_();
   var directory = loadHrDirectory_();
+  var deploymentMaintainers = loadDeploymentMaintainerEmployees_(directory);
+  var warnings = [];
+  if (directory.warning) warnings.push(directory.warning);
+  if (deploymentMaintainers.warning && deploymentMaintainers.warning !== directory.warning) warnings.push(deploymentMaintainers.warning);
   return {
     employees: directory.activeEmployees || [],
-    warning: directory.warning || ''
+    deploymentMaintainers: deploymentMaintainers.employees || [],
+    warning: warnings.join(' ')
   };
 }
 

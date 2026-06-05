@@ -1016,6 +1016,7 @@ var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
 var hrEmployeeOptions = [];
+var deploymentMaintainerOptions = [];
 var hrEmployeeLoadState = 'idle';
 var hrEmployeeWarning = '';
 var hrEmployeeLoadCallbacks = [];
@@ -3437,21 +3438,27 @@ function getHrOwnerOptionLabel(person) {
   return person.name ? (person.name + '（' + person.email + '）') : String(person.email || '');
 }
 
-function findHrOwnerByEmail(email) {
+function getRoleCandidateOptions(roleName) {
+  return roleName === '系統部署維護人員' ? deploymentMaintainerOptions : hrEmployeeOptions;
+}
+
+function findHrOwnerByEmail(email, options) {
   var target = String(email || '').toLowerCase();
   if (!target) return null;
-  for (var i = 0; i < (hrEmployeeOptions || []).length; i++) {
-    var person = hrEmployeeOptions[i];
+  var rows = options || hrEmployeeOptions || [];
+  for (var i = 0; i < rows.length; i++) {
+    var person = rows[i];
     if (String(person.email || '').toLowerCase() === target) return person;
   }
   return null;
 }
 
-function findHrOwnerByLabel(value) {
+function findHrOwnerByLabel(value, options) {
   var target = String(value || '').trim().toLowerCase();
   if (!target) return null;
-  for (var i = 0; i < (hrEmployeeOptions || []).length; i++) {
-    var person = hrEmployeeOptions[i];
+  var rows = options || hrEmployeeOptions || [];
+  for (var i = 0; i < rows.length; i++) {
+    var person = rows[i];
     var label = getHrOwnerOptionLabel(person);
     if (String(label || '').toLowerCase() === target) return person;
   }
@@ -3462,17 +3469,17 @@ function isEmailLike(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
 }
 
-function resolveHrOwnerInput(value) {
+function resolveHrOwnerInput(value, options) {
   var raw = String(value || '').trim();
   if (!raw) return {value:'', matched:null, unresolved:false};
-  var byLabel = findHrOwnerByLabel(raw);
+  var byLabel = findHrOwnerByLabel(raw, options);
   if (byLabel) return {value:byLabel.email || raw, matched:byLabel, unresolved:false};
-  var byEmail = findHrOwnerByEmail(raw);
+  var byEmail = findHrOwnerByEmail(raw, options);
   if (byEmail) return {value:byEmail.email || raw, matched:byEmail, unresolved:false};
   var emailMatch = raw.match(/[（(]([^()（）\s]+@[^()（）\s]+)[）)]/);
   if (emailMatch) {
     var email = emailMatch[1];
-    var matched = findHrOwnerByEmail(email);
+    var matched = findHrOwnerByEmail(email, options);
     return {value:matched ? matched.email : email, matched:matched, unresolved:!matched};
   }
   if (isEmailLike(raw)) return {value:raw.toLowerCase(), matched:null, unresolved:true};
@@ -3521,10 +3528,14 @@ function renderHrOwnerFieldContent(formKey, currentData, state) {
   return html;
 }
 
-function buildHrRoleDatalist() {
-  var html = '<datalist id="modal-role-list">';
+function getRoleDatalistId(idx) {
+  return 'modal-role-list-' + idx;
+}
+
+function buildHrRoleDatalist(roleName, idx) {
+  var html = '<datalist id="' + escH(getRoleDatalistId(idx)) + '">';
   var seen = {};
-  (hrEmployeeOptions || []).forEach(function(person) {
+  (getRoleCandidateOptions(roleName) || []).forEach(function(person) {
     var label = getHrOwnerOptionLabel(person);
     if (!label || seen[label]) return;
     seen[label] = true;
@@ -3575,13 +3586,18 @@ function renderRoleAssignmentFieldContent(currentData, state) {
     html += '</div>';
     if (!disabled) {
       html += '<div class="role-picker" id="role-picker-' + idx + '">';
-      html += '<input type="text" id="role-input-' + idx + '" list="modal-role-list" placeholder="輸入姓名或 email" autocomplete="off">';
+      html += '<input type="text" id="role-input-' + idx + '" list="' + escH(getRoleDatalistId(idx)) + '" placeholder="輸入姓名或 email" autocomplete="off">';
       html += '<button type="button" onclick="addRoleAssignment(' + idx + ')">加入</button>';
       html += '</div>';
     }
     html += '</div></div>';
   });
-  if (!disabled) html += buildHrRoleDatalist();
+  if (!disabled) {
+    SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
+      if (roleName === '系統部署維護人員' && !localDeployment) return;
+      html += buildHrRoleDatalist(roleName, idx);
+    });
+  }
   html += '</div>';
   if (missingRoles.length) {
     html += '<div class="field-help" style="color:#8a5100;font-weight:700">待補角色：' + escH(missingRoles.join('、')) + '</div>';
@@ -3591,7 +3607,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   } else if (mode === 'loading' || mode === 'error') {
     html += '<div class="field-help">' + escH(message || (mode === 'loading' ? '正在載入在勤人員名單，完成後即可指派角色。' : '目前無法更新人員名單；若直接儲存，會保留既有角色資料。')) + '</div>';
   } else {
-    html += '<div class="field-help">系統承辦窗口固定列入必填提醒；' + (localDeployment ? '系統運作部署在本地機房，系統部署維護人員也列入必填提醒。' : '未勾選系統運作部署在本地機房時，系統部署維護人員會保留既有資料但不顯示。') + '點擊 + 後可從在勤人員名單選擇。</div>';
+    html += '<div class="field-help">系統承辦窗口固定列入必填提醒，候選清單來自人員主檔；' + (localDeployment ? '系統部署維護人員候選清單來自人員職務配置 GRP-IT，且列入必填提醒。' : '未勾選系統運作部署在本地機房時，系統部署維護人員會保留既有資料但不顯示。') + '點擊 + 後可從候選名單選擇。</div>';
   }
   return html;
 }
@@ -3633,7 +3649,8 @@ function addRoleAssignment(idx) {
   var input = document.getElementById('role-input-' + idx);
   var list = document.querySelector('.role-chip-list[data-role-list="' + roleName + '"]');
   if (!roleName || !input || !list) return;
-  var resolved = resolveHrOwnerInput(input.value);
+  var candidateOptions = getRoleCandidateOptions(roleName);
+  var resolved = resolveHrOwnerInput(input.value, candidateOptions);
   if (!resolved.value || !isEmailLike(resolved.value)) {
     showToast('請選擇人員或輸入有效 email');
     return;
@@ -3644,7 +3661,7 @@ function addRoleAssignment(idx) {
     input.value = '';
     return;
   }
-  var person = resolved.matched || findHrOwnerByEmail(email) || {email: email, displayName: email};
+  var person = resolved.matched || findHrOwnerByEmail(email, candidateOptions) || findHrOwnerByEmail(email) || {email: email, displayName: email};
   var addBtn = list.querySelector('.role-add-btn');
   var tmp = document.createElement('span');
   tmp.innerHTML = renderRoleChip(roleName, {email: email, name: person.name || '', displayName: getHrOwnerOptionLabel(person) || email}, false);
@@ -4328,6 +4345,7 @@ function ensureHrEmployeesPreloaded(callback) {
   hrEmployeeLoadState = 'loading';
   google.script.run.withSuccessHandler(function(res){
     hrEmployeeOptions = (res && res.employees) ? res.employees : [];
+    deploymentMaintainerOptions = (res && res.deploymentMaintainers) ? res.deploymentMaintainers : [];
     hrEmployeeWarning = res && res.warning ? res.warning : '';
     hrEmployeeLoadState = 'ready';
     flushHrEmployeeLoadCallbacks(getHrEmployeeModalState());
