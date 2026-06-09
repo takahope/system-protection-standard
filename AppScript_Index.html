@@ -80,7 +80,7 @@
     .sys-assess-badge.fail{background:#fff0ef;border-color:#f2c0bc;color:#b3261e}
     .sys-assess-badge.idle{background:#f1f5f9;border-color:#d8e1ea;color:#475569}
     .sys-assess-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#b3261e;color:#fff;font-size:10px;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
-    .sys-assess-count.loading{background:#d7e0ea;color:#64748b}
+    .sys-assess-count.loading{min-width:0;height:auto;padding:0;background:transparent;color:#64748b;font-size:10px;font-weight:800;box-shadow:none}
 
     /* Mini progress */
     .mini-progress{background:#e0e0e0;border-radius:10px;height:6px;overflow:hidden;margin-top:6px}
@@ -1617,7 +1617,7 @@ function renderSystemAssessmentBadge(sys) {
   if (isAssessmentIssueStatus(status)) {
     var count = normalizeAssessmentIssueCount(sys._assessmentIssueCount);
     if (count === null && assessmentIssueCountCache[sys['系統ID']] !== undefined) count = normalizeAssessmentIssueCount(assessmentIssueCountCache[sys['系統ID']]);
-    var countHtml = count === null ? '<span class="sys-assess-count loading">…</span>' : '<span class="sys-assess-count">' + count + '</span>';
+    var countHtml = count === null ? '<span class="sys-assess-count loading">載入中</span>' : '<span class="sys-assess-count">' + count + '</span>';
     return '<span class="sys-assess-badge fail" data-assessment-system-id="' + escH(sys['系統ID']) + '" title="正式結果以系統清冊 X 欄為準；數字為背景計算的不符合與部分符合項目數">不符合' + countHtml + '</span>';
   }
   return '<span class="sys-assess-badge idle" title="系統清冊 X 欄正式結果：' + escH(status) + '">' + escH(status) + '</span>';
