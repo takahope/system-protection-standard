@@ -2053,39 +2053,31 @@ function getControlMeasures() {
 }
 
 // ===== 系統清冊 CRUD =====
-function buildAssessmentItemsMap_() {
+function getAssessmentIssueCounts(systemIds) {
+  assertPageAccess_();
+  systemIds = Array.isArray(systemIds) ? systemIds : [];
+  var wanted = {};
+  var result = {};
+  for (var i = 0; i < systemIds.length; i++) {
+    var id = String(systemIds[i] || '').trim();
+    if (!id || wanted[id]) continue;
+    wanted[id] = true;
+    result[id] = 0;
+  }
+  if (Object.keys(wanted).length === 0) return result;
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var assessSheet = ss.getSheetByName('防護基準自評');
-  var map = {};
-  if (!assessSheet || assessSheet.getLastRow() <= 1) return map;
+  if (!assessSheet || assessSheet.getLastRow() <= 1) return result;
 
   var data = assessSheet.getRange(2, 1, assessSheet.getLastRow() - 1, 8).getDisplayValues();
-  for (var i = 0; i < data.length; i++) {
-    var systemId = String(data[i][0] || '').trim();
-    if (!systemId) continue;
-    if (!map[systemId]) map[systemId] = [];
-    map[systemId].push({level: data[i][5], compliance: data[i][7]});
+  for (var r = 0; r < data.length; r++) {
+    var systemId = String(data[r][0] || '').trim();
+    if (!wanted[systemId]) continue;
+    var compliance = String(data[r][7] || '').trim();
+    if (compliance === '部分符合' || isAssessmentNonCompliant_(compliance)) result[systemId]++;
   }
-  return map;
-}
-
-function summarizeAssessmentItemsForSystem_(items, sysLevel) {
-  var summary = {hasAssessment: !!(items && items.length), total: 0, compliant: 0, partial: 0, nonCompliant: 0, failCount: 0};
-  (items || []).forEach(function(item) {
-    if (isAssessmentNa_(item, sysLevel)) return;
-    var compliance = String(item.compliance || '').trim();
-    summary.total++;
-    if (compliance === '符合') summary.compliant++;
-    else if (compliance === '部分符合') {
-      summary.partial++;
-      summary.failCount++;
-    }
-    else if (isAssessmentNonCompliant_(compliance)) {
-      summary.nonCompliant++;
-      summary.failCount++;
-    }
-  });
-  return summary;
+  return result;
 }
 
 function getSystems() {
@@ -2102,19 +2094,15 @@ function getSystems() {
 
   var hrDirectory = loadHrDirectory_();
   var roleAssignmentMap = getAllSystemRoleAssignments_(hrDirectory);
-  var assessmentItemsMap = buildAssessmentItemsMap_();
   var systems = [];
   for (var i = 1; i < data.length; i++) {
     if (!getSystemRowValue_(data[i], '系統ID') && !getSystemRowValue_(data[i], '系統名稱')) continue;
     var obj = mapSystemRowToObject_(data[i], i + 1);
     var level = String(obj['防護需求等級'] || '').trim();
     var needsAssessment = !!level && level !== '套裝軟體' && !isPackageExempt_(obj);
-    var assessmentSummary = summarizeAssessmentItemsForSystem_(assessmentItemsMap[obj['系統ID']], level);
     attachSystemRoleMetadata_(obj, hrDirectory, roleAssignmentMap);
-    obj._assessmentSummary = assessmentSummary;
-    obj._hasAssessment = !!assessmentSummary.hasAssessment;
     obj._needsAssessment = needsAssessment;
-    obj._showAssessmentInitWarning = needsAssessment && !obj._hasAssessment;
+    obj._showAssessmentInitWarning = false;
     obj._row = i + 1;
     systems.push(obj);
   }

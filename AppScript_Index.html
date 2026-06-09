@@ -80,6 +80,7 @@
     .sys-assess-badge.fail{background:#fff0ef;border-color:#f2c0bc;color:#b3261e}
     .sys-assess-badge.idle{background:#f1f5f9;border-color:#d8e1ea;color:#475569}
     .sys-assess-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#b3261e;color:#fff;font-size:10px;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+    .sys-assess-count.loading{background:#d7e0ea;color:#64748b}
 
     /* Mini progress */
     .mini-progress{background:#e0e0e0;border-radius:10px;height:6px;overflow:hidden;margin-top:6px}
@@ -983,6 +984,7 @@ var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData
 var dashboardSnapshots = [], currentDashboardSnapshotKey = '';
 var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
 var systemLoadProgressTimer = null, systemLoadProgressStartedAt = 0, systemLoadProgressValue = 0;
+var assessmentIssueCountCache = {}, assessmentIssueCountRequestSeq = 0;
 var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, toastProgressValue = 0;
 var lastSystemQuery = '', lastSystemBuildFilter = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
@@ -1557,83 +1559,68 @@ function isAssessmentNaItem(item, sysLevel) {
   return !isAssessmentApplicable(item.level, sysLevel);
 }
 
-function getEmptyAssessmentSummary(hasAssessment) {
-  return {hasAssessment: !!hasAssessment, total: 0, compliant: 0, partial: 0, nonCompliant: 0, failCount: 0};
+function isAssessmentIssueStatus(status) {
+  status = String(status || '').trim();
+  return status === '不符合' || status === '未符合' || status === '部分符合';
 }
 
-function normalizeAssessmentSummary(summary, hasAssessmentFallback) {
-  summary = summary || {};
-  return {
-    hasAssessment: summary.hasAssessment !== undefined ? !!summary.hasAssessment : !!hasAssessmentFallback,
-    total: parseInt(summary.total || 0, 10) || 0,
-    compliant: parseInt(summary.compliant || 0, 10) || 0,
-    partial: parseInt(summary.partial || 0, 10) || 0,
-    nonCompliant: parseInt(summary.nonCompliant || 0, 10) || 0,
-    failCount: parseInt(summary.failCount || 0, 10) || 0
-  };
+function normalizeAssessmentIssueCount(count) {
+  if (count === undefined || count === null || count === '') return null;
+  var n = parseInt(count, 10);
+  return isNaN(n) ? null : Math.max(0, n);
 }
 
-function buildAssessmentSummaryFromItems(items) {
-  var summary = getEmptyAssessmentSummary(items && items.length > 0);
-  var sysLevel = currentSystem ? (currentSystem['防護需求等級'] || '') : '';
-  (items || []).forEach(function(item) {
-    if (isAssessmentNaItem(item, sysLevel)) return;
-    var compliance = item ? String(item.compliance || '').trim() : '';
-    summary.total++;
-    summary.hasAssessment = true;
-    if (compliance === '符合') summary.compliant++;
-    else if (compliance === '部分符合') {
-      summary.partial++;
-      summary.failCount++;
-    }
-    else if (isAssessmentNonCompliant(compliance)) {
-      summary.nonCompliant++;
-      summary.failCount++;
-    }
-  });
-  return summary;
-}
-
-function applyAssessmentSummaryToSystem(systemId, summary) {
-  var normalized = normalizeAssessmentSummary(summary);
+function applyAssessmentIssueCountToSystem(systemId, count) {
+  var normalized = normalizeAssessmentIssueCount(count);
   var index = findSystemIndexById(systemId);
   if (index >= 0) {
-    allSystems[index]._assessmentSummary = normalized;
-    allSystems[index]._hasAssessment = normalized.hasAssessment;
-    allSystems[index]._showAssessmentInitWarning = !!allSystems[index]._needsAssessment && !normalized.hasAssessment;
+    allSystems[index]._assessmentIssueCount = normalized;
   }
   if (currentSystem && currentSystem['系統ID'] === systemId) {
-    currentSystem._assessmentSummary = normalized;
-    currentSystem._hasAssessment = normalized.hasAssessment;
-    currentSystem._showAssessmentInitWarning = !!currentSystem._needsAssessment && !normalized.hasAssessment;
+    currentSystem._assessmentIssueCount = normalized;
   }
+  assessmentIssueCountCache[systemId] = normalized;
 }
 
-function syncCurrentAssessmentSummary(items) {
+function countAssessmentIssuesFromItems(items) {
+  var count = 0;
+  (items || []).forEach(function(item) {
+    var compliance = item ? String(item.compliance || '').trim() : '';
+    if (compliance === '部分符合' || isAssessmentNonCompliant(compliance)) count++;
+  });
+  return count;
+}
+
+function syncCurrentAssessmentIssueCount(items) {
   if (!currentSystem) return;
-  applyAssessmentSummaryToSystem(currentSystem['系統ID'], buildAssessmentSummaryFromItems(items || []));
+  applyAssessmentIssueCountToSystem(currentSystem['系統ID'], countAssessmentIssuesFromItems(items || []));
   if (systemsLoaded && document.getElementById('system-grid')) {
-    renderSystems(getFilteredSystems());
-    renderGlobalStats(allSystems);
+    updateAssessmentIssueCountBadge(currentSystem['系統ID'], currentSystem._assessmentIssueCount);
   }
 }
 
 function renderSystemAssessmentBadge(sys) {
-  var summary = normalizeAssessmentSummary(sys ? sys._assessmentSummary : null, sys ? sys._hasAssessment : false);
   var level = sys ? String(sys['防護需求等級'] || '').trim() : '';
   if (!sys || isPackageSystemRecord(sys) || level === '套裝軟體') {
     return '<span class="sys-assess-badge idle" title="此系統不需進行防護基準自評">免自評</span>';
   }
   if (!sys._needsAssessment) {
-    return '<span class="sys-assess-badge idle" title="尚未完成防護需求等級設定">未自評</span>';
+    return '<span class="sys-assess-badge idle" title="尚未完成防護需求等級設定">未更新</span>';
   }
-  if (!summary.hasAssessment) {
-    return '<span class="sys-assess-badge idle" title="尚未建立防護基準自評資料">未自評</span>';
+  var status = String(sys['是否符合防護基準'] || '').trim();
+  if (!status) {
+    return '<span class="sys-assess-badge idle" title="系統清冊 X 欄尚未產生正式符合性結果">未更新</span>';
   }
-  if (summary.failCount > 0) {
-    return '<span class="sys-assess-badge fail" title="防護基準自評待改善項目：不符合 ' + summary.nonCompliant + ' 項，部分符合 ' + summary.partial + ' 項">不符合<span class="sys-assess-count">' + summary.failCount + '</span></span>';
+  if (status === '符合') {
+    return '<span class="sys-assess-badge ok" title="系統清冊 X 欄正式結果為符合">符合</span>';
   }
-  return '<span class="sys-assess-badge ok" title="防護基準自評未發現不符合或部分符合項目">符合</span>';
+  if (isAssessmentIssueStatus(status)) {
+    var count = normalizeAssessmentIssueCount(sys._assessmentIssueCount);
+    if (count === null && assessmentIssueCountCache[sys['系統ID']] !== undefined) count = normalizeAssessmentIssueCount(assessmentIssueCountCache[sys['系統ID']]);
+    var countHtml = count === null ? '<span class="sys-assess-count loading">…</span>' : '<span class="sys-assess-count">' + count + '</span>';
+    return '<span class="sys-assess-badge fail" data-assessment-system-id="' + escH(sys['系統ID']) + '" title="正式結果以系統清冊 X 欄為準；數字為背景計算的不符合與部分符合項目數">不符合' + countHtml + '</span>';
+  }
+  return '<span class="sys-assess-badge idle" title="系統清冊 X 欄正式結果：' + escH(status) + '">' + escH(status) + '</span>';
 }
 
 function renderSystemCardTags(sys) {
@@ -2000,9 +1987,8 @@ function enrichLocalSystemMeta(sys, previousSystem) {
   var level = String(sys['防護需求等級'] || '').trim();
   var needsAssessment = !!level && !isPackageSystemRecord(sys);
   sys._needsAssessment = needsAssessment;
-  sys._assessmentSummary = normalizeAssessmentSummary(sys._assessmentSummary || (previousSystem ? previousSystem._assessmentSummary : null), sys._hasAssessment);
-  sys._hasAssessment = !!sys._assessmentSummary.hasAssessment;
-  sys._showAssessmentInitWarning = needsAssessment && !sys._hasAssessment;
+  sys._assessmentIssueCount = normalizeAssessmentIssueCount(sys._assessmentIssueCount !== undefined ? sys._assessmentIssueCount : (previousSystem ? previousSystem._assessmentIssueCount : null));
+  sys._showAssessmentInitWarning = false;
   return sys;
 }
 
@@ -2095,6 +2081,44 @@ function rollbackOptimisticSystemUpdate(tx, reason) {
   failProgressToast('「' + systemName + '」更新失敗，已還原暫存資料：' + (reason || '請稍後再試。'));
 }
 
+function updateAssessmentIssueCountBadge(systemId, count) {
+  var normalized = normalizeAssessmentIssueCount(count);
+  var badges = document.querySelectorAll('[data-assessment-system-id]');
+  badges.forEach(function(badge) {
+    if (badge.getAttribute('data-assessment-system-id') !== String(systemId || '')) return;
+    var countEl = badge.querySelector('.sys-assess-count');
+    if (!countEl) return;
+    countEl.classList.remove('loading');
+    countEl.textContent = normalized === null ? '0' : String(normalized);
+  });
+}
+
+function requestAssessmentIssueCountsForSystems(systems) {
+  var ids = [];
+  var seen = {};
+  (systems || []).forEach(function(sys) {
+    if (!sys || !isAssessmentIssueStatus(sys['是否符合防護基準'])) return;
+    var id = String(sys['系統ID'] || '').trim();
+    if (!id || seen[id]) return;
+    if (normalizeAssessmentIssueCount(sys._assessmentIssueCount) !== null || assessmentIssueCountCache[id] !== undefined) return;
+    seen[id] = true;
+    ids.push(id);
+  });
+  if (!ids.length) return;
+  var requestSeq = ++assessmentIssueCountRequestSeq;
+  google.script.run.withSuccessHandler(function(result) {
+    if (requestSeq !== assessmentIssueCountRequestSeq) return;
+    result = result || {};
+    ids.forEach(function(id) {
+      var count = result[id] !== undefined ? result[id] : 0;
+      applyAssessmentIssueCountToSystem(id, count);
+      updateAssessmentIssueCountBadge(id, count);
+    });
+  }).withFailureHandler(function() {
+    ids.forEach(function(id) { updateAssessmentIssueCountBadge(id, 0); });
+  }).getAssessmentIssueCounts(ids);
+}
+
 function formatRefreshTime(date) {
   var hh = String(date.getHours());
   var mm = String(date.getMinutes());
@@ -2150,6 +2174,7 @@ function renderSystems(systems) {
   });
   grid.innerHTML=html;
   restoreListScrollIfNeeded();
+  requestAssessmentIssueCountsForSystems(systems);
 }
 
 function renderGlobalStats(systems) {
@@ -2939,7 +2964,7 @@ function loadAssessment(sysId) {
   google.script.run.withSuccessHandler(function(data){
     toggleAssessmentInitButton(!data || data.length === 0);
     currentAssessment=data;
-    syncCurrentAssessmentSummary(data);
+    syncCurrentAssessmentIssueCount(data);
     renderAssessment(data);
   }).withFailureHandler(function(e){
     toggleAssessmentInitButton(false);
@@ -3205,7 +3230,7 @@ function saveAllAssessment() {
       document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"]').forEach(function(row){row.classList.remove('dirty');});
     });
     updateAssessmentDirtyUI();
-    syncCurrentAssessmentSummary(currentAssessment);
+    syncCurrentAssessmentIssueCount(currentAssessment);
     renderAssessment(currentAssessment);
   }).withFailureHandler(function(e){showToast('儲存失敗：'+e.message);})
   .batchSaveAssessment(batch);
@@ -3221,6 +3246,7 @@ function recalculateCurrentSystemCompliance() {
   google.script.run.withSuccessHandler(function(result) {
     currentSystem['是否符合防護基準'] = result.status || '';
     currentSystem['不符合防護基準項目代碼'] = result.codeString || '';
+    if (currentAssessment && currentAssessment.length) currentSystem._assessmentIssueCount = countAssessmentIssuesFromItems(currentAssessment);
     document.getElementById('detail-status-badge').innerHTML = getComplianceBadge(result.status);
     updateFailCodesUI(result.codes || []);
     if (allSystems && allSystems.length) {
@@ -3228,9 +3254,16 @@ function recalculateCurrentSystemCompliance() {
         if (sys['系統ID'] !== currentSystem['系統ID']) return sys;
         sys['是否符合防護基準'] = result.status || '';
         sys['不符合防護基準項目代碼'] = result.codeString || '';
+        if (currentSystem._assessmentIssueCount !== undefined) sys._assessmentIssueCount = currentSystem._assessmentIssueCount;
         return sys;
       });
     }
+    if (currentSystem._assessmentIssueCount !== undefined) {
+      assessmentIssueCountCache[currentSystem['系統ID']] = currentSystem._assessmentIssueCount;
+    } else {
+      delete assessmentIssueCountCache[currentSystem['系統ID']];
+    }
+    if (systemsLoaded && document.getElementById('system-grid')) renderSystems(getFilteredSystems());
     renderAssessmentComplianceMeta();
     renderSystemDetailPanels(currentSystem, getMissingSystemFields(currentSystem));
     showToast('符合性結果已更新');
