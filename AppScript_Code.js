@@ -2053,6 +2053,41 @@ function getControlMeasures() {
 }
 
 // ===== 系統清冊 CRUD =====
+function buildAssessmentItemsMap_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var assessSheet = ss.getSheetByName('防護基準自評');
+  var map = {};
+  if (!assessSheet || assessSheet.getLastRow() <= 1) return map;
+
+  var data = assessSheet.getRange(2, 1, assessSheet.getLastRow() - 1, 8).getDisplayValues();
+  for (var i = 0; i < data.length; i++) {
+    var systemId = String(data[i][0] || '').trim();
+    if (!systemId) continue;
+    if (!map[systemId]) map[systemId] = [];
+    map[systemId].push({level: data[i][5], compliance: data[i][7]});
+  }
+  return map;
+}
+
+function summarizeAssessmentItemsForSystem_(items, sysLevel) {
+  var summary = {hasAssessment: !!(items && items.length), total: 0, compliant: 0, partial: 0, nonCompliant: 0, failCount: 0};
+  (items || []).forEach(function(item) {
+    if (isAssessmentNa_(item, sysLevel)) return;
+    var compliance = String(item.compliance || '').trim();
+    summary.total++;
+    if (compliance === '符合') summary.compliant++;
+    else if (compliance === '部分符合') {
+      summary.partial++;
+      summary.failCount++;
+    }
+    else if (isAssessmentNonCompliant_(compliance)) {
+      summary.nonCompliant++;
+      summary.failCount++;
+    }
+  });
+  return summary;
+}
+
 function getSystems() {
   assertPageAccess_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2067,22 +2102,17 @@ function getSystems() {
 
   var hrDirectory = loadHrDirectory_();
   var roleAssignmentMap = getAllSystemRoleAssignments_(hrDirectory);
-  var assessSheet = ss.getSheetByName('防護基準自評');
-  var assessmentMap = {};
-  if (assessSheet && assessSheet.getLastRow() > 1) {
-    var assessData = assessSheet.getRange(2, 1, assessSheet.getLastRow() - 1, 1).getDisplayValues();
-    for (var a = 0; a < assessData.length; a++) {
-      if (assessData[a][0]) assessmentMap[assessData[a][0]] = true;
-    }
-  }
+  var assessmentItemsMap = buildAssessmentItemsMap_();
   var systems = [];
   for (var i = 1; i < data.length; i++) {
     if (!getSystemRowValue_(data[i], '系統ID') && !getSystemRowValue_(data[i], '系統名稱')) continue;
     var obj = mapSystemRowToObject_(data[i], i + 1);
     var level = String(obj['防護需求等級'] || '').trim();
     var needsAssessment = !!level && level !== '套裝軟體' && !isPackageExempt_(obj);
+    var assessmentSummary = summarizeAssessmentItemsForSystem_(assessmentItemsMap[obj['系統ID']], level);
     attachSystemRoleMetadata_(obj, hrDirectory, roleAssignmentMap);
-    obj._hasAssessment = !!assessmentMap[obj['系統ID']];
+    obj._assessmentSummary = assessmentSummary;
+    obj._hasAssessment = !!assessmentSummary.hasAssessment;
     obj._needsAssessment = needsAssessment;
     obj._showAssessmentInitWarning = needsAssessment && !obj._hasAssessment;
     obj._row = i + 1;
