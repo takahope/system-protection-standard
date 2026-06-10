@@ -98,7 +98,7 @@ function getHrOrgTreeConfig_() {
 }
 
 function getHrRoleAssignmentConfig_() {
-  var defaultGroups = ['GRP-IT', 'BIOIT'];
+  var defaultGroups = ['GRP-IT', 'BIOIT', 'GRP-DM'];
   var groups = typeof HR_DEPLOYMENT_MAINTAINER_GROUPS !== 'undefined' ? HR_DEPLOYMENT_MAINTAINER_GROUPS : null;
   if (!groups && typeof HR_DEPLOYMENT_MAINTAINER_GROUP !== 'undefined') groups = [HR_DEPLOYMENT_MAINTAINER_GROUP];
   if (!groups) groups = defaultGroups;
@@ -113,7 +113,7 @@ function getHrRoleAssignmentConfig_() {
 
 function normalizeHrRoleGroupList_(groups) {
   if (typeof groups === 'string') groups = groups.split(',');
-  if (!groups || !groups.length) groups = ['GRP-IT', 'BIOIT'];
+  if (!groups || !groups.length) groups = ['GRP-IT', 'BIOIT', 'GRP-DM'];
   var result = [];
   var seen = {};
   for (var i = 0; i < groups.length; i++) {
@@ -122,7 +122,7 @@ function normalizeHrRoleGroupList_(groups) {
     seen[group] = true;
     result.push(group);
   }
-  return result.length ? result : ['GRP-IT', 'BIOIT'];
+  return result.length ? result : ['GRP-IT', 'BIOIT', 'GRP-DM'];
 }
 
 function formatEvaluatorDisplayName_(name, email) {
