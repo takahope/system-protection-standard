@@ -425,6 +425,8 @@
     .role-chip button{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:0;border-radius:999px;background:#dbeafe;color:#174ea6;font-size:13px;font-weight:900;line-height:1;cursor:pointer;padding:0}
     .role-chip button:hover{background:#cfe0ff}
     .role-empty{font-size:12px;color:#94a3b8}
+    .role-vendor-alert{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .role-vendor-chip{display:inline-flex;align-items:center;max-width:100%;padding:4px 8px;border-radius:999px;background:#fff8e8;border:1px solid #f4d493;color:#8a5100;font-size:11px;font-weight:800;line-height:1.4;overflow-wrap:anywhere}
     .role-add-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px dashed #9ab8e0;border-radius:999px;background:#f8fbff;color:#174ea6;font-size:18px;font-weight:900;line-height:1;cursor:pointer}
     .role-add-btn:hover{background:#eef6ff;border-style:solid}
     .role-picker{display:none;grid-template-columns:minmax(180px,1fr) auto;gap:8px;margin-top:8px}
@@ -3689,6 +3691,27 @@ function renderRoleChip(roleName, person, readOnly) {
   return html;
 }
 
+function getExternalVendorAlerts(currentData) {
+  currentData = currentData || {};
+  var alerts = [];
+  var builder = String(currentData['建置廠商'] || '').trim();
+  var operator = String(currentData['維運廠商'] || '').trim();
+  if (builder && builder !== '中央研究院') alerts.push({label:'外部建置', value:builder});
+  if (operator && operator !== '中央研究院') alerts.push({label:'外部維運', value:operator});
+  return alerts;
+}
+
+function renderExternalVendorAlerts(currentData) {
+  var alerts = getExternalVendorAlerts(currentData);
+  if (!alerts.length) return '';
+  var html = '<div class="role-vendor-alert" aria-label="外部廠商資訊">';
+  alerts.forEach(function(item) {
+    html += '<span class="role-vendor-chip">' + escH(item.label + '：' + item.value) + '</span>';
+  });
+  html += '</div>';
+  return html;
+}
+
 function renderRoleAssignmentFieldContent(currentData, state) {
   var roles = getRoleAssignmentsForModal(currentData || {});
   var mode = state && state.mode ? state.mode : 'ready';
@@ -3713,6 +3736,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
     }
     if (!disabled) html += '<button type="button" class="role-add-btn" onclick="toggleRolePicker(' + idx + ')" title="新增' + escH(roleName) + '"' + (idx === 0 ? ' data-tour="system-role-add-btn"' : '') + '>+</button>';
     html += '</div>';
+    if (roleName === '系統承辦窗口') html += renderExternalVendorAlerts(currentData || {});
     if (!disabled) {
       html += '<div class="role-picker" id="role-picker-' + idx + '">';
       html += '<input type="text" id="role-input-' + idx + '" list="' + escH(getRoleDatalistId(idx)) + '" placeholder="輸入姓名或 email" autocomplete="off">';
@@ -4614,7 +4638,7 @@ function renderSystemField(field, currentData) {
   var html = '<div class="system-field ' + escH(ui.size || 'medium') + escH(spanClass) + missingClass + '"' + tourAttr + '>';
   html += renderSystemModalFieldLabel(field, ui);
   var placeholder = ui.placeholder ? ' placeholder="' + escH(ui.placeholder) + '"' : '';
-  var dynamicAttrs = field.key === '維運廠商' ? ' oninput="refreshRoleAssignmentFieldFromModal()" onchange="refreshRoleAssignmentFieldFromModal()"' : '';
+  var dynamicAttrs = (field.key === '建置廠商' || field.key === '維運廠商') ? ' oninput="refreshRoleAssignmentFieldFromModal()" onchange="refreshRoleAssignmentFieldFromModal()"' : '';
   if (field.type === 'role_assignments') {
     html += '<div id="modal-role-field">';
     html += renderRoleAssignmentFieldContent(currentData, currentData && currentData._roleLoadState ? currentData._roleLoadState : getHrEmployeeModalState());
