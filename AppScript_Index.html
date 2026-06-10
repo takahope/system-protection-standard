@@ -29,6 +29,10 @@
     .topbar-user-role.admin{background:rgba(255,244,223,.92);color:#9a5b00}
     .topbar-user-role.member{background:rgba(227,242,253,.92);color:#0f4c81}
     .topbar-user-role.unknown{background:rgba(255,255,255,.2);color:#fff}
+    .official-downloads{position:sticky;top:58px;z-index:90;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 24px;background:rgba(255,255,255,.96);border-bottom:1px solid #dbe6f4;box-shadow:0 8px 22px rgba(15,23,42,.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+    .official-downloads-label{font-size:11px;font-weight:900;color:#334155;letter-spacing:.04em;white-space:nowrap}
+    .official-download-link{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:5px 10px;border-radius:999px;border:1px solid #cfe0ff;background:#f8fbff;color:#174ea6;text-decoration:none;font-size:11px;font-weight:800;line-height:1.25;box-shadow:0 6px 14px rgba(23,78,166,.06);transition:background .16s ease,border-color .16s ease,transform .16s ease,box-shadow .16s ease}
+    .official-download-link:hover,.official-download-link:focus{background:#eef6ff;border-color:#9fc3ff;color:#0f4c9a;transform:translateY(-1px);box-shadow:0 10px 18px rgba(23,78,166,.1);outline:none}
 
     .container{max-width:1560px;margin:0 auto;padding:16px}
     .card{background:var(--card);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:16px;margin-bottom:14px}
@@ -230,12 +234,14 @@
       .topbar h1{grid-area:title}
       .nav-btns{grid-area:nav;justify-content:flex-start}
       .topbar-user{grid-area:user}
+      .official-downloads{top:92px}
     }
     @media (max-width:960px){
       .rating-wizard{grid-template-columns:1fr}
       .wizard-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
       .scenario-grid,.rating-form-grid{grid-template-columns:1fr}
       .topbar{padding:12px 16px;gap:12px}
+      .official-downloads{top:98px;padding:8px 16px;gap:7px}
       .topbar-user-card{max-width:240px;padding:8px 10px}
       .topbar-user-email{display:none}
     }
@@ -706,6 +712,12 @@
     <button id="nav-init-btn" class="hidden" onclick="showPage('init')">設定</button>
   </div>
   <div class="topbar-user" id="topbar-user"></div>
+</div>
+<div class="official-downloads" aria-label="官方文件下載">
+  <span class="official-downloads-label">官方文件</span>
+  <a class="official-download-link" href="https://law.moda.gov.tw/Download.ashx?FileID=11296&id=FL089966&type=LAW" target="_blank" rel="noopener">附表九 分級原則</a>
+  <a class="official-download-link" href="https://law.moda.gov.tw/Download.ashx?FileID=11297&id=FL089966&type=LAW" target="_blank" rel="noopener">附表十 防護基準</a>
+  <a class="official-download-link" href="https://download.nics.nat.gov.tw/api/v4/file-service/UploadFile/Common_Standards/%E8%B3%87%E9%80%9A%E7%B3%BB%E7%B5%B1%E9%98%B2%E8%AD%B7%E5%9F%BA%E6%BA%96%E9%A9%97%E8%AD%89%E5%AF%A6%E5%8B%99v1.2_1150507.zip" target="_blank" rel="noopener">驗證實務</a>
 </div>
 
 <div class="container">
