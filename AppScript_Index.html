@@ -317,6 +317,8 @@
     .assess-example-btn:focus{outline:2px solid rgba(15,95,168,.22);outline-offset:2px}
     #assessment-save-btn.has-dirty{background:#b85f00;box-shadow:0 8px 18px rgba(184,95,0,.18)}
     #assessment-save-btn.has-dirty:hover{background:#9f5200}
+    .assess-dirty-note{display:none;align-items:center;gap:6px;margin-top:8px;padding:7px 10px;border:1px solid #f1c27d;border-radius:12px;background:#fffaf0;color:#8a5100;font-size:12px;font-weight:800;line-height:1.5}
+    .assess-dirty-note.show{display:inline-flex}
     .assess-inline-input,.assess-inline-textarea{width:100%;border:1px solid #d1d9e6;border-radius:12px;padding:10px 12px;font-size:12px;font-family:inherit;background:#fff;color:#111827}
     .assess-inline-textarea{min-height:78px;resize:vertical;line-height:1.6}
     .assess-empty-note{font-size:12px;color:var(--text2);padding:20px;text-align:center}
@@ -866,8 +868,8 @@
     </div>
 
     <div class="tabs">
-      <button class="tab-btn active" onclick="showTab('tab-rating')">防護需求分級評估</button>
-      <button class="tab-btn" onclick="showTab('tab-assess')">防護基準自評</button>
+      <button class="tab-btn active" onclick="showTab('tab-rating', this)">防護需求分級評估</button>
+      <button class="tab-btn" onclick="showTab('tab-assess', this)">防護基準自評</button>
     </div>
 
     <!-- 評級 -->
@@ -907,6 +909,7 @@
               <h2>防護基準自評工作台</h2>
               <p>每筆控制措施以單層列完整呈現，進入頁面即可同時檢視符合性、現況與佐證，並在需要補強時填寫矯正作為與目標日期。</p>
               <div id="assessment-compliance-meta" class="assess-meta">尚未手動更新符合性結果</div>
+              <div id="assessment-dirty-note" class="assess-dirty-note" aria-live="polite"></div>
             </div>
             <div class="assess-actions">
               <button class="btn btn-outline btn-sm hidden" id="init-assessment-btn" onclick="initAssessment()">初始化自評項目</button>
@@ -999,6 +1002,7 @@ var dashboardSnapshots = [], currentDashboardSnapshotKey = '';
 var systemsLoaded = false, systemsLoading = false, systemsRefreshQueued = false;
 var systemLoadProgressTimer = null, systemLoadProgressStartedAt = 0, systemLoadProgressValue = 0;
 var assessmentIssueCountCache = {}, assessmentIssueCountRequestSeq = 0;
+var assessmentSavedSnapshot = {}, suppressAssessmentLeaveGuard = false;
 var toastTimer = null, toastProgressTimer = null, toastProgressStartedAt = 0, toastProgressValue = 0;
 var lastSystemQuery = '', lastSystemBuildFilter = '', listScrollTop = 0, listScrollRestorePending = false;
 var lastSystemsRefreshAt = '';
@@ -1701,6 +1705,12 @@ function updateFailCodesUI(codes) {
 
 // ===== Pages =====
 function showPage(page) {
+  if (!suppressAssessmentLeaveGuard && shouldGuardAssessmentLeave() && page !== 'detail') {
+    confirmDiscardAssessmentChanges(function() {
+      withAssessmentLeaveGuardSuppressed(function() { showPage(page); });
+    });
+    return;
+  }
   if (page === 'init' && !isRuleAdmin()) {
     showToast('僅管理者可查看系統設定');
     page = 'list';
@@ -1727,11 +1737,18 @@ function showPage(page) {
   else if(page==='init'){document.getElementById('nav-init-btn').classList.add('active');loadRuleSettings();}
 }
 
-function showTab(tabId) {
+function showTab(tabId, sourceEl) {
+  if (!suppressAssessmentLeaveGuard && tabId !== 'tab-assess' && shouldGuardAssessmentLeave()) {
+    confirmDiscardAssessmentChanges(function() {
+      withAssessmentLeaveGuardSuppressed(function() { showTab(tabId, sourceEl); });
+    });
+    return;
+  }
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
   ['tab-rating','tab-assess'].forEach(function(t){document.getElementById(t).classList.add('hidden')});
   document.getElementById(tabId).classList.remove('hidden');
-  event.target.classList.add('active');
+  var trigger = sourceEl || (window.event && window.event.target);
+  if (trigger && trigger.classList) trigger.classList.add('active');
   if(isPackageSystem()) {
     renderPackageExemption(tabId === 'tab-rating' ? 'rating' : 'assess');
     return;
@@ -2370,6 +2387,12 @@ function renderDashboard(data) {
 
 // ===== System Detail =====
 function openSystem(sysId) {
+  if (!suppressAssessmentLeaveGuard && shouldGuardAssessmentLeave() && currentSystem && currentSystem['系統ID'] !== sysId) {
+    confirmDiscardAssessmentChanges(function() {
+      withAssessmentLeaveGuardSuppressed(function() { openSystem(sysId); });
+    });
+    return;
+  }
   captureListViewState();
   currentSystem = allSystems.find(function(s){return s['系統ID']===sysId;});
   if(!currentSystem) return;
@@ -2969,6 +2992,96 @@ function toggleAssessmentInitButton(show) {
   btn.classList.toggle('hidden', !show || !canEditCurrentSystem());
 }
 
+function getAssessmentTrackedFields() {
+  return ['compliance','currentStatus','evidence','corrective','targetDate'];
+}
+
+function normalizeAssessmentDraftValue(value) {
+  return String(value === null || value === undefined ? '' : value);
+}
+
+function captureAssessmentSnapshot(items) {
+  assessmentSavedSnapshot = {};
+  if (!items || !items.length) return;
+  var fields = getAssessmentTrackedFields();
+  items.forEach(function(item, idx) {
+    var snap = {};
+    fields.forEach(function(field) {
+      snap[field] = normalizeAssessmentDraftValue(item ? item[field] : '');
+    });
+    assessmentSavedSnapshot[idx] = snap;
+  });
+}
+
+function isAssessmentItemDirty(idx) {
+  idx = String(idx);
+  if (!currentAssessment || !currentAssessment[idx]) return false;
+  var base = assessmentSavedSnapshot[idx] || {};
+  var item = currentAssessment[idx] || {};
+  var fields = getAssessmentTrackedFields();
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i];
+    if (normalizeAssessmentDraftValue(item[field]) !== normalizeAssessmentDraftValue(base[field])) return true;
+  }
+  return false;
+}
+
+function syncAssessmentFieldValue(el) {
+  if (!el) return null;
+  var row = el.closest('tr');
+  if (!row || !row.dataset || row.dataset.idx === undefined) return null;
+  var idx = parseInt(row.dataset.idx, 10);
+  if (isNaN(idx) || !currentAssessment || !currentAssessment[idx]) return null;
+  var field = el.dataset ? el.dataset.field : '';
+  if (!field) return idx;
+  currentAssessment[idx][field] = el.value || '';
+  return idx;
+}
+
+function syncVisibleAssessmentDraftValues() {
+  document.querySelectorAll('#assess-body tr.assess-entry-row [data-field]').forEach(function(field) {
+    syncAssessmentFieldValue(field);
+  });
+}
+
+function updateAssessmentRowDirtyState(idx) {
+  var dirty = isAssessmentItemDirty(idx);
+  document.querySelectorAll('#assess-body tr[data-idx="' + idx + '"]').forEach(function(row) {
+    row.classList.toggle('dirty', dirty);
+  });
+}
+
+function isAssessmentWorkspaceActive() {
+  var detailPage = document.getElementById('page-detail');
+  var assessTab = document.getElementById('tab-assess');
+  return !!(detailPage && assessTab && !detailPage.classList.contains('hidden') && !assessTab.classList.contains('hidden'));
+}
+
+function shouldGuardAssessmentLeave() {
+  return isAssessmentWorkspaceActive() && getAssessmentDirtyCount() > 0;
+}
+
+function withAssessmentLeaveGuardSuppressed(action) {
+  suppressAssessmentLeaveGuard = true;
+  try {
+    if (typeof action === 'function') action();
+  } finally {
+    suppressAssessmentLeaveGuard = false;
+  }
+}
+
+function confirmDiscardAssessmentChanges(action) {
+  var count = getAssessmentDirtyCount();
+  openConfirmModal(
+    '自評內容尚未儲存',
+    '目前有 ' + count + ' 項防護基準自評內容尚未儲存，離開後這些填寫內容將不會保留。',
+    '建議先點擊「儲存所有變更」完成保存，再離開此頁面。',
+    '放棄變更並離開',
+    'btn-danger',
+    action
+  );
+}
+
 function loadAssessment(sysId) {
   if (isPackageSystem()) {
     renderPackageExemption('assess');
@@ -2980,9 +3093,10 @@ function loadAssessment(sysId) {
   document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
     toggleAssessmentInitButton(!data || data.length === 0);
-    currentAssessment=data;
-    syncCurrentAssessmentIssueCount(data);
-    renderAssessment(data);
+    currentAssessment=Array.isArray(data) ? data : [];
+    captureAssessmentSnapshot(currentAssessment);
+    syncCurrentAssessmentIssueCount(currentAssessment);
+    renderAssessment(currentAssessment);
   }).withFailureHandler(function(e){
     toggleAssessmentInitButton(false);
     document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="padding:20px">載入失敗：'+e.message+'</td></tr>';
@@ -2993,7 +3107,9 @@ function renderAssessment(items) {
   var tbody=document.getElementById('assess-body');
   if(!items||items.length===0){
     tbody.innerHTML='<tr><td colspan="7"><div class="assess-empty-note">尚無自評資料，請點擊「初始化自評項目」。</div></td></tr>';
-    document.getElementById('assess-stats').innerHTML='';return;
+    document.getElementById('assess-stats').innerHTML='';
+    updateAssessmentDirtyUI();
+    return;
   }
 
   var sysLevel=currentSystem['防護需求等級']||'普';
@@ -3076,12 +3192,12 @@ function renderAssessmentRows(items) {
       html+='<div class="assess-workgrid">';
       html+='<div class="assess-subfield"><div class="assess-subfield-head"><span class="assess-cell-label">現況說明</span>';
       if (!readOnly && item.exampleCurrentStatus) html+='<button type="button" class="assess-example-btn" data-example-mode="standard" onclick="loadAssessmentExample(this,\'currentStatus\')" title="載入控制措施基準 G 欄的現況說明範例">載入範例</button>';
-      html+='</div><textarea class="assess-inline-textarea" data-field="currentStatus" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.currentStatus||'')+'</textarea></div>';
+      html+='</div><textarea class="assess-inline-textarea" data-field="currentStatus" oninput="handleAssessmentFieldInput(this)" onchange="handleAssessmentFieldInput(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.currentStatus||'')+'</textarea></div>';
       html+='<div class="assess-subfield"><div class="assess-subfield-head"><span class="assess-cell-label">佐證資料</span>';
       if (!readOnly && item.exampleEvidence) html+='<button type="button" class="assess-example-btn" onclick="loadAssessmentExample(this,\'evidence\')" title="載入控制措施基準的佐證資料範例">載入範例</button>';
-      html+='</div><textarea class="assess-inline-textarea" data-field="evidence" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.evidence||'')+'</textarea></div>';
-      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.corrective||'')+'</textarea></div>';
-      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" onchange="markDirty(this)" ' + (readOnly ? 'disabled' : '') + '></div>';
+      html+='</div><textarea class="assess-inline-textarea" data-field="evidence" oninput="handleAssessmentFieldInput(this)" onchange="handleAssessmentFieldInput(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.evidence||'')+'</textarea></div>';
+      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">矯正作為</span><textarea class="assess-inline-textarea" data-field="corrective" oninput="handleAssessmentFieldInput(this)" onchange="handleAssessmentFieldInput(this)" ' + (readOnly ? 'disabled' : '') + '>'+escH(item.corrective||'')+'</textarea></div>';
+      html+='<div class="assess-subfield assess-remediation-field" style="display:'+(showRemediation ? 'grid' : 'none')+'"><span class="assess-cell-label">目標日期</span><input class="assess-inline-input" type="date" data-field="targetDate" value="'+escH(item.targetDate||'')+'" oninput="handleAssessmentFieldInput(this)" onchange="handleAssessmentFieldInput(this)" ' + (readOnly ? 'disabled' : '') + '></div>';
       html+='</div>';
     } else {
       var naText = escH(getPersistedRuleValue('assessment_applicability', 'na_note', '該等級不要求此項目'));
@@ -3108,41 +3224,52 @@ function toggleAssessmentRemediationFields(row, compliance, naLabel) {
 
 function handleAssessmentComplianceChange(el) {
   if (!el) return;
-  markDirty(el);
   var row = el.closest('tr');
+  var idx = syncAssessmentFieldValue(el);
   var compliance = el.value || '';
   var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
-  if (row && currentAssessment.length > 0) {
-    var idx = parseInt(row.dataset.idx, 10);
-    if (!isNaN(idx) && currentAssessment[idx]) currentAssessment[idx].compliance = compliance;
-  }
   toggleAssessmentRemediationFields(row, compliance, naLabel);
+  if (idx !== null) updateAssessmentRowDirtyState(idx);
+  updateAssessmentDirtyUI();
 }
 
 function applyFilters() { if(currentAssessment.length>0) renderAssessmentRows(currentAssessment); }
 
 function getAssessmentDirtyCount() {
-  var seen = {};
-  document.querySelectorAll('#assess-body tr.assess-entry-row.dirty').forEach(function(row) {
-    if (row.dataset && row.dataset.idx !== undefined) seen[row.dataset.idx] = true;
+  syncVisibleAssessmentDraftValues();
+  if (!currentAssessment || !currentAssessment.length) return 0;
+  var count = 0;
+  currentAssessment.forEach(function(item, idx) {
+    if (isAssessmentItemDirty(idx)) count++;
   });
-  return Object.keys(seen).length;
+  return count;
 }
 
 function updateAssessmentDirtyUI() {
   var btn = document.getElementById('assessment-save-btn');
-  if (!btn) return;
   var count = getAssessmentDirtyCount();
-  btn.textContent = count > 0 ? ('儲存 ' + count + ' 項變更') : '儲存所有變更';
-  btn.classList.toggle('has-dirty', count > 0);
+  if (currentAssessment && currentAssessment.length) {
+    currentAssessment.forEach(function(item, idx) { updateAssessmentRowDirtyState(idx); });
+  }
+  if (btn) {
+    btn.textContent = count > 0 ? ('儲存 ' + count + ' 項變更') : '儲存所有變更';
+    btn.classList.toggle('has-dirty', count > 0);
+  }
+  var note = document.getElementById('assessment-dirty-note');
+  if (note) {
+    note.textContent = count > 0 ? ('有 ' + count + ' 項自評內容尚未儲存，離開前請先儲存。') : '';
+    note.classList.toggle('show', count > 0);
+  }
+}
+
+function handleAssessmentFieldInput(el) {
+  var idx = syncAssessmentFieldValue(el);
+  if (idx !== null) updateAssessmentRowDirtyState(idx);
+  updateAssessmentDirtyUI();
 }
 
 function markDirty(el) {
-  var row=el.closest('tr');
-  if(!row) return;
-  var idx=row.dataset.idx;
-  document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"]').forEach(function(tr){tr.classList.add('dirty');});
-  updateAssessmentDirtyUI();
+  handleAssessmentFieldInput(el);
 }
 
 function setCurrentStatusExampleButtonMode(btn, mode) {
@@ -3219,33 +3346,25 @@ function initAssessment() {
 
 function saveAllAssessment() {
   if(!canEditCurrentSystem()){showToast('目前帳號無法儲存此系統的自評結果');return;}
-  var dirtyRows=document.querySelectorAll('#assess-body tr.assess-entry-row.dirty');
-  if(dirtyRows.length===0){showToast('沒有變更需要儲存');return;}
-
-  var batch=[],seen={};
-  dirtyRows.forEach(function(row){
-    var idx=parseInt(row.dataset.idx,10);
-    if(seen[idx]) return;
-    seen[idx]=true;
-    var item=Object.assign({},currentAssessment[idx]);
-    document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"] [data-field]').forEach(function(f){
-      item[f.dataset.field]=f.value||'';
+  syncVisibleAssessmentDraftValues();
+  var dirtyIndexes = [];
+  if (currentAssessment && currentAssessment.length) {
+    currentAssessment.forEach(function(item, idx) {
+      if (isAssessmentItemDirty(idx)) dirtyIndexes.push(idx);
     });
+  }
+  if(dirtyIndexes.length===0){showToast('沒有變更需要儲存');return;}
+
+  var batch=[];
+  dirtyIndexes.forEach(function(idx){
+    var item=Object.assign({},currentAssessment[idx]);
     batch.push(item);
-    // Update local
-    currentAssessment[idx].compliance=item.compliance;
-    currentAssessment[idx].currentStatus=item.currentStatus;
-    currentAssessment[idx].evidence=item.evidence;
-    currentAssessment[idx].corrective=item.corrective;
-    currentAssessment[idx].targetDate=item.targetDate;
   });
 
   showToast('儲存中 ('+batch.length+' 項)...');
   google.script.run.withSuccessHandler(function(r){
     showToast('已儲存 '+r.updated+' 項，自評結果需手動更新符合性');
-    Object.keys(seen).forEach(function(idx){
-      document.querySelectorAll('#assess-body tr[data-idx="'+idx+'"]').forEach(function(row){row.classList.remove('dirty');});
-    });
+    captureAssessmentSnapshot(currentAssessment);
     updateAssessmentDirtyUI();
     syncCurrentAssessmentIssueCount(currentAssessment);
     renderAssessment(currentAssessment);
@@ -5484,6 +5603,12 @@ function failProgressToast(message) {
   var t = document.getElementById('toast');
   toastTimer = setTimeout(function(){ if (t) t.classList.remove('show'); }, 4500);
 }
+
+window.addEventListener('beforeunload', function(e) {
+  if (!shouldGuardAssessmentLeave()) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
 
 document.addEventListener('DOMContentLoaded',function(){
   ratingTabTemplate = document.getElementById('tab-rating').innerHTML;
