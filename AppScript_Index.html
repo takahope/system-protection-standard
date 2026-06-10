@@ -1540,8 +1540,11 @@ function formatRoleAssignmentsSummary(sys, roleName) {
   var roles = getSystemRoleAssignments(sys || {});
   var list = roles[roleName] || [];
   if (!list.length) return '-';
-  var first = getRolePersonDisplay(list[0]);
-  return list.length > 1 ? first + ' +' + (list.length - 1) : first;
+  return list.map(function(person) {
+    return getRolePersonDisplay(person);
+  }).filter(function(name) {
+    return !!name;
+  }).join('、') || '-';
 }
 
 function formatRoleAssignmentsCompact(sys) {
