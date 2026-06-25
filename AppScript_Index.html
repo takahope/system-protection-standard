@@ -3379,14 +3379,18 @@ function saveAllAssessment() {
     batch.push(item);
   });
 
-  showToast('儲存中 ('+batch.length+' 項)...');
+  showProgressToast({
+    title: '正在儲存自評 ('+batch.length+' 項)',
+    durationMs: 6000,
+    summaryProvider: getAssessmentSaveProgressSummary
+  });
   google.script.run.withSuccessHandler(function(r){
-    showToast('已儲存 '+r.updated+' 項，自評結果需手動更新符合性');
+    finishProgressToast('已儲存 '+r.updated+' 項，自評結果需手動更新符合性', '自評已儲存');
     captureAssessmentSnapshot(currentAssessment);
     updateAssessmentDirtyUI();
     syncCurrentAssessmentIssueCount(currentAssessment);
     renderAssessment(currentAssessment);
-  }).withFailureHandler(function(e){showToast('儲存失敗：'+e.message);})
+  }).withFailureHandler(function(e){failProgressToast('儲存失敗：'+e.message);})
   .batchSaveAssessment(batch);
 }
 
@@ -5529,6 +5533,13 @@ function getToastExportProgressSummary(percent) {
   if (percent >= 40) return '建立匯出內容';
   if (percent >= 20) return '整理報告欄位';
   return '檢查自評資料';
+}
+
+function getAssessmentSaveProgressSummary(percent) {
+  if (percent >= 100) return '自評已儲存';
+  if (percent >= 90) return '等待後端確認';
+  var msgs = ['正在驗證變更項目','正在整理自評內容','正在寫入現況說明','正在儲存佐證資料','正在更新矯正作為','正在確認後端寫入'];
+  return msgs[Math.min(msgs.length - 1, Math.floor(percent / 15))];
 }
 
 function getToastProgressSummary(percent, summaryProvider) {
