@@ -274,6 +274,10 @@
     .assess-filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
     .assess-filterbar select{padding:8px 10px;border:1px solid #d1d9e6;border-radius:10px;font-size:12px;background:#fff}
     .assess-filterbar label{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px}
+    .assess-status-filter{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .assess-status-chip{padding:6px 11px;border:1px solid #d1d9e6;border-radius:999px;font-size:12px;background:#fff;color:var(--text2);cursor:pointer;font-weight:600;transition:border-color .15s,background .15s,color .15s}
+    .assess-status-chip:hover{border-color:#9dbcf0}
+    .assess-status-chip.active{background:#e8f1ff;border-color:#9dbcf0;color:#174ea6}
     .assess-legend{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
     .assess-legend-item{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #d9e2ec;background:#fff;font-size:11px;color:#334155;font-weight:600}
     .assess-legend-swatch{width:12px;height:12px;border-radius:999px;border:1px solid rgba(15,23,42,.12)}
@@ -937,14 +941,13 @@
                 </select>
               </label>
               <label>篩選狀態：
-                <select id="filter-status" onchange="applyFilters()">
-                  <option value="">全部狀態</option>
-                  <option value="pending">待評估</option>
-                  <option value="符合">符合</option>
-                  <option value="部分符合">部分符合</option>
-                  <option value="不符合">不符合</option>
-                  <option value="不適用">不適用</option>
-                </select>
+                <span class="assess-status-filter" role="group" aria-label="篩選狀態">
+                  <button type="button" class="assess-status-chip" data-status="pending" aria-pressed="false" onclick="toggleStatusChip(this)">待評估</button>
+                  <button type="button" class="assess-status-chip" data-status="符合" aria-pressed="false" onclick="toggleStatusChip(this)">符合</button>
+                  <button type="button" class="assess-status-chip" data-status="部分符合" aria-pressed="false" onclick="toggleStatusChip(this)">部分符合</button>
+                  <button type="button" class="assess-status-chip" data-status="不符合" aria-pressed="false" onclick="toggleStatusChip(this)">不符合</button>
+                  <button type="button" class="assess-status-chip" data-status="不適用" aria-pressed="false" onclick="toggleStatusChip(this)">不適用</button>
+                </span>
               </label>
               <label><input type="checkbox" id="filter-applicable" onchange="applyFilters()" checked> 只顯示應評項目</label>
               <div class="assess-legend">
@@ -3150,7 +3153,7 @@ function renderAssessmentRows(items) {
   var sysLevel=currentSystem['防護需求等級']||'普';
   var readOnly = !canEditCurrentSystem();
   var filterDim=document.getElementById('filter-dim').value;
-  var filterStatus=document.getElementById('filter-status').value;
+  var filterStatuses=getSelectedStatusFilters();
   var filterApplicable=document.getElementById('filter-applicable').checked;
   var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
 
@@ -3161,10 +3164,13 @@ function renderAssessmentRows(items) {
     // Filters
     if(filterDim && item.dimension!==filterDim) return;
     if(filterApplicable && !applicable) return;
-    if(filterStatus){
-      if(filterStatus==='pending' && (item.compliance && item.compliance!=='')) return;
-      else if(filterStatus==='不符合' && !isAssessmentNonCompliant(item.compliance)) return;
-      else if(filterStatus!=='pending' && filterStatus!=='不符合' && item.compliance!==filterStatus) return;
+    if(filterStatuses.length){
+      var matched=filterStatuses.some(function(s){
+        if(s==='pending') return !item.compliance;
+        if(s==='不符合') return isAssessmentNonCompliant(item.compliance);
+        return item.compliance===s;
+      });
+      if(!matched) return;
     }
 
     var rowClass=applicable?'applicable':'not-applicable';
@@ -3235,6 +3241,16 @@ function handleAssessmentComplianceChange(el) {
   updateAssessmentDirtyUI();
 }
 
+function getSelectedStatusFilters() {
+  var chips=document.querySelectorAll('.assess-status-chip.active');
+  return Array.prototype.map.call(chips, function(c){ return c.getAttribute('data-status'); });
+}
+function toggleStatusChip(btn) {
+  var active=!btn.classList.contains('active');
+  btn.classList.toggle('active', active);
+  btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  applyFilters();
+}
 function applyFilters() { if(currentAssessment.length>0) renderAssessmentRows(currentAssessment); }
 
 function getAssessmentDirtyCount() {

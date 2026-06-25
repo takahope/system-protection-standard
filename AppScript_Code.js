@@ -16,6 +16,7 @@ var PAGE_PASSCODE_CACHE_VERSION_PROPERTY = 'PAGE_PASSCODE_CACHE_VERSION';
 var PAGE_PASSCODE_CACHE_PREFIX = 'page_passcode_';
 var PAGE_PASSCODE_TTL_SECONDS = 8 * 60 * 60;
 var PAGE_PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
+var ADDITIONAL_ORG_ADMIN_EMAILS_PROPERTY = 'ADDITIONAL_ORG_ADMIN_EMAILS';
 
 function doGet(e) {
   var access = getPageAccessStatus_();
@@ -132,6 +133,20 @@ function formatEvaluatorDisplayName_(name, email) {
 
 function normalizeEmail_(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function getScriptPropertyEmailList_(propertyName) {
+  var prop = PropertiesService.getScriptProperties().getProperty(propertyName) || '';
+  var result = [];
+  var seen = {};
+  var emails = prop.split(',');
+  for (var i = 0; i < emails.length; i++) {
+    var email = normalizeEmail_(emails[i]);
+    if (!email || seen[email]) continue;
+    seen[email] = true;
+    result.push(email);
+  }
+  return result;
 }
 
 function escapeHtml_(value) {
@@ -354,12 +369,7 @@ function verifyPagePasscode(passcode) {
 
 function resetPagePasscodeCache() {
   var email = normalizeEmail_(getSessionEmail_());
-  var prop = PropertiesService.getScriptProperties().getProperty('RULE_ADMIN_EMAILS') || '';
-  var admins = prop.split(',').map(function(adminEmail) {
-    return normalizeEmail_(adminEmail);
-  }).filter(function(adminEmail) {
-    return !!adminEmail;
-  });
+  var admins = getScriptPropertyEmailList_('RULE_ADMIN_EMAILS');
   if (!email || admins.indexOf(email) === -1) {
     throw new Error('僅 RULE_ADMIN_EMAILS 管理者可清理通行碼認證暫存。');
   }
@@ -1165,14 +1175,15 @@ function isAssessmentControlApplicable_(ctrlLevel, systemLevel) {
 function getRuleAdminStatus() {
   assertPageAccess_();
   var evaluator = getCurrentEvaluator();
-  var prop = PropertiesService.getScriptProperties().getProperty('RULE_ADMIN_EMAILS') || '';
-  var admins = prop.split(',').map(function(email) { return String(email || '').trim().toLowerCase(); }).filter(function(email) { return !!email; });
-  var email = String(evaluator.email || '').trim().toLowerCase();
+  var admins = getScriptPropertyEmailList_('RULE_ADMIN_EMAILS');
+  var additionalOrgAdmins = getScriptPropertyEmailList_(ADDITIONAL_ORG_ADMIN_EMAILS_PROPERTY);
+  var email = normalizeEmail_(evaluator.email);
   var orgDirectory = loadOrgAdminDirectory_();
   var orgAdmin = orgDirectory.map[email] || null;
   var ownerSystems = getOwnedSystemsByEmail_(email);
   var isAdmin = !!email && admins.indexOf(email) !== -1;
-  var isOrgAdmin = !!orgAdmin;
+  var isAdditionalOrgAdmin = !!email && additionalOrgAdmins.indexOf(email) !== -1;
+  var isOrgAdmin = !!orgAdmin || isAdditionalOrgAdmin;
   var isSystemOwner = ownerSystems.length > 0;
   var roleKey = 'viewer';
   var roleLabel = '一般使用者';
@@ -1182,7 +1193,7 @@ function getRuleAdminStatus() {
     roleLabel = '管理者';
   } else if (isOrgAdmin) {
     roleKey = 'org_admin';
-    roleLabel = orgAdmin.orgName || '組織管理者';
+    roleLabel = orgAdmin ? (orgAdmin.orgName || '組織管理者') : '指定組長權限';
   } else if (isSystemOwner) {
     roleKey = 'system_owner';
     roleLabel = '系統角色成員';
@@ -1191,11 +1202,13 @@ function getRuleAdminStatus() {
   return {
     isAdmin: isAdmin,
     isOrgAdmin: isOrgAdmin,
+    isAdditionalOrgAdmin: isAdditionalOrgAdmin,
     isSystemOwner: isSystemOwner,
     roleKey: roleKey,
     roleLabel: roleLabel,
     evaluator: evaluator,
     adminEmailsConfigured: admins.length > 0,
+    additionalOrgAdminEmailsConfigured: additionalOrgAdmins.length > 0,
     ownerSystemCount: ownerSystems.length,
     ownerSystemIds: ownerSystems,
     orgAdminInfo: orgAdmin,
