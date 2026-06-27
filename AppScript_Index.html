@@ -3005,6 +3005,29 @@ function normalizeAssessmentDraftValue(value) {
   return String(value === null || value === undefined ? '' : value);
 }
 
+// 將後端 getDisplayValues 回傳的目標日期（如 2026/6/27、2026年6月27日）正規化為
+// <input type="date"> 接受的 yyyy-MM-dd；無法解析時回傳 ''（與日期欄位丟棄非法值後的讀回行為一致）。
+function normalizeAssessmentDraftDate(value) {
+  var raw = normalizeAssessmentDraftValue(value).trim();
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  var m = raw.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (!m) return '';
+  var mm = ('0' + m[2]).slice(-2);
+  var dd = ('0' + m[3]).slice(-2);
+  return m[1] + '-' + mm + '-' + dd;
+}
+
+// 載入時正規化欄位，使 snapshot / currentAssessment / DOM 三者一致，避免乾淨載入即被誤判 dirty。
+// - compliance：舊值別名 未符合 → 不符合（對齊 select option 與 isAssessmentNonCompliant）
+// - targetDate：轉成 yyyy-MM-dd
+function normalizeAssessmentLoadedItem(item) {
+  if (!item || typeof item !== 'object') return item;
+  if (item.compliance === '未符合') item.compliance = '不符合';
+  item.targetDate = normalizeAssessmentDraftDate(item.targetDate);
+  return item;
+}
+
 function captureAssessmentSnapshot(items) {
   assessmentSavedSnapshot = {};
   if (!items || !items.length) return;
@@ -3098,7 +3121,7 @@ function loadAssessment(sysId) {
   document.getElementById('assess-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
   google.script.run.withSuccessHandler(function(data){
     toggleAssessmentInitButton(!data || data.length === 0);
-    currentAssessment=Array.isArray(data) ? data : [];
+    currentAssessment=(Array.isArray(data) ? data : []).map(normalizeAssessmentLoadedItem);
     captureAssessmentSnapshot(currentAssessment);
     syncCurrentAssessmentIssueCount(currentAssessment);
     renderAssessment(currentAssessment);
