@@ -5361,7 +5361,11 @@ function renderComparePage() {
     {loc:'存取控制 ▸ 帳號管理 #6',oldLv:'高',newLv:'中',desc:'逾越機關所許可之閒置時間或可使用期限時，系統應自動將使用者登出'},
     {loc:'存取控制 ▸ 最小權限 #9',oldLv:'中',newLv:'普',desc:'採最小權限原則，僅允許使用者（或代表使用者行為之程序）依機關任務及業務功能，完成指派任務所需之授權存取'},
     {loc:'營運持續計畫 ▸ 系統備援 #33',oldLv:'中',newLv:'普',desc:'訂定資通系統從中斷後至重新恢復服務之可容忍時間要求'},
-    {loc:'系統與資訊完整性 ▸ 軟體及資訊完整性 #77',oldLv:'中',newLv:'普',desc:'使用者輸入資料合法性檢查應置放於應用系統伺服器端'}
+    {loc:'系統與資訊完整性 ▸ 軟體及資訊完整性 #77',oldLv:'中',newLv:'普',desc:'使用者輸入資料合法性檢查應置放於應用系統伺服器端'},
+    {loc:'存取控制 ▸ 遠端存取 #12',oldLv:'中',newLv:'普',desc:'應監控遠端存取機關內部網段或資通系統後臺之連線'},
+    {loc:'存取控制 ▸ 遠端存取 #13',oldLv:'中',newLv:'普',desc:'應採用加密機制'},
+    {loc:'存取控制 ▸ 遠端存取 #14',oldLv:'中',newLv:'普',desc:'遠端存取之來源應為機關已預先定義及管理之存取控制點'},
+    {loc:'事件日誌與可歸責性 ▸ 時戳及校時 #24',oldLv:'中',newLv:'普',desc:'系統內部時鐘應定期與基準時間源進行同步'}
   ];
 
   var CAT_RENAMES = [
@@ -5416,7 +5420,7 @@ function renderComparePage() {
   html += '<div class="cmp-kpi-row">';
   html += '<div class="cmp-kpi"><div class="num old">78</div><div class="label">舊版項目數</div></div>';
   html += '<div class="cmp-kpi"><div class="num new">80</div><div class="label">新版項目數</div></div>';
-  html += '<div class="cmp-kpi"><div class="num chg">8</div><div class="label">等級變更</div></div>';
+  html += '<div class="cmp-kpi"><div class="num chg">12</div><div class="label">等級變更</div></div>';
   html += '<div class="cmp-kpi"><div class="num chg">16</div><div class="label">文字修改</div></div>';
   html += '<div class="cmp-kpi"><div class="num new">4</div><div class="label">新增項目</div></div>';
   html += '<div class="cmp-kpi"><div class="num old">2</div><div class="label">刪除項目</div></div>';
@@ -5442,7 +5446,7 @@ function renderComparePage() {
     b1 += '<span class="cmp-pill lv-new">' + it.newLv + ' 級</span>';
     b1 += '</div><div class="cmp-desc">' + escH(it.desc) + '</div></div>';
   });
-  html += sec('lv','一、等級變更','8 項',b1,true);
+  html += sec('lv','一、等級變更','12 項',b1,true);
 
   // 2. Category renames
   var b2 = '';
@@ -5509,7 +5513,7 @@ function renderComparePage() {
   // Level table
   b6 += '<div><div class="cmp-row-label" style="margin-bottom:8px">各等級項目數比較</div>';
   b6 += '<table class="cmp-grid-table"><thead><tr><th style="text-align:left">等級</th><th>舊版</th><th>新版</th><th>差異</th></tr></thead><tbody>';
-  var lvls = [['普級',35,43],['中級',23,19],['高級',20,18]];
+  var lvls = [['普級',33,45],['中級',25,17],['高級',20,18]];
   lvls.forEach(function(l){
     var diff = l[2]-l[1];
     var cls = diff !== 0 ? ' class="cmp-changed"' : '';
@@ -5520,7 +5524,7 @@ function renderComparePage() {
 
   // Insight cards
   b6 += '<div class="cmp-summary-insight">';
-  b6 += '<div class="cmp-insight-card up"><h4>普級基線大幅提升</h4><p>普級項目由 35 項增至 43 項（+23%），帳號管理、最小權限、系統備援、輸入驗證等原本中級才要求的措施，全部下放為普級基本要求。</p></div>';
+  b6 += '<div class="cmp-insight-card up"><h4>普級基線大幅提升</h4><p>普級項目由 33 項增至 45 項（約 +36%），帳號管理、最小權限、遠端存取、系統備援、校時、輸入驗證等原本中級才要求的措施，全部下放為普級基本要求。</p></div>';
   b6 += '<div class="cmp-insight-card info"><h4>軟體供應鏈安全入法</h4><p>新增「識別第三方軟體、函式庫或元件」為普級要求（新版 #64），回應 SCA / SBOM 國際趨勢，所有系統均須清點第三方元件。</p></div>';
   b6 += '<div class="cmp-insight-card down"><h4>高級門檻微幅降低</h4><p>高級項目由 20 項降至 18 項（-10%），刪除「最大長度金鑰」要求，部分原高級措施調降為中級，但新增備援演練要求。</p></div>';
   b6 += '</div>';

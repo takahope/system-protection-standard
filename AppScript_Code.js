@@ -1995,7 +1995,7 @@ function getControlMeasures() {
     {index:11, dimension:"存取控制", category:"遠端存取", level:"普", description:"使用者之權限檢查作業應於伺服器端完成。"},
     {index:12, dimension:"存取控制", category:"遠端存取", level:"普", description:"應監控遠端存取機關內部網段或資通系統後臺之連線。"},
     {index:13, dimension:"存取控制", category:"遠端存取", level:"普", description:"應採用加密機制。"},
-    {index:14, dimension:"存取控制", category:"遠端存取", level:"中", description:"遠端存取之來源應為機關已預先定義及管理之存取控制點。"},
+    {index:14, dimension:"存取控制", category:"遠端存取", level:"普", description:"遠端存取之來源應為機關已預先定義及管理之存取控制點。"},
     {index:15, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"訂定日誌之記錄時間週期及留存政策，並保留日誌至少六個月。"},
     {index:16, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"確保資通系統有記錄特定事件之功能，並決定應記錄之特定資通系統事件。"},
     {index:17, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"應記錄資通系統管理者帳號所執行之各項功能。"},
@@ -2005,7 +2005,7 @@ function getControlMeasures() {
     {index:21, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"普", description:"資通系統於日誌處理失效時，應採取適當之行動。"},
     {index:22, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"高", description:"機關規定需要即時通報之日誌處理失效事件發生時，資通系統應於機關規定之時效內，對特定人員提出警告。"},
     {index:23, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"資通系統應使用系統內部時鐘產生日誌所需時戳，並可以對應到世界協調時間（UTC）或格林威治標準時間（GMT）。"},
-    {index:24, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"中", description:"系統內部時鐘應定期與基準時間源進行同步。"},
+    {index:24, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"系統內部時鐘應定期與基準時間源進行同步。"},
     {index:25, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"普", description:"對日誌之存取管理，僅限於有權限之使用者。"},
     {index:26, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"中", description:"應運用雜湊或其他適當方式之完整性確保機制。"},
     {index:27, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"高", description:"定期備份日誌至原系統外之其他實體系統。"},
@@ -2332,7 +2332,7 @@ function getAssessmentCompareChangeMeta_(index) {
     new_item: '新增項目'
   };
   var type = '';
-  var levelChanges = {'2':true,'3':true,'4':true,'5':true,'6':true,'9':true,'33':true,'77':true};
+  var levelChanges = {'2':true,'3':true,'4':true,'5':true,'6':true,'9':true,'12':true,'13':true,'14':true,'24':true,'33':true,'77':true};
   var wordingChanges = {'28':true,'29':true,'30':true,'31':true,'32':true,'33':true,'34':true,'36':true,'37':true,'38':true,'41':true,'42':true,'43':true,'47':true,'58':true,'70':true};
   var newItems = {'35':true,'59':true,'61':true,'64':true};
 
