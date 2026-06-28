@@ -1053,7 +1053,7 @@ var hrEmployeeWarning = '';
 var hrEmployeeLoadCallbacks = [];
 var ACCESS_DENIED_MESSAGE = '權限不足，請聯絡負責人員';
 var PASSCODE_REQUIRED_MESSAGE = '通行碼驗證已逾時，請重新輸入通行碼';
-var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員'];
+var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員', '開發人員'];
 
 var SYSTEM_MODAL_GROUP_META = {
   '基本概況': {title:'基本概況', desc:'先建立可辨識的系統輪廓；資料可分次補齊。'},
@@ -1519,6 +1519,9 @@ function getMissingSystemRoleFields(sys) {
   if (isLocalDeploymentSystem(sys) && !(roles['系統部署維護人員'] || []).length) {
     missing.push('系統部署維護人員');
   }
+  if (isAcademiaSinicaVendorInvolved(sys) && !(roles['開發人員'] || []).length) {
+    missing.push('開發人員');
+  }
   return missing;
 }
 
@@ -1570,8 +1573,21 @@ function formatRoleAssignmentsSummary(sys, roleName) {
   }).join('、') || '-';
 }
 
+function formatDeveloperSummary(sys) {
+  var parts = [];
+  var roles = getSystemRoleAssignments(sys || {});
+  (roles['開發人員'] || []).forEach(function(person) {
+    var name = getRolePersonDisplay(person);
+    if (name) parts.push(name);
+  });
+  getExternalVendorAlerts(sys || {}).forEach(function(item) {
+    parts.push(item.label + '：' + item.value);
+  });
+  return parts.length ? parts.join('、') : '-';
+}
+
 function formatRoleAssignmentsCompact(sys) {
-  return '承辦窗口：' + formatRoleAssignmentsSummary(sys, '系統承辦窗口') + '｜部署維護：' + formatRoleAssignmentsSummary(sys, '系統部署維護人員');
+  return '承辦窗口：' + formatRoleAssignmentsSummary(sys, '系統承辦窗口') + '｜部署維護：' + formatRoleAssignmentsSummary(sys, '系統部署維護人員') + '｜開發：' + formatDeveloperSummary(sys);
 }
 
 function isAssessmentNonCompliant(compliance) {
@@ -3746,7 +3762,7 @@ function getHrOwnerOptionLabel(person) {
 }
 
 function getRoleCandidateOptions(roleName) {
-  return roleName === '系統部署維護人員' ? deploymentMaintainerOptions : hrEmployeeOptions;
+  return (roleName === '系統部署維護人員' || roleName === '開發人員') ? deploymentMaintainerOptions : hrEmployeeOptions;
 }
 
 function findHrOwnerByEmail(email, options) {
@@ -3867,6 +3883,13 @@ function renderRoleChip(roleName, person, readOnly) {
   return html;
 }
 
+function isAcademiaSinicaVendorInvolved(currentData) {
+  currentData = currentData || {};
+  var builder = String(currentData['建置廠商'] || '').trim();
+  var operator = String(currentData['維運廠商'] || '').trim();
+  return builder === '中央研究院' || operator === '中央研究院';
+}
+
 function getExternalVendorAlerts(currentData) {
   currentData = currentData || {};
   var alerts = [];
@@ -3896,24 +3919,37 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   var disabled = readOnly || mode === 'loading' || mode === 'error';
   var missingRoles = getMissingSystemRoleFields(currentData || {});
   var localDeployment = isLocalDeploymentSystem(currentData || {});
+  var academiaInternal = isAcademiaSinicaVendorInvolved(currentData || {});
   var html = '<div class="role-assignment-panel" id="modal-role-panel" data-tour="system-modal-role-panel">';
   SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
     if (roleName === '系統部署維護人員' && !localDeployment) return;
+    var isDeveloper = roleName === '開發人員';
+    var showPicker = !disabled && (!isDeveloper || academiaInternal);
     var list = roles[roleName] || [];
-    var tourKey = roleName === '系統承辦窗口' ? 'system-role-user-contact' : 'system-role-maintainer';
+    var tourKey = roleName === '系統承辦窗口' ? 'system-role-user-contact' : (isDeveloper ? 'system-role-developer' : 'system-role-maintainer');
+    var desc = roleName === '系統承辦窗口' ? '各組業務若有涉及此系統請至少指派一位業務承辦窗口' : (isDeveloper ? '中研院自建可指派內部開發人員；委外開發則顯示委外廠商' : '部署、維護與技術處理人員');
     html += '<div class="role-row" data-role-row="' + idx + '" data-role-name="' + escH(roleName) + '" data-tour="' + tourKey + '">';
-    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + (roleName === '系統承辦窗口' ? '各組業務若有涉及此系統請至少指派一位業務承辦窗口' : '部署、維護與技術處理人員') + '</span></div>';
+    html += '<div class="role-row-head"><strong>' + escH(roleName) + '</strong><span>' + desc + '</span></div>';
     html += '<div>';
-    html += '<div class="role-chip-list" data-role-list="' + escH(roleName) + '">';
-    if (list.length) {
-      list.forEach(function(person) { html += renderRoleChip(roleName, person, disabled); });
-    } else {
-      html += '<span class="role-empty">尚未指派</span>';
+    if (!isDeveloper || academiaInternal) {
+      html += '<div class="role-chip-list" data-role-list="' + escH(roleName) + '">';
+      if (list.length) {
+        list.forEach(function(person) { html += renderRoleChip(roleName, person, disabled); });
+      } else {
+        html += '<span class="role-empty">尚未指派</span>';
+      }
+      if (!disabled) html += '<button type="button" class="role-add-btn" onclick="toggleRolePicker(' + idx + ')" title="新增' + escH(roleName) + '"' + (idx === 0 ? ' data-tour="system-role-add-btn"' : '') + '>+</button>';
+      html += '</div>';
     }
-    if (!disabled) html += '<button type="button" class="role-add-btn" onclick="toggleRolePicker(' + idx + ')" title="新增' + escH(roleName) + '"' + (idx === 0 ? ' data-tour="system-role-add-btn"' : '') + '>+</button>';
-    html += '</div>';
-    if (roleName === '系統承辦窗口') html += renderExternalVendorAlerts(currentData || {});
-    if (!disabled) {
+    if (isDeveloper) {
+      var devAlertHtml = renderExternalVendorAlerts(currentData || {});
+      if (devAlertHtml) {
+        html += devAlertHtml;
+      } else if (!academiaInternal) {
+        html += '<div class="role-chip-list"><span class="role-empty">尚未填寫建置／維運廠商</span></div>';
+      }
+    }
+    if (showPicker) {
       html += '<div class="role-picker" id="role-picker-' + idx + '">';
       html += '<input type="text" id="role-input-' + idx + '" list="' + escH(getRoleDatalistId(idx)) + '" placeholder="輸入姓名或 email" autocomplete="off">';
       html += '<button type="button" onclick="addRoleAssignment(' + idx + ')">加入</button>';
@@ -3924,6 +3960,7 @@ function renderRoleAssignmentFieldContent(currentData, state) {
   if (!disabled) {
     SYSTEM_ROLE_NAMES.forEach(function(roleName, idx) {
       if (roleName === '系統部署維護人員' && !localDeployment) return;
+      if (roleName === '開發人員' && !academiaInternal) return;
       html += buildHrRoleDatalist(roleName, idx);
     });
   }
@@ -4012,10 +4049,14 @@ function collectRoleAssignmentsFromModal() {
 
 function mergeHiddenRoleAssignmentsFromCurrentSystem(result, data) {
   result = result || getEmptyRoleAssignments();
-  if (activeSystemModalMode !== 'edit') return result;
-  if (!data || isLocalDeploymentSystem(data)) return result;
+  if (activeSystemModalMode !== 'edit' || !data) return result;
   var source = getSystemRoleAssignments(currentSystem || {});
-  result['系統部署維護人員'] = source['系統部署維護人員'] || [];
+  if (!isLocalDeploymentSystem(data)) {
+    result['系統部署維護人員'] = source['系統部署維護人員'] || [];
+  }
+  if (!isAcademiaSinicaVendorInvolved(data)) {
+    result['開發人員'] = source['開發人員'] || [];
+  }
   return result;
 }
 
@@ -4894,7 +4935,8 @@ function openAddSystemModal() {
     modalData._roleReadOnly = true;
     modalData._roleAssignments = {
       '系統承辦窗口': [{email: email, displayName: displayName}],
-      '系統部署維護人員': []
+      '系統部署維護人員': [],
+      '開發人員': []
     };
   }
   var requestId = openSystemModal('新增系統', modalData, {
