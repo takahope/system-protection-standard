@@ -543,8 +543,8 @@ var RULE_SETTINGS_HEADERS = ['rule_group', 'rule_key', 'rule_label', 'rule_type'
 var RULE_AUDIT_HEADERS = ['timestamp', 'editor_email', 'editor_name', 'rule_group', 'rule_key', 'old_value', 'new_value', 'change_summary'];
 var DASHBOARD_SNAPSHOT_HEADERS = ['快照鍵', '更新時間', '更新人員', '更新人員Email', '資料JSON'];
 var SYSTEM_ROLE_ASSIGNMENT_HEADERS = ['系統ID', '系統名稱', '角色名稱', '使用者email', '指派人', '指派時間'];
-var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員', '開發人員'];
-var SYSTEM_ROLE_LEGACY_NAME_MAP = {'系統使用窗口': '系統承辦窗口', '系統維運人員': '系統部署維護人員'};
+var SYSTEM_ROLE_NAMES = ['系統承辦窗口', '系統部署維護人員', '開發'];
+var SYSTEM_ROLE_LEGACY_NAME_MAP = {'系統使用窗口': '系統承辦窗口', '系統維運人員': '系統部署維護人員', '開發人員': '開發'};
 
 function getEmptySystemRoleAssignmentMap_() {
   var map = {};
