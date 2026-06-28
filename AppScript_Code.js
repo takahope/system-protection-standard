@@ -75,14 +75,27 @@ function createPasscodeOutput_(access) {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+// 彙整可接受的人員狀態清單（HR_ACTIVE_VALUES），去除空白並去重；未設定時退回預設「在勤」。
+function getHrActiveValues_() {
+  var raw = (typeof HR_ACTIVE_VALUES !== 'undefined' && Array.isArray(HR_ACTIVE_VALUES)) ? HR_ACTIVE_VALUES : [];
+  var seen = {}, out = [];
+  raw.forEach(function(v) {
+    var s = String(v === null || v === undefined ? '' : v).trim();
+    if (s && !seen[s]) { seen[s] = true; out.push(s); }
+  });
+  if (!out.length) out.push('在勤');
+  return out;
+}
+
 function getHrConfig_() {
+  var activeValues = getHrActiveValues_();
   return {
     spreadsheetId: typeof HR_SPREADSHEET_ID !== 'undefined' ? HR_SPREADSHEET_ID : '',
     sheetName: typeof HR_SHEET_NAME !== 'undefined' ? HR_SHEET_NAME : '人員主檔',
     emailColumn: typeof HR_EMAIL_COLUMN !== 'undefined' ? HR_EMAIL_COLUMN : 1,
     nameColumn: typeof HR_NAME_COLUMN !== 'undefined' ? HR_NAME_COLUMN : 2,
     statusColumn: typeof HR_STATUS_COLUMN !== 'undefined' ? HR_STATUS_COLUMN : 3,
-    activeValue: typeof HR_ACTIVE_VALUE !== 'undefined' ? HR_ACTIVE_VALUE : '在勤'
+    activeValues: activeValues
   };
 }
 
@@ -189,7 +202,7 @@ function loadHrDirectory_() {
       var name = String(data[i][cfg.nameColumn - 1] || '').trim();
       var status = String(data[i][cfg.statusColumn - 1] || '').trim();
       result.map[email] = {email: email, name: name, status: status};
-      if (status === cfg.activeValue) {
+      if (cfg.activeValues.indexOf(status) !== -1) {
         result.activeEmployees.push({
           email: email,
           name: name,

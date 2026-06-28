@@ -9,7 +9,8 @@ var HR_SHEET_NAME = '人員主檔';
 var HR_EMAIL_COLUMN = 1;
 var HR_NAME_COLUMN = 2;
 var HR_STATUS_COLUMN = 3;
-var HR_ACTIVE_VALUE = '在勤';
+// 視為「可選用人員」的狀態清單，符合任一即納入（可自由增減，例如新增「倫理委員會」）。
+var HR_ACTIVE_VALUES = ['在勤', '倫理委員會'];
 
 var HR_ROLE_ASSIGNMENT_SHEET_NAME = '人員職務配置';
 var HR_ROLE_ASSIGNMENT_EMAIL_COLUMN = 1;
