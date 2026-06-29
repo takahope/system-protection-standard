@@ -3144,19 +3144,18 @@ function renderAssessmentAspectInner(item, readOnly) {
     });
   }
   html += '</div></div>';
-  // 顯示說明框的面向 = 已勾選 ∪ 已有說明內容（讓取消勾選後仍可看到/編輯/清空既有說明）
+  // 只顯示已勾選面向的說明框；未勾選的面向隱藏但說明內容保留於資料模型中
   var detailAspects = ASSESSMENT_ASPECT_OPTIONS.filter(function(a) {
-    return selected.indexOf(a) !== -1 || (details[a] && details[a].length);
+    return selected.indexOf(a) !== -1;
   });
   if (detailAspects.length) {
     var detailHtml = '';
     detailAspects.forEach(function(a) {
       var d = details[a] || '';
-      var off = selected.indexOf(a) === -1;
       if (readOnly) {
-        if (d) detailHtml += '<div class="assess-aspect-detail-ro' + (off ? ' is-off' : '') + '"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><span class="assess-aspect-detail-text"><strong>' + escH(a) + '</strong>：' + escH(d) + (off ? ' <em class="assess-aspect-off-tag">（未勾選）</em>' : '') + '</span></div>';
+        if (d) detailHtml += '<div class="assess-aspect-detail-ro"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><span class="assess-aspect-detail-text"><strong>' + escH(a) + '</strong>：' + escH(d) + '</span></div>';
       } else {
-        detailHtml += '<div class="assess-aspect-detail' + (off ? ' is-off' : '') + '"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><textarea class="assess-aspect-detail-input" data-aspect="' + escH(a) + '" placeholder="' + escH(a) + ' 細項說明（選填）" oninput="handleAssessmentAspectDetailInput(this)" onchange="handleAssessmentAspectDetailInput(this)">' + escH(d) + '</textarea>' + (off ? '<span class="assess-aspect-off-tag" title="此面向未勾選，但說明內容會保留">未勾選</span>' : '') + '</div>';
+        detailHtml += '<div class="assess-aspect-detail"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><textarea class="assess-aspect-detail-input" data-aspect="' + escH(a) + '" placeholder="' + escH(a) + ' 細項說明（選填）" oninput="handleAssessmentAspectDetailInput(this)" onchange="handleAssessmentAspectDetailInput(this)">' + escH(d) + '</textarea></div>';
       }
     });
     if (detailHtml) html += '<div class="assess-aspect-details">' + detailHtml + '</div>';
@@ -3191,7 +3190,6 @@ function handleAssessmentAspectDetailInput(el) {
   if (idx === null) return;
   var aspect = el.getAttribute('data-aspect');
   var parsed = parseAssessmentAspect(currentAssessment[idx].aspect);
-  if (parsed.selected.indexOf(aspect) === -1) parsed.selected.push(aspect);
   parsed.details[aspect] = el.value || '';
   currentAssessment[idx].aspect = serializeAssessmentAspect(parsed.selected, parsed.details);
   updateAssessmentRowDirtyState(idx);
