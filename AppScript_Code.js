@@ -890,6 +890,22 @@ function getSystemRowValue_(row, key) {
   return row && row[idx] !== undefined ? row[idx] : '';
 }
 
+// 將建置日期儲存格的值正規化為 <input type="date"> 接受的 yyyy-MM-dd。
+// getDisplayValues 受儲存格格式影響可能只剩年月，故讀取時改用 getValues 的原始值
+// （Date 物件仍保留完整日期）再於此格式化，新舊資料一致。
+function formatSystemBuildDateValue_(value) {
+  if (value === null || value === undefined || value === '') return '';
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(value, Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyy-MM-dd');
+  }
+  var raw = String(value).trim();
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  var m = raw.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+  return raw;
+}
+
 function mapSystemRowToObject_(row, rowNum) {
   var obj = {};
   getSystemColumns_().forEach(function(col) {
@@ -2118,12 +2134,16 @@ function getSystems() {
   var data = sheet.getDataRange().getDisplayValues();
   if (data.length <= 1) return [];
 
+  // 建置日期改讀原始值（Date 物件保留完整日期），避免 getDisplayValues 受儲存格格式截成年月。
+  var buildDateVals = sheet.getRange(2, SYSTEM_BUILD_DATE_COLUMN, data.length - 1, 1).getValues();
+
   var hrDirectory = loadHrDirectory_();
   var roleAssignmentMap = getAllSystemRoleAssignments_(hrDirectory);
   var systems = [];
   for (var i = 1; i < data.length; i++) {
     if (!getSystemRowValue_(data[i], '系統ID') && !getSystemRowValue_(data[i], '系統名稱')) continue;
     var obj = mapSystemRowToObject_(data[i], i + 1);
+    obj['系統建置日期'] = formatSystemBuildDateValue_(buildDateVals[i - 1][0]);
     var level = String(obj['防護需求等級'] || '').trim();
     var needsAssessment = !!level && level !== '套裝軟體' && !isPackageExempt_(obj);
     attachSystemRoleMetadata_(obj, hrDirectory, roleAssignmentMap);

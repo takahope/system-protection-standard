@@ -450,6 +450,9 @@
     .system-modal-tour-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;border:1px solid #cfe0ff;border-radius:999px;background:#fff;color:#174ea6;padding:0 12px;font-size:11px;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 8px 18px rgba(23,78,166,.08)}
     .system-modal-tour-btn:hover{background:#eef6ff;border-color:#b8d2ff}
     .system-modal-tour-btn:focus{outline:2px solid rgba(23,78,166,.22);outline-offset:2px}
+    .system-modal-close-btn{align-self:flex-start;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;flex-shrink:0;border:1px solid #e3ebf6;border-radius:999px;background:#fff;color:#475569;font-size:14px;line-height:1;cursor:pointer;box-shadow:0 8px 18px rgba(23,78,166,.08)}
+    .system-modal-close-btn:hover{background:#f1f5fb;border-color:#cfdcef;color:#0f172a}
+    .system-modal-close-btn:focus{outline:2px solid rgba(23,78,166,.22);outline-offset:2px}
     .system-modal-tour-overlay{position:fixed;inset:0;z-index:2400}
     .system-modal-tour-overlay:not(.is-ready) .system-modal-tour-backdrop,
     .system-modal-tour-overlay:not(.is-ready) .system-modal-tour-highlight,
@@ -1046,6 +1049,7 @@ var ruleAuditLogs = [];
 var ruleLoaded = false;
 var ruleDirty = false;
 var pendingConfirmAction = null;
+var systemModalSnapshot = '';
 var hrEmployeeOptions = [];
 var deploymentMaintainerOptions = [];
 var hrEmployeeLoadState = 'idle';
@@ -4593,11 +4597,12 @@ function openSystemModal(title, currentData, options) {
   html += '<div class="modal-action-left">' + (options.extraActions || '') + '</div>';
   html += renderSystemSubmitProgress();
   html += '<div class="modal-action-right" data-tour="system-modal-actions">';
-  html += '<button id="system-modal-cancel-btn" class="btn btn-outline" onclick="closeModal()">取消</button>';
+  html += '<button id="system-modal-cancel-btn" class="btn btn-outline" onclick="requestCloseSystemModal()">取消</button>';
   html += '<button id="system-modal-submit-btn" class="btn ' + escH(options.submitClass || 'btn-primary') + '" onclick="' + escH(options.submitAction || 'submitAddSystem()') + '">' + escH(options.submitLabel || '儲存') + '</button>';
   html += '</div></div></div></div>';
   document.getElementById('modal-container').innerHTML=html;
   initSystemModalConditionalFields();
+  systemModalSnapshot = serializeSystemModalFields();
   return activeSystemModalRequest;
 }
 
@@ -4843,7 +4848,8 @@ function renderSystemModalHeader(title, currentData) {
   html += '<div class="system-modal-subtitle">先保存已掌握的資訊即可；未完成欄位會持續提醒，方便分次補齊。</div></div>';
   html += '<div class="system-modal-status-group"><button type="button" class="system-modal-tour-btn" onclick="startSystemModalRoleTour(true, activeSystemModalMode)">欄位導覽</button><div class="system-modal-reminder">可隨時更新資料，必填不影響儲存或新增</div>';
   html += '<div class="system-auto-card"><div><label>防護需求等級</label><strong>' + escH(level) + '</strong></div></div>';
-  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div></div></div>';
+  html += '<div class="system-modal-completeness' + (missing.length ? '' : ' ok') + '"><div class="num">' + missing.length + '</div><div class="label">項必填資料待補</div></div>';
+  html += '<button type="button" class="system-modal-close-btn" aria-label="關閉" onclick="requestCloseSystemModal()">✕</button></div></div>';
   html += '<input type="hidden" id="modal-level" value="' + escH(String(currentData && currentData['防護需求等級'] ? currentData['防護需求等級'] : '')) + '">';
   html += '</div>';
   return html;
@@ -4879,7 +4885,8 @@ function renderSystemField(field, currentData) {
   } else if (field.type === 'textarea') {
     html += '<textarea class="' + escH(ui.textareaClass || '') + '" id="modal-'+field.formKey+'"' + placeholder + '>'+escH(String(val))+'</textarea>';
   } else {
-    html += '<input type="'+(field.type==='date'?'date':'text')+'" id="modal-'+field.formKey+'" value="'+escH(String(val))+'"' + placeholder + dynamicAttrs + '>';
+    var inputVal = field.type === 'date' ? normalizeAssessmentDraftDate(val) : String(val);
+    html += '<input type="'+(field.type==='date'?'date':'text')+'" id="modal-'+field.formKey+'" value="'+escH(inputVal)+'"' + placeholder + dynamicAttrs + '>';
   }
   if (ui.helper) html += '<div class="field-help">' + escH(ui.helper) + '</div>';
   html += '</div>';
@@ -4912,7 +4919,7 @@ function renderSystemModal(title, currentData) {
     if (!grouped[group]) grouped[group] = [];
     grouped[group].push(field);
   });
-  var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">';
+  var html = '<div class="modal-overlay"><div class="modal">';
   html += renderSystemModalHeader(title, currentData || {});
   html += '<div class="system-modal-body">';
   groupOrder.forEach(function(groupName) {
@@ -5068,6 +5075,29 @@ function confirmPendingAction() {
   pendingConfirmAction = null;
   closeModal();
   if (typeof action === 'function') action();
+}
+
+// 僅序列化單純欄位（排除非同步載入的 role_assignments / hr_select），供關閉前的未儲存偵測。
+function serializeSystemModalFields() {
+  var fields = getSystemFormFields();
+  var parts = [];
+  fields.forEach(function(f) {
+    if (f.type === 'role_assignments' || f.type === 'hr_select') return;
+    var el = document.getElementById('modal-' + f.formKey);
+    if (!el) return;
+    parts.push(f.formKey + '=' + (f.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value));
+  });
+  return parts.join('\n');
+}
+
+function isSystemModalDirty() {
+  return systemModalSnapshot !== serializeSystemModalFields();
+}
+
+function requestCloseSystemModal() {
+  if (systemModalSubmitting) { showToast('系統資料處理中，請稍候'); return; }
+  if (isSystemModalDirty() && !confirm('此視窗有尚未儲存的內容，確定要關閉並放棄變更嗎？')) return;
+  closeModal(true);
 }
 
 function closeModal(force) {
