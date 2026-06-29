@@ -2588,6 +2588,12 @@ function getAssessment(systemId) {
         note: data[i][12],
         lastUpdate: data[i][13],
         aspect: aspect,
+        devChecked: data[i][14] || '',
+        devDesc: data[i][15] || '',
+        opsChecked: data[i][16] || '',
+        opsDesc: data[i][17] || '',
+        procChecked: data[i][18] || '',
+        procDesc: data[i][19] || '',
         compareChangeType: meta.compareChangeType,
         compareChangeLabel: meta.compareChangeLabel,
         compareChangeColor: meta.compareChangeColor,
@@ -3405,15 +3411,23 @@ function buildAssessmentReportPayload_(systemId) {
   var assessment = getAssessment(systemId);
   if (assessment.length === 0) return {success: false, message: '尚無自評資料'};
 
-  var headers = ['構面','類別','項次','最低要求等級','安全控制措施','面向','符合性','現況說明','佐證資料','矯正作為','目標日期','備註'];
+  var headers = ['構面','類別','項次','最低要求等級','安全控制措施','符合性','現況說明','佐證資料','矯正作為','目標日期','備註','開發面','開發面說明','部署維運面','部署維運面說明','流程面','流程面說明'];
   var prevDim = '', prevCat = '';
   var rows = assessment.map(function(item) {
     var dim = item.dimension !== prevDim ? item.dimension : '';
     var cat = item.category !== prevCat ? item.category : '';
     prevDim = item.dimension; prevCat = item.category;
-    return [dim, cat, item.index, item.level, item.description, item.aspect || '',
+    var expanded = parseAspectToExpandedColumns_(item.aspect || '');
+    var devChecked = item.devChecked !== undefined ? item.devChecked : expanded[0];
+    var devDesc = item.devDesc !== undefined ? item.devDesc : expanded[1];
+    var opsChecked = item.opsChecked !== undefined ? item.opsChecked : expanded[2];
+    var opsDesc = item.opsDesc !== undefined ? item.opsDesc : expanded[3];
+    var procChecked = item.procChecked !== undefined ? item.procChecked : expanded[4];
+    var procDesc = item.procDesc !== undefined ? item.procDesc : expanded[5];
+    return [dim, cat, item.index, item.level, item.description,
       item.compliance || '', item.currentStatus || '', item.evidence || '',
-      item.corrective || '', item.targetDate || '', item.note || ''];
+      item.corrective || '', item.targetDate || '', item.note || '',
+      devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc];
   });
 
   return {
@@ -3454,11 +3468,14 @@ function populateAssessmentReportSheet_(ws, report) {
     ws.getRange(6, 1, rows.length, colCount).setValues(rows);
   }
 
-  // Formatting（欄序：構面/類別/項次/等級/安全控制措施/面向/符合性/現況說明/佐證資料/矯正作為/目標日期/備註）
+  // Formatting（欄序：構面/類別/項次/等級/安全控制措施/符合性/現況說明/佐證資料/矯正作為/目標日期/備註/開發面/開發面說明/部署維運面/部署維運面說明/流程面/流程面說明）
   ws.setColumnWidth(1, 100); ws.setColumnWidth(2, 130); ws.setColumnWidth(3, 40);
-  ws.setColumnWidth(4, 60); ws.setColumnWidth(5, 350); ws.setColumnWidth(6, 160);
-  ws.setColumnWidth(7, 60); ws.setColumnWidth(8, 250); ws.setColumnWidth(9, 150);
-  ws.setColumnWidth(10, 150); ws.setColumnWidth(11, 80); ws.setColumnWidth(12, 80);
+  ws.setColumnWidth(4, 60); ws.setColumnWidth(5, 350);
+  ws.setColumnWidth(6, 60); ws.setColumnWidth(7, 250); ws.setColumnWidth(8, 150); // 符合性, 現況說明, 佐證資料
+  ws.setColumnWidth(9, 150); ws.setColumnWidth(10, 80); ws.setColumnWidth(11, 80); // 矯正作為, 目標日期, 備註
+  ws.setColumnWidth(12, 60); ws.setColumnWidth(13, 180); // 開發面, 開發面說明
+  ws.setColumnWidth(14, 80); ws.setColumnWidth(15, 180); // 部署維運面, 部署維運面說明
+  ws.setColumnWidth(16, 60); ws.setColumnWidth(17, 180); // 流程面, 流程面說明
 
   // Color applicable/not-applicable rows
   for (var i = 0; i < assessment.length; i++) {
