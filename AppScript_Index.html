@@ -278,6 +278,16 @@
     .assess-status-chip{padding:6px 11px;border:1px solid #d1d9e6;border-radius:999px;font-size:12px;background:#fff;color:var(--text2);cursor:pointer;font-weight:600;transition:border-color .15s,background .15s,color .15s}
     .assess-status-chip:hover{border-color:#9dbcf0}
     .assess-status-chip.active{background:#e8f1ff;border-color:#9dbcf0;color:#174ea6}
+    .assess-aspect-filter{display:inline-flex;gap:6px;flex-wrap:wrap}
+    .assess-aspect-filter-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border:1px solid #d1d9e6;border-radius:999px;font-size:12px;font-weight:600;background:#fff;color:var(--text2);cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+    .assess-aspect-filter-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:#cbd5e1}
+    .assess-aspect-filter-chip:hover{border-color:#9dbcf0}
+    .assess-aspect-filter-chip.aspect-dev::before{background:#2563eb}
+    .assess-aspect-filter-chip.aspect-ops::before{background:#0f766e}
+    .assess-aspect-filter-chip.aspect-proc::before{background:#d97706}
+    .assess-aspect-filter-chip.aspect-dev.active{background:#e8f0fe;border-color:#bfd4fe;color:#1d4ed8}
+    .assess-aspect-filter-chip.aspect-ops.active{background:#d8f0ec;border-color:#a7ddd4;color:#0f766e}
+    .assess-aspect-filter-chip.aspect-proc.active{background:#fdf0d5;border-color:#f5d9a0;color:#b45309}
     .assess-legend{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
     .assess-legend-item{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #d9e2ec;background:#fff;font-size:11px;color:#334155;font-weight:600}
     .assess-legend-swatch{width:12px;height:12px;border-radius:999px;border:1px solid rgba(15,23,42,.12)}
@@ -329,6 +339,10 @@
     .assess-aspect-detail-input{flex:1;min-width:0;border:1px solid #d1d9e6;border-radius:9px;padding:6px 9px;font-size:11px;font-family:inherit;line-height:1.5;color:#111827;background:#fff;min-height:34px;resize:vertical}
     .assess-aspect-detail-input:focus{outline:none;border-color:#7aa7e0;box-shadow:0 0 0 2px rgba(122,167,224,.18)}
     .assess-table tr.dirty .assess-aspect-detail-input{border-color:#e8b86f;background:#fffefb}
+    .assess-aspect-detail.is-off,.assess-aspect-detail-ro.is-off{opacity:.62}
+    .assess-aspect-detail.is-off .assess-aspect-detail-input{background:#f8fafc;border-style:dashed;color:#64748b}
+    .assess-aspect-detail.is-off .assess-aspect-dot,.assess-aspect-detail-ro.is-off .assess-aspect-dot{opacity:.5}
+    .assess-aspect-off-tag{flex:0 0 auto;align-self:center;font-size:9px;font-weight:700;font-style:normal;color:#94a3b8;background:#f1f5f9;border-radius:5px;padding:1px 5px;white-space:nowrap}
     .assess-status-select{width:100%;border:1px solid #d1d9e6;border-radius:10px;padding:8px 10px;font-size:12px;background:#fff}
     .assess-workgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .assess-subfield{display:grid;gap:6px;padding:10px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fbff;min-width:0;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
@@ -973,6 +987,13 @@
                   <button type="button" class="assess-status-chip" data-status="部分符合" aria-pressed="false" onclick="toggleStatusChip(this)">部分符合</button>
                   <button type="button" class="assess-status-chip" data-status="不符合" aria-pressed="false" onclick="toggleStatusChip(this)">不符合</button>
                   <button type="button" class="assess-status-chip" data-status="不適用" aria-pressed="false" onclick="toggleStatusChip(this)">不適用</button>
+                </span>
+              </label>
+              <label>篩選面向：
+                <span class="assess-aspect-filter" role="group" aria-label="篩選面向">
+                  <button type="button" class="assess-aspect-filter-chip aspect-dev" data-aspect="開發面" aria-pressed="false" onclick="toggleStatusChip(this)">開發面</button>
+                  <button type="button" class="assess-aspect-filter-chip aspect-ops" data-aspect="部署維運面" aria-pressed="false" onclick="toggleStatusChip(this)">部署維運面</button>
+                  <button type="button" class="assess-aspect-filter-chip aspect-proc" data-aspect="流程面" aria-pressed="false" onclick="toggleStatusChip(this)">流程面</button>
                 </span>
               </label>
               <label><input type="checkbox" id="filter-applicable" onchange="applyFilters()" checked> 只顯示應評項目</label>
@@ -3082,13 +3103,15 @@ function parseAssessmentAspect(raw) {
 }
 
 // 由 { selected, details } 重新序列化成儲存格文字（固定面向順序，確保比對穩定）。
+// 注意：細項說明「不論該面向是否被勾選」都會保留輸出，直到使用者手動清空，
+// 避免取消勾選即遺失已填寫的說明內容。
 function serializeAssessmentAspect(selected, details) {
-  var ordered = ASSESSMENT_ASPECT_OPTIONS.filter(function(a) {
+  var selOrdered = ASSESSMENT_ASPECT_OPTIONS.filter(function(a) {
     return selected.indexOf(a) !== -1;
   });
-  if (!ordered.length) return '';
-  var lines = ['面向：' + ordered.join('＋')];
-  ordered.forEach(function(a) {
+  var lines = [];
+  if (selOrdered.length) lines.push('面向：' + selOrdered.join('＋'));
+  ASSESSMENT_ASPECT_OPTIONS.forEach(function(a) {
     var detail = normalizeAssessmentDraftValue(details ? details[a] : '').replace(/^\s+|\s+$/g, '');
     if (detail) lines.push(a + '：' + detail);
   });
@@ -3121,14 +3144,19 @@ function renderAssessmentAspectInner(item, readOnly) {
     });
   }
   html += '</div></div>';
-  if (selected.length) {
+  // 顯示說明框的面向 = 已勾選 ∪ 已有說明內容（讓取消勾選後仍可看到/編輯/清空既有說明）
+  var detailAspects = ASSESSMENT_ASPECT_OPTIONS.filter(function(a) {
+    return selected.indexOf(a) !== -1 || (details[a] && details[a].length);
+  });
+  if (detailAspects.length) {
     var detailHtml = '';
-    selected.forEach(function(a) {
+    detailAspects.forEach(function(a) {
       var d = details[a] || '';
+      var off = selected.indexOf(a) === -1;
       if (readOnly) {
-        if (d) detailHtml += '<div class="assess-aspect-detail-ro"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><span class="assess-aspect-detail-text"><strong>' + escH(a) + '</strong>：' + escH(d) + '</span></div>';
+        if (d) detailHtml += '<div class="assess-aspect-detail-ro' + (off ? ' is-off' : '') + '"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><span class="assess-aspect-detail-text"><strong>' + escH(a) + '</strong>：' + escH(d) + (off ? ' <em class="assess-aspect-off-tag">（未勾選）</em>' : '') + '</span></div>';
       } else {
-        detailHtml += '<div class="assess-aspect-detail"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><textarea class="assess-aspect-detail-input" data-aspect="' + escH(a) + '" placeholder="' + escH(a) + ' 細項說明（選填）" oninput="handleAssessmentAspectDetailInput(this)" onchange="handleAssessmentAspectDetailInput(this)">' + escH(d) + '</textarea></div>';
+        detailHtml += '<div class="assess-aspect-detail' + (off ? ' is-off' : '') + '"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><textarea class="assess-aspect-detail-input" data-aspect="' + escH(a) + '" placeholder="' + escH(a) + ' 細項說明（選填）" oninput="handleAssessmentAspectDetailInput(this)" onchange="handleAssessmentAspectDetailInput(this)">' + escH(d) + '</textarea>' + (off ? '<span class="assess-aspect-off-tag" title="此面向未勾選，但說明內容會保留">未勾選</span>' : '') + '</div>';
       }
     });
     if (detailHtml) html += '<div class="assess-aspect-details">' + detailHtml + '</div>';
@@ -3346,6 +3374,7 @@ function renderAssessmentRows(items) {
   var readOnly = !canEditCurrentSystem();
   var filterDim=document.getElementById('filter-dim').value;
   var filterStatuses=getSelectedStatusFilters();
+  var filterAspects=getSelectedAspectFilters();
   var filterApplicable=document.getElementById('filter-applicable').checked;
   var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
 
@@ -3363,6 +3392,11 @@ function renderAssessmentRows(items) {
         return item.compliance===s;
       });
       if(!matched) return;
+    }
+    if(filterAspects.length){
+      var itemAspects=parseAssessmentAspect(item.aspect).selected;
+      var aspectHit=filterAspects.some(function(a){ return itemAspects.indexOf(a)!==-1; });
+      if(!aspectHit) return;
     }
 
     var rowClass=applicable?'applicable':'not-applicable';
@@ -3436,6 +3470,10 @@ function handleAssessmentComplianceChange(el) {
 function getSelectedStatusFilters() {
   var chips=document.querySelectorAll('.assess-status-chip.active');
   return Array.prototype.map.call(chips, function(c){ return c.getAttribute('data-status'); });
+}
+function getSelectedAspectFilters() {
+  var chips=document.querySelectorAll('.assess-aspect-filter-chip.active');
+  return Array.prototype.map.call(chips, function(c){ return c.getAttribute('data-aspect'); });
 }
 function toggleStatusChip(btn) {
   var active=!btn.classList.contains('active');
