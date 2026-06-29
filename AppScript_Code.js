@@ -1550,7 +1550,8 @@ function initializeSheetsCore_() {
     var assessHeaders = [
       '系統ID', '系統名稱', '項次', '構面', '類別', '最低要求等級',
       '安全控制措施', '符合性', '現況說明', '佐證資料',
-      '矯正作為', '目標日期', '備註', '最後更新時間', '面向'
+      '矯正作為', '目標日期', '備註', '最後更新時間',
+      '開發面', '開發面說明', '部署維運面', '部署維運面說明', '流程面', '流程面說明'
     ];
     assessSheet.getRange(1, 1, 1, assessHeaders.length).setValues([assessHeaders]);
     assessSheet.getRange(1, 1, 1, assessHeaders.length).setFontWeight('bold');
@@ -2408,32 +2409,147 @@ function getControlMeasureAspectMap_() {
   return map;
 }
 
-// 確保「防護基準自評」表含「面向」欄。
-// 既有部署缺欄時，於最後補上「面向」欄並依項次回填 seed 預設值（僅在首次建欄時回填，
-// 不覆寫使用者既有資料，避免被刻意清空的面向又被預設值復活）。
-function ensureAssessmentAspectColumn_() {
+// 將面向字串（如 "面向：開發面＋流程面\n開發面：…\n流程面：…"）解析為 6 欄展開值。
+// 回傳 [devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc]
+function parseAspectToExpandedColumns_(aspectText) {
+  var text = String(aspectText || '');
+  var devChecked = '', devDesc = '', opsChecked = '', opsDesc = '', procChecked = '', procDesc = '';
+  if (!text) return [devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc];
+
+  var lines = text.split(/\r?\n/);
+  var selected = [];
+  var details = {};
+  lines.forEach(function(line) {
+    var trimmed = line.replace(/^\s+|\s+$/g, '');
+    if (!trimmed) return;
+    var m = trimmed.match(/^面向[：:](.*)$/);
+    if (m) {
+      m[1].split(/[＋+]/).forEach(function(name) {
+        var n = name.replace(/^\s+|\s+$/g, '');
+        if (n) selected.push(n);
+      });
+      return;
+    }
+    var dm = trimmed.match(/^([^：:]+)[：:](.*)$/);
+    if (dm) {
+      var key = dm[1].replace(/^\s+|\s+$/g, '');
+      details[key] = dm[2].replace(/^\s+|\s+$/g, '');
+    }
+  });
+
+  if (selected.indexOf('開發面') !== -1) devChecked = 'V';
+  devDesc = details['開發面'] || '';
+  if (selected.indexOf('部署維運面') !== -1) opsChecked = 'V';
+  opsDesc = details['部署維運面'] || '';
+  if (selected.indexOf('流程面') !== -1) procChecked = 'V';
+  procDesc = details['流程面'] || '';
+
+  return [devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc];
+}
+
+// 將 6 欄展開值還原為前端相容的面向字串。
+// 引數：devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc
+function expandedColumnsToAspectText_(devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc) {
+  var ASPECT_OPTIONS = ['開發面', '部署維運面', '流程面'];
+  var checkedMap = {'開發面': devChecked === 'V', '部署維運面': opsChecked === 'V', '流程面': procChecked === 'V'};
+  var detailMap = {'開發面': devDesc || '', '部署維運面': opsDesc || '', '流程面': procDesc || ''};
+
+  var selOrdered = ASPECT_OPTIONS.filter(function(a) { return checkedMap[a]; });
+  var lines = [];
+  if (selOrdered.length) lines.push('面向：' + selOrdered.join('＋'));
+  ASPECT_OPTIONS.forEach(function(a) {
+    var detail = String(detailMap[a] || '').replace(/^\s+|\s+$/g, '');
+    if (detail) lines.push(a + '：' + detail);
+  });
+  return lines.join('\n');
+}
+
+// 確保「防護基準自評」表使用展開的 6 欄面向格式。
+// 若偵測到舊版單一「面向」欄，自動遷移為展開格式。
+function ensureAssessmentExpandedColumns_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) return;
   var lastCol = sheet.getLastColumn();
   if (lastCol < 1) return;
   var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  // 檢查是否已為新版展開格式（第 15 欄為「開發面」）
+  if (headers.length >= 20 && String(headers[14]).trim() === '開發面') return;
+
+  // 尋找舊版「面向」欄位置
   var aspectCol = -1;
   for (var c = 0; c < headers.length; c++) {
     if (String(headers[c]).trim() === '面向') { aspectCol = c + 1; break; }
   }
-  if (aspectCol !== -1) return; // 已有面向欄，不動既有資料
-  aspectCol = lastCol + 1;
-  sheet.getRange(1, aspectCol).setValue('面向');
+
+  if (aspectCol === -1) {
+    // 既無舊版也無新版 → 直接補上 6 個新欄位標頭
+    var startCol = lastCol + 1;
+    var newHeaders = ['開發面', '開發面說明', '部署維運面', '部署維運面說明', '流程面', '流程面說明'];
+    sheet.getRange(1, startCol, 1, 6).setValues([newHeaders]);
+    SpreadsheetApp.flush();
+    return;
+  }
+
+  // 舊版「面向」欄存在 → 執行遷移
+  migrateAspectColumnToExpanded_(sheet, aspectCol);
+}
+
+// 內部遷移：將舊版單一「面向」欄拆解為 6 欄展開格式。
+function migrateAspectColumnToExpanded_(sheet, aspectCol) {
   var lastRow = sheet.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.flush(); return; }
-  var aspectMap = getControlMeasureAspectMap_();
-  var indexValues = sheet.getRange(2, 3, lastRow - 1, 1).getValues(); // 項次欄（第 3 欄）
-  var fill = indexValues.map(function(r) {
-    return [aspectMap[String(r[0]).trim()] || ''];
-  });
-  sheet.getRange(2, aspectCol, fill.length, 1).setValues(fill);
+
+  // 讀取舊面向資料
+  var aspectData = [];
+  if (lastRow >= 2) {
+    aspectData = sheet.getRange(2, aspectCol, lastRow - 1, 1).getDisplayValues();
+  }
+
+  // 在「面向」欄之後插入 5 個新欄位（面向欄本身會變成「開發面」）
+  sheet.insertColumnsAfter(aspectCol, 5);
+
+  // 設定新標頭
+  var newHeaders = ['開發面', '開發面說明', '部署維運面', '部署維運面說明', '流程面', '流程面說明'];
+  sheet.getRange(1, aspectCol, 1, 6).setValues([newHeaders]);
+
+  // 逐列解析舊文字並寫入展開欄位
+  if (aspectData.length > 0) {
+    var expandedRows = aspectData.map(function(row) {
+      return parseAspectToExpandedColumns_(row[0]);
+    });
+    sheet.getRange(2, aspectCol, expandedRows.length, 6).setValues(expandedRows);
+  }
+
   SpreadsheetApp.flush();
+}
+
+// 對外公開的遷移函式：可從 Apps Script 編輯器手動執行。
+// 掃描「防護基準自評」表，若為舊版單一「面向」欄格式，自動遷移為 6 欄展開格式。
+function migrateAssessmentAspectColumns() {
+  assertRuleAdmin_();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('防護基準自評');
+  if (!sheet) return '找不到「防護基準自評」工作表';
+
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) return '工作表無資料';
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  // 已為新版格式
+  if (headers.length >= 20 && String(headers[14]).trim() === '開發面') {
+    return '已為展開格式，無需遷移';
+  }
+
+  // 尋找舊版「面向」欄
+  var aspectCol = -1;
+  for (var c = 0; c < headers.length; c++) {
+    if (String(headers[c]).trim() === '面向') { aspectCol = c + 1; break; }
+  }
+  if (aspectCol === -1) return '找不到舊版「面向」欄，無法遷移';
+
+  migrateAspectColumnToExpanded_(sheet, aspectCol);
+  return '遷移完成：已將第 ' + aspectCol + ' 欄的面向資料展開為 6 個欄位';
 }
 
 function getAssessment(systemId) {
@@ -2441,7 +2557,7 @@ function getAssessment(systemId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) return [];
-  ensureAssessmentAspectColumn_();
+  ensureAssessmentExpandedColumns_();
 
   var exampleMap = getControlMeasureExampleMap_();
   var data = sheet.getDataRange().getDisplayValues();
@@ -2450,6 +2566,12 @@ function getAssessment(systemId) {
     if (data[i][0] == systemId) {
       var meta = getAssessmentCompareChangeMeta_(data[i][2]);
       var examples = exampleMap[String(data[i][2] || '').trim()] || {};
+      // 從 6 欄展開格式組裝前端相容的 aspect 字串
+      var aspect = expandedColumnsToAspectText_(
+        data[i][14] || '', data[i][15] || '',
+        data[i][16] || '', data[i][17] || '',
+        data[i][18] || '', data[i][19] || ''
+      );
       results.push({
         systemId: data[i][0],
         systemName: data[i][1],
@@ -2465,7 +2587,7 @@ function getAssessment(systemId) {
         targetDate: data[i][11],
         note: data[i][12],
         lastUpdate: data[i][13],
-        aspect: data[i][14] || '',
+        aspect: aspect,
         compareChangeType: meta.compareChangeType,
         compareChangeLabel: meta.compareChangeLabel,
         compareChangeColor: meta.compareChangeColor,
@@ -2494,14 +2616,18 @@ function saveAssessmentItem_(item) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
-  ensureAssessmentAspectColumn_();
+  ensureAssessmentExpandedColumns_();
+
+  // 將前端傳來的 aspect 字串拆解為 6 欄展開值
+  var expanded = parseAspectToExpandedColumns_(item.aspect || '');
 
   var row = [
     item.systemId, item.systemName, item.index, item.dimension,
     item.category, item.level, item.description, item.compliance || '',
     item.currentStatus || '', item.evidence || '', item.corrective || '',
     item.targetDate || '', item.note || '',
-    new Date().toLocaleString('zh-TW'), item.aspect || ''
+    new Date().toLocaleString('zh-TW'),
+    expanded[0], expanded[1], expanded[2], expanded[3], expanded[4], expanded[5]
   ];
 
   if (item._row) {
@@ -2857,18 +2983,20 @@ function batchSaveAssessment(items) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
-  ensureAssessmentAspectColumn_();
+  ensureAssessmentExpandedColumns_();
 
   var data = sheet.getDataRange().getValues();
   var now = new Date().toLocaleString('zh-TW');
   var updated = 0;
 
   items.forEach(function(item) {
+    var expanded = parseAspectToExpandedColumns_(item.aspect || '');
     var row = [
       item.systemId, item.systemName, item.index, item.dimension,
       item.category, item.level, item.description, item.compliance || '',
       item.currentStatus || '', item.evidence || '', item.corrective || '',
-      item.targetDate || '', item.note || '', now, item.aspect || ''
+      item.targetDate || '', item.note || '', now,
+      expanded[0], expanded[1], expanded[2], expanded[3], expanded[4], expanded[5]
     ];
 
     // Find existing row
