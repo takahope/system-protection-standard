@@ -1550,7 +1550,7 @@ function initializeSheetsCore_() {
     var assessHeaders = [
       '系統ID', '系統名稱', '項次', '構面', '類別', '最低要求等級',
       '安全控制措施', '符合性', '現況說明', '佐證資料',
-      '矯正作為', '目標日期', '備註', '最後更新時間'
+      '矯正作為', '目標日期', '備註', '最後更新時間', '面向'
     ];
     assessSheet.getRange(1, 1, 1, assessHeaders.length).setValues([assessHeaders]);
     assessSheet.getRange(1, 1, 1, assessHeaders.length).setFontWeight('bold');
@@ -2011,86 +2011,86 @@ function updateSystemLevel_(systemId, level) {
 function getControlMeasures() {
   assertPageAccess_();
   return [
-    {index:1, dimension:"存取控制", category:"帳號管理", level:"普", description:"建立帳號管理機制，包含帳號之申請、建立、修改、啟用、停用及刪除之程序。"},
-    {index:2, dimension:"存取控制", category:"帳號管理", level:"普", description:"已逾期之臨時或緊急帳號應刪除或禁用。"},
-    {index:3, dimension:"存取控制", category:"帳號管理", level:"普", description:"資通系統閒置帳號應禁用。"},
-    {index:4, dimension:"存取控制", category:"帳號管理", level:"普", description:"定期審核資通系統帳號之申請、建立、修改、啟用、停用及刪除。"},
-    {index:5, dimension:"存取控制", category:"帳號管理", level:"中", description:"機關應定義各系統之閒置時間或可使用期限與資通系統之使用情況及條件。"},
-    {index:6, dimension:"存取控制", category:"帳號管理", level:"中", description:"逾越機關所許可之閒置時間或可使用期限時，系統應自動將使用者登出。"},
-    {index:7, dimension:"存取控制", category:"帳號管理", level:"高", description:"應依機關規定之情況及條件，使用資通系統。"},
-    {index:8, dimension:"存取控制", category:"帳號管理", level:"高", description:"監控資通系統帳號，如發現帳號違常使用時，回報管理者。"},
-    {index:9, dimension:"存取控制", category:"最小權限", level:"普", description:"採最小權限原則，僅允許使用者（或代表使用者行為之程序）依機關任務及業務功能，完成指派任務所需之授權存取。"},
-    {index:10, dimension:"存取控制", category:"遠端存取", level:"普", description:"對於每一種允許之遠端存取類型，均應先取得授權，建立使用限制、組態需求、連線需求及文件化。"},
-    {index:11, dimension:"存取控制", category:"遠端存取", level:"普", description:"使用者之權限檢查作業應於伺服器端完成。"},
-    {index:12, dimension:"存取控制", category:"遠端存取", level:"普", description:"應監控遠端存取機關內部網段或資通系統後臺之連線。"},
-    {index:13, dimension:"存取控制", category:"遠端存取", level:"普", description:"應採用加密機制。"},
-    {index:14, dimension:"存取控制", category:"遠端存取", level:"普", description:"遠端存取之來源應為機關已預先定義及管理之存取控制點。"},
-    {index:15, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"訂定日誌之記錄時間週期及留存政策，並保留日誌至少六個月。"},
-    {index:16, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"確保資通系統有記錄特定事件之功能，並決定應記錄之特定資通系統事件。"},
-    {index:17, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"應記錄資通系統管理者帳號所執行之各項功能。"},
-    {index:18, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"中", description:"應定期審查機關所保留資通系統產生之日誌。"},
-    {index:19, dimension:"事件日誌與可歸責性", category:"日誌紀錄內容", level:"普", description:"資通系統產生之日誌應包含事件類型、發生時間、發生位置及任何與事件相關之使用者身分識別等資訊，採用單一日誌機制，確保輸出格式之一致性。"},
-    {index:20, dimension:"事件日誌與可歸責性", category:"日誌儲存容量", level:"普", description:"依據日誌儲存需求，配置所需之儲存容量。"},
-    {index:21, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"普", description:"資通系統於日誌處理失效時，應採取適當之行動。"},
-    {index:22, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"高", description:"機關規定需要即時通報之日誌處理失效事件發生時，資通系統應於機關規定之時效內，對特定人員提出警告。"},
-    {index:23, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"資通系統應使用系統內部時鐘產生日誌所需時戳，並可以對應到世界協調時間（UTC）或格林威治標準時間（GMT）。"},
-    {index:24, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"系統內部時鐘應定期與基準時間源進行同步。"},
-    {index:25, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"普", description:"對日誌之存取管理，僅限於有權限之使用者。"},
-    {index:26, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"中", description:"應運用雜湊或其他適當方式之完整性確保機制。"},
-    {index:27, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"高", description:"定期備份日誌至原系統外之其他實體系統。"},
-    {index:28, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"訂定資料可容忍損失之時間要求。"},
-    {index:29, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"執行資料備份。"},
-    {index:30, dimension:"營運持續計畫", category:"資料備份", level:"中", description:"應定期測試備份資料，以驗證備份媒體之可靠性及資訊之完整性。"},
-    {index:31, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應將備份還原，作為營運持續計畫演練之一部分。"},
-    {index:32, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應建立資料異地備份機制。"},
-    {index:33, dimension:"營運持續計畫", category:"系統備援", level:"普", description:"訂定資通系統從中斷後至重新恢復服務之最大可容忍中斷時間要求。"},
-    {index:34, dimension:"營運持續計畫", category:"系統備援", level:"中", description:"應定期測試原服務中斷時，於最大可容忍中斷時間內，由備援設備或其他方式取代並提供服務。"},
-    {index:35, dimension:"營運持續計畫", category:"系統備援", level:"高", description:"應將備援啟動作為營運持續計畫演練之一部分。"},
-    {index:36, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"普", description:"資通系統應識別及鑑別使用者，並禁止使用者使用共用帳號。"},
-    {index:37, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"高", description:"對資通系統之存取採取多因子鑑別技術。"},
-    {index:38, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用預設密碼初次登入系統時，應於登入後立即變更。"},
-    {index:39, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"身分驗證相關資訊不以明文傳輸。"},
-    {index:40, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"具備帳戶鎖定機制，帳號登入進行身分驗證失敗達五次後，至少十五分鐘內不允許該帳號繼續嘗試登入或使用機關自建之失敗驗證機制。"},
-    {index:41, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用密碼進行驗證時，應強制最低密碼複雜度；依機關密碼效期規定變更密碼。"},
-    {index:42, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"密碼變更時，至少不可以與前三次使用過之密碼相同。"},
-    {index:43, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"第四點及第五點所定措施，對外部使用者，機關得自行規範辦理。"},
-    {index:44, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"身分驗證機制應防範自動化程式之登入或密碼更換嘗試。"},
-    {index:45, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"密碼重設機制對使用者重新身分確認後，發送一次性及具有時效性符記。"},
-    {index:46, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"普", description:"資通系統應遮蔽鑑別過程中之資訊。"},
-    {index:47, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"中", description:"資通系統如以密碼進行鑑別時，該密碼應經雜湊或其他適當方式處理後儲存。"},
-    {index:48, dimension:"系統與服務獲得", category:"系統發展生命週期需求階段", level:"普", description:"針對系統安全需求（含機密性、可用性、完整性）進行確認。"},
-    {index:49, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"根據系統功能與要求，識別可能影響系統之威脅，進行風險分析及評估。"},
-    {index:50, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"將風險評估結果回饋需求階段之檢核項目，並提出安全需求修正。"},
-    {index:51, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"應針對安全需求實作必要控制措施。"},
-    {index:52, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"應注意避免軟體常見漏洞及實作必要控制措施。"},
-    {index:53, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"發生錯誤時，使用者頁面僅顯示簡短錯誤訊息及代碼，不包含詳細之錯誤訊息。"},
-    {index:54, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"執行「源碼掃描」安全檢測。"},
-    {index:55, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"系統應具備發生嚴重錯誤時之通知機制。"},
-    {index:56, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"普", description:"執行「弱點掃描」安全檢測。"},
-    {index:57, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"高", description:"執行「滲透測試」安全檢測。"},
-    {index:58, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"於部署環境中應針對相關資通安全威脅，進行更新與修補。"},
-    {index:59, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"識別並關閉不必要服務及埠口。"},
-    {index:60, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"資通系統不使用預設密碼。"},
-    {index:61, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"執行系統源碼備份。"},
-    {index:62, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"中", description:"於系統發展生命週期之維運階段，應執行版本控制與變更管理。"},
-    {index:63, dimension:"系統與服務獲得", category:"系統發展生命週期委外階段", level:"普", description:"資通系統開發如委外辦理，應將系統發展生命週期各階段依等級將安全需求（含機密性、可用性、完整性）納入委外契約。"},
-    {index:64, dimension:"系統與服務獲得", category:"獲得程序", level:"普", description:"識別資通系統使用之第三方軟體、服務、函式庫或其他元件。"},
-    {index:65, dimension:"系統與服務獲得", category:"獲得程序", level:"中", description:"開發、測試及正式作業環境應為區隔。"},
-    {index:66, dimension:"系統與服務獲得", category:"系統文件", level:"普", description:"應儲存與管理系統發展生命週期之相關文件。"},
-    {index:67, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"資通系統應採用加密機制，以防止未授權之資訊揭露或偵測資訊之變更。"},
-    {index:68, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"使用公開、國際機構驗證且未遭破解之演算法。"},
-    {index:69, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"加密金鑰或憑證應定期更換。"},
-    {index:70, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"伺服器端之金鑰保管應訂定管理規範及實施應有之安全防護措施。"},
-    {index:71, dimension:"系統與通訊保護", category:"資料儲存之安全", level:"高", description:"資通系統重要組態設定檔案及其他具保護需求之資訊應加密或以其他適當方式儲存。"},
-    {index:72, dimension:"系統與資訊完整性", category:"漏洞修復", level:"普", description:"系統之漏洞修復應測試有效性及潛在影響，並定期更新。"},
-    {index:73, dimension:"系統與資訊完整性", category:"漏洞修復", level:"中", description:"定期確認資通系統相關漏洞修復之狀態。"},
-    {index:74, dimension:"系統與資訊完整性", category:"資通系統監控", level:"普", description:"發現資通系統有被入侵跡象時，應通報機關特定人員。"},
-    {index:75, dimension:"系統與資訊完整性", category:"資通系統監控", level:"中", description:"監控資通系統，以偵測攻擊與未授權之連線，並識別資通系統之未授權使用。"},
-    {index:76, dimension:"系統與資訊完整性", category:"資通系統監控", level:"高", description:"資通系統應採用自動化工具監控進出之通信流量，並於發現不尋常或未授權之活動時，針對該事件進行分析。"},
-    {index:77, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"普", description:"使用者輸入資料合法性檢查應置放於應用系統伺服器端。"},
-    {index:78, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"使用完整性驗證工具，以偵測未授權變更特定軟體及資訊。"},
-    {index:79, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"發現違反完整性時，資通系統應實施機關指定之安全保護措施。"},
-    {index:80, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"高", description:"應定期執行軟體與資訊完整性檢查。"}
+    {index:1, dimension:"存取控制", category:"帳號管理", level:"普", description:"建立帳號管理機制，包含帳號之申請、建立、修改、啟用、停用及刪除之程序。", aspect:"面向：開發面＋流程面\n開發面：實作帳號 CRUD 與啟用/停用狀態\n流程面：訂定帳號申請/核准/刪除程序"},
+    {index:2, dimension:"存取控制", category:"帳號管理", level:"普", description:"已逾期之臨時或緊急帳號應刪除或禁用。", aspect:"面向：開發面＋流程面\n開發面：到期欄位與自動禁用邏輯\n流程面：臨時帳號核發與清查作業"},
+    {index:3, dimension:"存取控制", category:"帳號管理", level:"普", description:"資通系統閒置帳號應禁用。", aspect:"面向：開發面"},
+    {index:4, dimension:"存取控制", category:"帳號管理", level:"普", description:"定期審核資通系統帳號之申請、建立、修改、啟用、停用及刪除。", aspect:"面向：開發面＋流程面\n開發面：產生帳號異動稽核日誌\n流程面：定期審核帳號異動並留記錄"},
+    {index:5, dimension:"存取控制", category:"帳號管理", level:"中", description:"機關應定義各系統之閒置時間或可使用期限與資通系統之使用情況及條件。", aspect:"面向：開發面＋流程面\n開發面：實作 session timeout 設定\n流程面：機關定義閒置時間/可使用期限政策"},
+    {index:6, dimension:"存取控制", category:"帳號管理", level:"中", description:"逾越機關所許可之閒置時間或可使用期限時，系統應自動將使用者登出。", aspect:"面向：開發面"},
+    {index:7, dimension:"存取控制", category:"帳號管理", level:"高", description:"應依機關規定之情況及條件，使用資通系統。", aspect:"面向：開發面＋流程面\n開發面：實作條件式存取控制\n流程面：訂定系統使用情況與條件規範"},
+    {index:8, dimension:"存取控制", category:"帳號管理", level:"高", description:"監控資通系統帳號，如發現帳號違常使用時，回報管理者。", aspect:"面向：開發面＋部署維運面\n開發面：實作違常偵測與告警觸發\n部署維運面：設定通報管道/監控整合"},
+    {index:9, dimension:"存取控制", category:"最小權限", level:"普", description:"採最小權限原則，僅允許使用者（或代表使用者行為之程序）依機關任務及業務功能，完成指派任務所需之授權存取。", aspect:"面向：開發面"},
+    {index:10, dimension:"存取控制", category:"遠端存取", level:"普", description:"對於每一種允許之遠端存取類型，均應先取得授權，建立使用限制、組態需求、連線需求及文件化。", aspect:"面向：開發面＋流程面\n開發面：管理端點存取限制\n流程面：遠端存取授權核准與文件化"},
+    {index:11, dimension:"存取控制", category:"遠端存取", level:"普", description:"使用者之權限檢查作業應於伺服器端完成。", aspect:"面向：開發面"},
+    {index:12, dimension:"存取控制", category:"遠端存取", level:"普", description:"應監控遠端存取機關內部網段或資通系統後臺之連線。", aspect:"面向：開發面＋部署維運面\n開發面：記錄後台存取日誌\n部署維運面：監控遠端/後台連線"},
+    {index:13, dimension:"存取控制", category:"遠端存取", level:"普", description:"應採用加密機制。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制 HTTPS/HSTS\n部署維運面：安裝設定 TLS 憑證"},
+    {index:14, dimension:"存取控制", category:"遠端存取", level:"普", description:"遠端存取之來源應為機關已預先定義及管理之存取控制點。", aspect:"面向：開發面＋部署維運面\n開發面：實作來源檢查\n部署維運面：設定 IP allowlist/跳板/閘道"},
+    {index:15, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"訂定日誌之記錄時間週期及留存政策，並保留日誌至少六個月。", aspect:"面向：部署維運面＋流程面\n部署維運面：設定日誌留存/輪替與容量\n流程面：訂定日誌留存政策（≥6 個月）"},
+    {index:16, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"確保資通系統有記錄特定事件之功能，並決定應記錄之特定資通系統事件。", aspect:"面向：開發面＋流程面\n開發面：應用程式產生事件日誌\n流程面：決定應記錄之特定事件"},
+    {index:17, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"應記錄資通系統管理者帳號所執行之各項功能。", aspect:"面向：開發面"},
+    {index:18, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"中", description:"應定期審查機關所保留資通系統產生之日誌。", aspect:"面向：開發面＋流程面\n開發面：提供日誌彙整/查詢介面\n流程面：定期審查日誌並留記錄"},
+    {index:19, dimension:"事件日誌與可歸責性", category:"日誌紀錄內容", level:"普", description:"資通系統產生之日誌應包含事件類型、發生時間、發生位置及任何與事件相關之使用者身分識別等資訊，採用單一日誌機制，確保輸出格式之一致性。", aspect:"面向：開發面"},
+    {index:20, dimension:"事件日誌與可歸責性", category:"日誌儲存容量", level:"普", description:"依據日誌儲存需求，配置所需之儲存容量。", aspect:"面向：部署維運面"},
+    {index:21, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"普", description:"資通系統於日誌處理失效時，應採取適當之行動。", aspect:"面向：開發面"},
+    {index:22, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"高", description:"機關規定需要即時通報之日誌處理失效事件發生時，資通系統應於機關規定之時效內，對特定人員提出警告。", aspect:"面向：開發面＋部署維運面\n開發面：偵測日誌處理失效並觸發警告\n部署維運面：設定即時通報管道與時效"},
+    {index:23, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"資通系統應使用系統內部時鐘產生日誌所需時戳，並可以對應到世界協調時間（UTC）或格林威治標準時間（GMT）。", aspect:"面向：開發面"},
+    {index:24, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"系統內部時鐘應定期與基準時間源進行同步。", aspect:"面向：部署維運面"},
+    {index:25, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"普", description:"對日誌之存取管理，僅限於有權限之使用者。", aspect:"面向：開發面＋部署維運面\n開發面：日誌查詢介面授權控管\n部署維運面：日誌檔案系統權限設定"},
+    {index:26, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"中", description:"應運用雜湊或其他適當方式之完整性確保機制。", aspect:"面向：開發面＋部署維運面\n開發面：日誌雜湊/簽章機制\n部署維運面：WORM/不可竄改儲存設定"},
+    {index:27, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"高", description:"定期備份日誌至原系統外之其他實體系統。", aspect:"面向：部署維運面"},
+    {index:28, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"訂定資料可容忍損失之時間要求。", aspect:"面向：流程面"},
+    {index:29, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"執行資料備份。", aspect:"面向：部署維運面"},
+    {index:30, dimension:"營運持續計畫", category:"資料備份", level:"中", description:"應定期測試備份資料，以驗證備份媒體之可靠性及資訊之完整性。", aspect:"面向：流程面＋部署維運面\n流程面：訂定備份測試頻率/政策\n部署維運面：定期執行備份測試"},
+    {index:31, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應將備份還原，作為營運持續計畫演練之一部分。", aspect:"面向：流程面＋部署維運面\n流程面：制定演練計劃\n部署維運面：執行演練與備份還原"},
+    {index:32, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應建立資料異地備份機制。", aspect:"面向：部署維運面"},
+    {index:33, dimension:"營運持續計畫", category:"系統備援", level:"普", description:"訂定資通系統從中斷後至重新恢復服務之最大可容忍中斷時間要求。", aspect:"面向：流程面"},
+    {index:34, dimension:"營運持續計畫", category:"系統備援", level:"中", description:"應定期測試原服務中斷時，於最大可容忍中斷時間內，由備援設備或其他方式取代並提供服務。", aspect:"面向：部署維運面＋流程面\n部署維運面：健康檢查/failover/多副本設定、定期執行備援測試\n流程面：留存測試記錄"},
+    {index:35, dimension:"營運持續計畫", category:"系統備援", level:"高", description:"應將備援啟動作為營運持續計畫演練之一部分。", aspect:"面向：流程面"},
+    {index:36, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"普", description:"資通系統應識別及鑑別使用者，並禁止使用者使用共用帳號。", aspect:"面向：開發面"},
+    {index:37, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"高", description:"對資通系統之存取採取多因子鑑別技術。", aspect:"面向：開發面"},
+    {index:38, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用預設密碼初次登入系統時，應於登入後立即變更。", aspect:"面向：開發面"},
+    {index:39, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"身分驗證相關資訊不以明文傳輸。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制 HTTPS、不以明文/GET 傳憑證\n部署維運面：TLS 憑證安裝設定"},
+    {index:40, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"具備帳戶鎖定機制，帳號登入進行身分驗證失敗達五次後，至少十五分鐘內不允許該帳號繼續嘗試登入或使用機關自建之失敗驗證機制。", aspect:"面向：開發面"},
+    {index:41, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用密碼進行驗證時，應強制最低密碼複雜度；依機關密碼效期規定變更密碼。", aspect:"面向：開發面"},
+    {index:42, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"密碼變更時，至少不可以與前三次使用過之密碼相同。", aspect:"面向：開發面"},
+    {index:43, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"第四點及第五點所定措施，對外部使用者，機關得自行規範辦理。", aspect:"面向：流程面\n流程面：第四點、第五點（即項次41 密碼複雜度與效期、42 密碼不可與前三次相同）對外部使用者得由機關自行規範辦理"},
+    {index:44, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"身分驗證機制應防範自動化程式之登入或密碼更換嘗試。", aspect:"面向：開發面"},
+    {index:45, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"密碼重設機制對使用者重新身分確認後，發送一次性及具有時效性符記。", aspect:"面向：開發面"},
+    {index:46, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"普", description:"資通系統應遮蔽鑑別過程中之資訊。", aspect:"面向：開發面"},
+    {index:47, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"中", description:"資通系統如以密碼進行鑑別時，該密碼應經雜湊或其他適當方式處理後儲存。", aspect:"面向：開發面"},
+    {index:48, dimension:"系統與服務獲得", category:"系統發展生命週期需求階段", level:"普", description:"針對系統安全需求（含機密性、可用性、完整性）進行確認。", aspect:"面向：流程面＋開發面\n流程面：確認並記錄系統安全需求\n開發面：以需求/設計文件或實作佐證"},
+    {index:49, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"根據系統功能與要求，識別可能影響系統之威脅，進行風險分析及評估。", aspect:"面向：流程面"},
+    {index:50, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"將風險評估結果回饋需求階段之檢核項目，並提出安全需求修正。", aspect:"面向：流程面"},
+    {index:51, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"應針對安全需求實作必要控制措施。", aspect:"面向：開發面"},
+    {index:52, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"應注意避免軟體常見漏洞及實作必要控制措施。", aspect:"面向：開發面"},
+    {index:53, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"發生錯誤時，使用者頁面僅顯示簡短錯誤訊息及代碼，不包含詳細之錯誤訊息。", aspect:"面向：開發面＋部署維運面\n開發面：自訂簡短錯誤頁\n部署維運面：正式環境關閉 debug"},
+    {index:54, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"執行「源碼掃描」安全檢測。", aspect:"面向：部署維運面＋開發面\n部署維運面：CI 整合 SAST 源碼掃描\n開發面：執行並追蹤掃描結果"},
+    {index:55, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"系統應具備發生嚴重錯誤時之通知機制。", aspect:"面向：開發面＋部署維運面\n開發面：捕捉嚴重錯誤並觸發通知\n部署維運面：整合告警/監控服務"},
+    {index:56, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"普", description:"執行「弱點掃描」安全檢測。", aspect:"面向：部署維運面＋開發面\n部署維運面：CI 整合弱點/相依掃描\n開發面：定期執行並追蹤修補"},
+    {index:57, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"高", description:"執行「滲透測試」安全檢測。", aspect:"面向：流程面"},
+    {index:58, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"於部署環境中應針對相關資通安全威脅，進行更新與修補。", aspect:"面向：開發面＋部署維運面\n開發面：定期修補與驗證\n部署維運面：相依/環境自動更新設定、協助確認"},
+    {index:59, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"識別並關閉不必要服務及埠口。", aspect:"面向：部署維運面"},
+    {index:60, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"資通系統不使用預設密碼。", aspect:"面向：開發面＋部署維運面\n開發面：不在碼中寫死預設密碼、改讀環境變數\n部署維運面：部署時設定強式憑證"},
+    {index:61, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"執行系統源碼備份。", aspect:"面向：部署維運面"},
+    {index:62, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"中", description:"於系統發展生命週期之維運階段，應執行版本控制與變更管理。", aspect:"面向：開發面＋部署維運面\n開發面：變更管理與 PR 審查程序\n部署維運面：版本控制系統（git）"},
+    {index:63, dimension:"系統與服務獲得", category:"系統發展生命週期委外階段", level:"普", description:"資通系統開發如委外辦理，應將系統發展生命週期各階段依等級將安全需求（含機密性、可用性、完整性）納入委外契約。", aspect:"面向：流程面"},
+    {index:64, dimension:"系統與服務獲得", category:"獲得程序", level:"普", description:"識別資通系統使用之第三方軟體、服務、函式庫或其他元件。", aspect:"面向：開發面"},
+    {index:65, dimension:"系統與服務獲得", category:"獲得程序", level:"中", description:"開發、測試及正式作業環境應為區隔。", aspect:"面向：開發面＋部署維運面\n開發面：多環境設定/環境變數切換\n部署維運面：實際分離開發/測試/正式部署"},
+    {index:66, dimension:"系統與服務獲得", category:"系統文件", level:"普", description:"應儲存與管理系統發展生命週期之相關文件。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：系統從無到有的安全設計與程式碼品質管控之文件\n部署維運面：上線後組態設定、環境防護及資料可用性之文件\n流程面：定義政策、權責並進行監督量測之文件"},
+    {index:67, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"資通系統應採用加密機制，以防止未授權之資訊揭露或偵測資訊之變更。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制全站 HTTPS/HSTS\n部署維運面：TLS 憑證與伺服器加密設定"},
+    {index:68, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"使用公開、國際機構驗證且未遭破解之演算法。", aspect:"面向：開發面"},
+    {index:69, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"加密金鑰或憑證應定期更換。", aspect:"面向：部署維運面"},
+    {index:70, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"伺服器端之金鑰保管應訂定管理規範及實施應有之安全防護措施。", aspect:"面向：開發面＋部署維運面\n開發面：碼中不寫死金鑰、改讀環境變數/KMS\n部署維運面：KMS/Secret Manager 與金鑰保管規範"},
+    {index:71, dimension:"系統與通訊保護", category:"資料儲存之安全", level:"高", description:"資通系統重要組態設定檔案及其他具保護需求之資訊應加密或以其他適當方式儲存。", aspect:"面向：開發面＋部署維運面\n開發面：敏感資料/欄位加密實作\n部署維運面：設定檔/密鑰加密儲存"},
+    {index:72, dimension:"系統與資訊完整性", category:"漏洞修復", level:"普", description:"系統之漏洞修復應測試有效性及潛在影響，並定期更新。", aspect:"面向：部署維運面＋流程面\n部署維運面：相依更新/CI 測試自動化\n流程面：定期修復並驗證有效性"},
+    {index:73, dimension:"系統與資訊完整性", category:"漏洞修復", level:"中", description:"定期確認資通系統相關漏洞修復之狀態。", aspect:"面向：部署維運面＋流程面\n部署維運面：持續弱點掃描整合\n流程面：定期確認修復狀態"},
+    {index:74, dimension:"系統與資訊完整性", category:"資通系統監控", level:"普", description:"發現資通系統有被入侵跡象時，應通報機關特定人員。", aspect:"面向：開發面＋部署維運面\n開發面：偵測入侵跡象並觸發告警\n部署維運面：設定通報對象與管道"},
+    {index:75, dimension:"系統與資訊完整性", category:"資通系統監控", level:"中", description:"監控資通系統，以偵測攻擊與未授權之連線，並識別資通系統之未授權使用。", aspect:"面向：部署維運面＋開發面\n部署維運面：IDS/WAF/異常監控部署\n開發面：存取監控/記錄"},
+    {index:76, dimension:"系統與資訊完整性", category:"資通系統監控", level:"高", description:"資通系統應採用自動化工具監控進出之通信流量，並於發現不尋常或未授權之活動時，針對該事件進行分析。", aspect:"面向：部署維運面"},
+    {index:77, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"普", description:"使用者輸入資料合法性檢查應置放於應用系統伺服器端。", aspect:"面向：開發面"},
+    {index:78, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"使用完整性驗證工具，以偵測未授權變更特定軟體及資訊。", aspect:"面向：部署維運面＋開發面\n部署維運面：部署檔案完整性監控工具\n開發面：完整性校驗實作"},
+    {index:79, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"發現違反完整性時，資通系統應實施機關指定之安全保護措施。", aspect:"面向：開發面"},
+    {index:80, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"高", description:"應定期執行軟體與資訊完整性檢查。", aspect:"面向：部署維運面\n部署維運面：完整性檢查排程/簽章驗證設定、定期執行並留記錄"}
   ];
 }
 
@@ -2399,11 +2399,49 @@ function getControlMeasureExampleMap_() {
   return map;
 }
 
+// 取得各項次的預設面向（由 seed 提供），key 為項次字串
+function getControlMeasureAspectMap_() {
+  var map = {};
+  getControlMeasures().forEach(function(c) {
+    map[String(c.index)] = c.aspect || '';
+  });
+  return map;
+}
+
+// 確保「防護基準自評」表含「面向」欄。
+// 既有部署缺欄時，於最後補上「面向」欄並依項次回填 seed 預設值（僅在首次建欄時回填，
+// 不覆寫使用者既有資料，避免被刻意清空的面向又被預設值復活）。
+function ensureAssessmentAspectColumn_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('防護基準自評');
+  if (!sheet) return;
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) return;
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var aspectCol = -1;
+  for (var c = 0; c < headers.length; c++) {
+    if (String(headers[c]).trim() === '面向') { aspectCol = c + 1; break; }
+  }
+  if (aspectCol !== -1) return; // 已有面向欄，不動既有資料
+  aspectCol = lastCol + 1;
+  sheet.getRange(1, aspectCol).setValue('面向');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.flush(); return; }
+  var aspectMap = getControlMeasureAspectMap_();
+  var indexValues = sheet.getRange(2, 3, lastRow - 1, 1).getValues(); // 項次欄（第 3 欄）
+  var fill = indexValues.map(function(r) {
+    return [aspectMap[String(r[0]).trim()] || ''];
+  });
+  sheet.getRange(2, aspectCol, fill.length, 1).setValues(fill);
+  SpreadsheetApp.flush();
+}
+
 function getAssessment(systemId) {
   assertPageAccess_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) return [];
+  ensureAssessmentAspectColumn_();
 
   var exampleMap = getControlMeasureExampleMap_();
   var data = sheet.getDataRange().getDisplayValues();
@@ -2427,6 +2465,7 @@ function getAssessment(systemId) {
         targetDate: data[i][11],
         note: data[i][12],
         lastUpdate: data[i][13],
+        aspect: data[i][14] || '',
         compareChangeType: meta.compareChangeType,
         compareChangeLabel: meta.compareChangeLabel,
         compareChangeColor: meta.compareChangeColor,
@@ -2455,13 +2494,14 @@ function saveAssessmentItem_(item) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
+  ensureAssessmentAspectColumn_();
 
   var row = [
     item.systemId, item.systemName, item.index, item.dimension,
     item.category, item.level, item.description, item.compliance || '',
     item.currentStatus || '', item.evidence || '', item.corrective || '',
     item.targetDate || '', item.note || '',
-    new Date().toLocaleString('zh-TW')
+    new Date().toLocaleString('zh-TW'), item.aspect || ''
   ];
 
   if (item._row) {
@@ -2513,7 +2553,8 @@ function initAssessmentForSystem(systemId, systemName, systemLevel) {
         evidence: '',
         corrective: '',
         targetDate: '',
-        note: applicable ? '' : appRule.naNote
+        note: applicable ? '' : appRule.naNote,
+        aspect: ctrl.aspect || ''
       });
       count++;
     }
@@ -2816,6 +2857,7 @@ function batchSaveAssessment(items) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('防護基準自評');
   if (!sheet) { initializeSheetsCore_(); sheet = ss.getSheetByName('防護基準自評'); }
+  ensureAssessmentAspectColumn_();
 
   var data = sheet.getDataRange().getValues();
   var now = new Date().toLocaleString('zh-TW');
@@ -2826,7 +2868,7 @@ function batchSaveAssessment(items) {
       item.systemId, item.systemName, item.index, item.dimension,
       item.category, item.level, item.description, item.compliance || '',
       item.currentStatus || '', item.evidence || '', item.corrective || '',
-      item.targetDate || '', item.note || '', now
+      item.targetDate || '', item.note || '', now, item.aspect || ''
     ];
 
     // Find existing row
@@ -3235,13 +3277,13 @@ function buildAssessmentReportPayload_(systemId) {
   var assessment = getAssessment(systemId);
   if (assessment.length === 0) return {success: false, message: '尚無自評資料'};
 
-  var headers = ['構面','類別','項次','最低要求等級','安全控制措施','符合性','現況說明','佐證資料','矯正作為','目標日期','備註'];
+  var headers = ['構面','類別','項次','最低要求等級','安全控制措施','面向','符合性','現況說明','佐證資料','矯正作為','目標日期','備註'];
   var prevDim = '', prevCat = '';
   var rows = assessment.map(function(item) {
     var dim = item.dimension !== prevDim ? item.dimension : '';
     var cat = item.category !== prevCat ? item.category : '';
     prevDim = item.dimension; prevCat = item.category;
-    return [dim, cat, item.index, item.level, item.description,
+    return [dim, cat, item.index, item.level, item.description, item.aspect || '',
       item.compliance || '', item.currentStatus || '', item.evidence || '',
       item.corrective || '', item.targetDate || '', item.note || ''];
   });
@@ -3265,8 +3307,9 @@ function populateAssessmentReportSheet_(ws, report) {
   var headers = report.headers;
   var assessment = report.assessment;
 
+  var colCount = headers.length;
   ws.getRange('A1').setValue('資通系統防護基準檢核表（依據附表十修正規定）');
-  ws.getRange('A1:K1').merge().setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
+  ws.getRange(1, 1, 1, colCount).merge().setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
 
   ws.getRange('A2').setValue('機關單位名稱'); ws.getRange('B2').setValue(report.agencyName);
   ws.getRange('D2').setValue('檢核日期'); ws.getRange('E2').setValue(report.checkDate);
@@ -3280,14 +3323,14 @@ function populateAssessmentReportSheet_(ws, report) {
   ws.setFrozenRows(5);
 
   if (rows.length > 0) {
-    ws.getRange(6, 1, rows.length, 11).setValues(rows);
+    ws.getRange(6, 1, rows.length, colCount).setValues(rows);
   }
 
-  // Formatting
+  // Formatting（欄序：構面/類別/項次/等級/安全控制措施/面向/符合性/現況說明/佐證資料/矯正作為/目標日期/備註）
   ws.setColumnWidth(1, 100); ws.setColumnWidth(2, 130); ws.setColumnWidth(3, 40);
-  ws.setColumnWidth(4, 60); ws.setColumnWidth(5, 350); ws.setColumnWidth(6, 60);
-  ws.setColumnWidth(7, 250); ws.setColumnWidth(8, 150); ws.setColumnWidth(9, 150);
-  ws.setColumnWidth(10, 80); ws.setColumnWidth(11, 80);
+  ws.setColumnWidth(4, 60); ws.setColumnWidth(5, 350); ws.setColumnWidth(6, 160);
+  ws.setColumnWidth(7, 60); ws.setColumnWidth(8, 250); ws.setColumnWidth(9, 150);
+  ws.setColumnWidth(10, 150); ws.setColumnWidth(11, 80); ws.setColumnWidth(12, 80);
 
   // Color applicable/not-applicable rows
   for (var i = 0; i < assessment.length; i++) {
@@ -3295,15 +3338,15 @@ function populateAssessmentReportSheet_(ws, report) {
     var meta = getAssessmentCompareChangeMeta_(assessment[i].index);
     var applicable = isAssessmentControlApplicable_(assessment[i].level, sys['防護需求等級']);
     if (meta.compareChangeColor) {
-      ws.getRange(r, 1, 1, 11).setBackground(meta.compareChangeColor);
-      if (!applicable) ws.getRange(r, 1, 1, 11).setFontColor('#7A7A7A');
-      else ws.getRange(r, 1, 1, 11).setFontColor('#000000');
+      ws.getRange(r, 1, 1, colCount).setBackground(meta.compareChangeColor);
+      if (!applicable) ws.getRange(r, 1, 1, colCount).setFontColor('#7A7A7A');
+      else ws.getRange(r, 1, 1, colCount).setFontColor('#000000');
     } else if (applicable) {
-      ws.getRange(r, 1, 1, 11).setBackground('#FFFFFF').setFontColor('#000000');
+      ws.getRange(r, 1, 1, colCount).setBackground('#FFFFFF').setFontColor('#000000');
     } else {
-      ws.getRange(r, 1, 1, 11).setBackground('#F2F2F2').setFontColor('#999999');
+      ws.getRange(r, 1, 1, colCount).setBackground('#F2F2F2').setFontColor('#999999');
     }
-    ws.getRange(r, 1, 1, 11).setBorder(true,true,true,true,true,true);
+    ws.getRange(r, 1, 1, colCount).setBorder(true,true,true,true,true,true);
   }
 
   // Non-compliance summary at bottom
