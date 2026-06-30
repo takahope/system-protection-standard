@@ -3412,11 +3412,7 @@ function buildAssessmentReportPayload_(systemId) {
   if (assessment.length === 0) return {success: false, message: '尚無自評資料'};
 
   var headers = ['構面','類別','項次','最低要求等級','安全控制措施','符合性','現況說明','佐證資料','矯正作為','目標日期','備註','開發面','開發面說明','部署維運面','部署維運面說明','流程面','流程面說明'];
-  var prevDim = '', prevCat = '';
   var rows = assessment.map(function(item) {
-    var dim = item.dimension !== prevDim ? item.dimension : '';
-    var cat = item.category !== prevCat ? item.category : '';
-    prevDim = item.dimension; prevCat = item.category;
     var expanded = parseAspectToExpandedColumns_(item.aspect || '');
     var devChecked = item.devChecked !== undefined ? item.devChecked : expanded[0];
     var devDesc = item.devDesc !== undefined ? item.devDesc : expanded[1];
@@ -3424,7 +3420,7 @@ function buildAssessmentReportPayload_(systemId) {
     var opsDesc = item.opsDesc !== undefined ? item.opsDesc : expanded[3];
     var procChecked = item.procChecked !== undefined ? item.procChecked : expanded[4];
     var procDesc = item.procDesc !== undefined ? item.procDesc : expanded[5];
-    return [dim, cat, item.index, item.level, item.description,
+    return [item.dimension, item.category, item.index, item.level, item.description,
       item.compliance || '', item.currentStatus || '', item.evidence || '',
       item.corrective || '', item.targetDate || '', item.note || '',
       devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc];
