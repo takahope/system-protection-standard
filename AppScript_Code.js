@@ -3161,7 +3161,12 @@ function parseXlsxSharedStrings_(xmlText) {
 }
 
 function parseXlsxRows_(blob) {
-  var files = Utilities.unzip(blob);
+  // XLSX 本質上是 ZIP 封裝（OOXML/OPC）。Utilities.unzip() 只接受 ContentType 為
+  // application/zip 的 blob，而前端上傳帶的是瀏覽器 MIME
+  // （application/vnd.openxmlformats-officedocument.spreadsheetml.sheet），
+  // 故先複製並覆寫 ContentType 再解壓，避免「以下引數無效：ContentType」錯誤。
+  var zipBlob = blob.copyBlob().setContentType('application/zip');
+  var files = Utilities.unzip(zipBlob);
   var sharedStrings = parseXlsxSharedStrings_(getXmlText_(files, 'xl/sharedStrings.xml'));
   var sheetXml = '';
   for (var i = 0; i < files.length; i++) {
