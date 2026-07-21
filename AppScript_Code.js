@@ -3250,6 +3250,20 @@ function normalizeImportCompliance_(value, naLabel) {
   return null;
 }
 
+// 項次為數字識別碼；XLSX 經 Google Sheets 匯出往返後整數字串可能變成 "1.0"，
+// 而現況自評的項次來自 getDisplayValues 為 "1"，精確字串比對會全數對不上。
+// 故將可解析為數字者正規化為標準數字字串（"1.0" / " 1 " / "01" → "1"），
+// 非數字（如「不符合防護基準」摘要列）保持原樣。
+function normalizeAssessmentIndexKey_(value) {
+  var raw = String(value === null || value === undefined ? '' : value).trim();
+  if (!raw) return '';
+  if (/^-?\d+(\.\d+)?$/.test(raw)) {
+    var num = Number(raw);
+    if (!isNaN(num) && isFinite(num)) return String(num);
+  }
+  return raw;
+}
+
 function buildAssessmentImportPreview_(systemId, filePayload) {
   var sys = getSystems().filter(function(s) { return s['系統ID'] == systemId; })[0];
   if (!sys) throw new Error('找不到系統');
@@ -3261,7 +3275,7 @@ function buildAssessmentImportPreview_(systemId, filePayload) {
   if (!header) throw new Error('找不到可匯入的自評欄位，請使用本系統匯出的 CSV 或 XLSX 檔案');
 
   var currentMap = {};
-  for (var i = 0; i < assessment.length; i++) currentMap[String(assessment[i].index || '').trim()] = assessment[i];
+  for (var i = 0; i < assessment.length; i++) currentMap[normalizeAssessmentIndexKey_(assessment[i].index)] = assessment[i];
 
   var naLabel = getAssessmentApplicabilityConfig_().naLabel;
   var sysLevel = sys['防護需求等級'] || '';
@@ -3276,7 +3290,7 @@ function buildAssessmentImportPreview_(systemId, filePayload) {
 
   for (var r = header.rowIndex + 1; r < rows.length; r++) {
     var row = rows[r] || [];
-    var index = String(row[col['項次']] || '').trim();
+    var index = normalizeAssessmentIndexKey_(row[col['項次']]);
     if (!index) continue;
     if (index.indexOf('不符合防護基準') !== -1) continue;
     totalRows++;
@@ -3389,11 +3403,11 @@ function applyAssessmentImport(systemId, importToken) {
 
   var assessment = getAssessment(systemId);
   var currentMap = {};
-  for (var i = 0; i < assessment.length; i++) currentMap[String(assessment[i].index || '').trim()] = assessment[i];
+  for (var i = 0; i < assessment.length; i++) currentMap[normalizeAssessmentIndexKey_(assessment[i].index)] = assessment[i];
   var updates = [];
   for (var c = 0; c < preview.changes.length; c++) {
     var change = preview.changes[c];
-    var item = currentMap[String(change.index || '').trim()];
+    var item = currentMap[normalizeAssessmentIndexKey_(change.index)];
     if (!item) continue;
     for (var f = 0; f < change.fields.length; f++) {
       item[change.fields[f].key] = change.fields[f].newValue;
