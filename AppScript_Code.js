@@ -1052,7 +1052,10 @@ function getDefaultRuleDefinitions_() {
     {group:'code_map', key:'系統與通訊保護|資料儲存之安全', label:'系統與通訊保護 / 資料儲存之安全', type:'mapping', value:'C0602', description:'未符合代碼對照。', enabled:true, sort:240},
     {group:'code_map', key:'系統與資訊完整性|漏洞修復', label:'系統與資訊完整性 / 漏洞修復', type:'mapping', value:'C0701', description:'未符合代碼對照。', enabled:true, sort:250},
     {group:'code_map', key:'系統與資訊完整性|資通系統監控', label:'系統與資訊完整性 / 資通系統監控', type:'mapping', value:'C0702', description:'未符合代碼對照。', enabled:true, sort:260},
-    {group:'code_map', key:'系統與資訊完整性|軟體及資訊完整性', label:'系統與資訊完整性 / 軟體及資訊完整性', type:'mapping', value:'C0703', description:'未符合代碼對照。', enabled:true, sort:270}
+    {group:'code_map', key:'系統與資訊完整性|軟體及資訊完整性', label:'系統與資訊完整性 / 軟體及資訊完整性', type:'mapping', value:'C0703', description:'未符合代碼對照。', enabled:true, sort:270},
+
+    {group:'doc_generation', key:'doc_template_transl_center', label:'轉譯中心評估表範本 ID', type:'text', value:'', description:'設定用於產出分級評估表的 Google Doc 範本 ID (轉譯中心)', enabled:true, sort:10},
+    {group:'doc_generation', key:'doc_output_folder', label:'文件輸出資料夾 ID', type:'text', value:'', description:'設定產出文件的目標 Google Drive 資料夾 ID', enabled:true, sort:20}
   ];
 }
 
