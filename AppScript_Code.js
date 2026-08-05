@@ -815,7 +815,9 @@ function getSystemColumns_() {
   {key:'備註', label:'備註', column:SYSTEM_NOTE_COLUMN},
   {key:'提供之服務，是否含有人工智慧', label:'提供之服務，是否含有人工智慧', column:SYSTEM_AI_SERVICE_COLUMN},
   {key:'系統負責人', label:'系統負責人', column:SYSTEM_OWNER_COLUMN},
-  {key:'系統運作部署在本地機房', label:'系統運作部署在本地機房', column:SYSTEM_LOCAL_DEPLOYMENT_COLUMN}
+  {key:'系統運作部署在本地機房', label:'系統運作部署在本地機房', column:SYSTEM_LOCAL_DEPLOYMENT_COLUMN},
+  {key:'復原目標時間(RTO)', label:'復原目標時間(RTO)', column:SYSTEM_RTO_COLUMN},
+  {key:'資料回復點目標(RPO)', label:'資料回復點目標(RPO)', column:SYSTEM_RPO_COLUMN}
   ];
 }
 
@@ -827,9 +829,12 @@ function getSystemColumnConstantDebug_() {
     SYSTEM_COMPLIANCE_STATUS_COLUMN: {exists: typeof SYSTEM_COMPLIANCE_STATUS_COLUMN !== 'undefined', value: typeof SYSTEM_COMPLIANCE_STATUS_COLUMN !== 'undefined' ? SYSTEM_COMPLIANCE_STATUS_COLUMN : ''},
     SYSTEM_NON_COMPLIANCE_CODES_COLUMN: {exists: typeof SYSTEM_NON_COMPLIANCE_CODES_COLUMN !== 'undefined', value: typeof SYSTEM_NON_COMPLIANCE_CODES_COLUMN !== 'undefined' ? SYSTEM_NON_COMPLIANCE_CODES_COLUMN : ''},
     SYSTEM_OWNER_COLUMN: {exists: typeof SYSTEM_OWNER_COLUMN !== 'undefined', value: typeof SYSTEM_OWNER_COLUMN !== 'undefined' ? SYSTEM_OWNER_COLUMN : ''},
-    SYSTEM_LOCAL_DEPLOYMENT_COLUMN: {exists: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined', value: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined' ? SYSTEM_LOCAL_DEPLOYMENT_COLUMN : ''}
+    SYSTEM_LOCAL_DEPLOYMENT_COLUMN: {exists: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined', value: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined' ? SYSTEM_LOCAL_DEPLOYMENT_COLUMN : ''},
+    SYSTEM_RTO_COLUMN: {exists: typeof SYSTEM_RTO_COLUMN !== 'undefined', value: typeof SYSTEM_RTO_COLUMN !== 'undefined' ? SYSTEM_RTO_COLUMN : ''},
+    SYSTEM_RPO_COLUMN: {exists: typeof SYSTEM_RPO_COLUMN !== 'undefined', value: typeof SYSTEM_RPO_COLUMN !== 'undefined' ? SYSTEM_RPO_COLUMN : ''}
   };
 }
+
 
 function assertSystemColumnConstantsReady_() {
   var debug = getSystemColumnConstantDebug_();
