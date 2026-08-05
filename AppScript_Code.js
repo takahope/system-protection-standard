@@ -3721,3 +3721,181 @@ function importDefaultSystems() {
 
   return {success: true, count: defaultSystems.length};
 }
+
+// ===== 文件產出功能 (Document Generation) =====
+
+function buildCheckboxString_(selectedValue, options) {
+  var CHECKED = '☑';
+  var UNCHECKED = '□';
+  return options.map(function(opt) {
+    return (opt === selectedValue ? CHECKED : UNCHECKED) + opt;
+  }).join(' / ');
+}
+
+function getSystemRolesData_(systemId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SYSTEM_ROLE_ASSIGNMENT_SHEET);
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  var roles = [];
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === systemId) {
+      roles.push({
+        roleName: data[i][2],
+        email: data[i][3],
+        name: data[i][4]
+      });
+    }
+  }
+  return roles;
+}
+
+function getManagerFromHR_(userEmail) {
+  if (!HR_SPREADSHEET_ID) return '';
+  try {
+    var hrSs = SpreadsheetApp.openById(HR_SPREADSHEET_ID);
+    var hrSheet = hrSs.getSheetByName(HR_ROLE_ASSIGNMENT_SHEET_NAME);
+    if (!hrSheet) return '';
+    var data = hrSheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      var email = data[i][0]; // A欄
+      var group = data[i][2]; // C欄
+      var mgrName = data[i][6]; // G欄 (index 6)
+      if (email === userEmail && group && group.toString().indexOf('grp-') === 0) {
+        return mgrName || '';
+      }
+    }
+  } catch(e) {
+    console.error("HR Lookup failed", e);
+  }
+  return '';
+}
+
+function getAppendix9Description_(dimension, level) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('附表9說明');
+  if (!sheet) return '';
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === dimension && data[i][1] === level) {
+      return data[i][2] || '';
+    }
+  }
+  return '';
+}
+
+function generateAssessmentDoc(systemId, templateKey) {
+  assertPageAccess_();
+  var rules = getRuleConfig_();
+  var templateId = rules[templateKey || 'doc_template_transl_center'];
+  var folderId = rules['doc_output_folder'];
+  
+  if (!templateId || !folderId) throw new Error('尚未設定範本 ID 或輸出資料夾 ID。');
+  
+  var system = getSystemById_(systemId);
+  if (!system) throw new Error('找不到系統資料：' + systemId);
+  
+  var summary = getSummaryRatingRow_(systemId);
+  if (!summary) throw new Error('該系統尚未完成評估。');
+  
+  var details = getRatingDetailsReadOnly_(systemId);
+  var detailMap = {};
+  for (var i = 0; i < details.length; i++) {
+    detailMap[details[i].dimension] = details[i];
+  }
+  
+  // 1 & 2. 填表人與日期
+  var evaluatorName = getCurrentEvaluator().displayName || getCurrentEvaluator().email;
+  var d = new Date();
+  var dateStr = Utilities.formatDate(d, 'Asia/Taipei', 'yyyy/MM/dd');
+  
+  // 4. 系統管理人
+  var roles = getSystemRolesData_(systemId);
+  var sysManager = roles.filter(function(r) { return r.roleName === '系統部署維護人員'; })[0] 
+                || roles.filter(function(r) { return r.roleName === '系統承辦窗口'; })[0];
+  var sysManagerName = sysManager ? sysManager.name : '';
+  var sysManagerEmail = sysManager ? sysManager.email : '';
+  
+  // 5. 系統開發型態
+  var devType = '';
+  if (system.buildMethod === '本機關建置套裝軟體') devType = '套裝軟硬體';
+  else if (system.buildMethod === '本機關委外開發') devType = '委外開發';
+  else if (system.buildMethod === '本機關自行開發') devType = '自行開發';
+  var devTypeStr = buildCheckboxString_(devType, ['自行開發', '委外開發', '套裝軟硬體']);
+  
+  // 6 & 7. 廠商與單位人員
+  var vendorContact = roles.filter(function(r) { return r.roleName === '開發'; })[0]
+                   || roles.filter(function(r) { return r.roleName === '系統部署維護人員'; })[0]
+                   || roles.filter(function(r) { return r.roleName === '系統承辦窗口'; })[0];
+  var contactStr = vendorContact ? vendorContact.name : '';
+  
+  // 14. 系統管理人主管
+  var sysManagerBoss = getManagerFromHR_(sysManagerEmail);
+  
+  try {
+    var templateFile = DriveApp.getFileById(templateId);
+    var targetFolder = DriveApp.getFolderById(folderId);
+    var newFileName = system.name + '_資通系統防護需求分級評估表';
+    var newFile = templateFile.makeCopy(newFileName, targetFolder);
+    var doc = DocumentApp.openById(newFile.getId());
+    var body = doc.getBody();
+    
+    var mapping = {
+      '{{填表人}}': evaluatorName,
+      '{{填表日期}}': dateStr,
+      '{{資通系統名稱}}': system.name || '',
+      '{{系統管理人}}': sysManagerName,
+      '{{系統開發型態}}': devTypeStr,
+      '{{建置單位／廠商}}': (system.builderVendor || '') + (contactStr ? ' - ' + contactStr : ''),
+      '{{維運單位／廠商}}': (system.maintenanceVendor || '') + (contactStr ? ' - ' + contactStr : ''),
+      '{{MTPD}}': system.mtpd || '',
+      '{{RTO}}': system.rto || '',
+      '{{RPO}}': system.rpo || '',
+      '{{機密性說明}}': getAppendix9Description_('機密性', (detailMap['confidentiality'] || {}).selectedLevel),
+      '{{完整性說明}}': getAppendix9Description_('完整性', (detailMap['integrity'] || {}).selectedLevel),
+      '{{可用性說明}}': getAppendix9Description_('可用性', (detailMap['availability'] || {}).selectedLevel),
+      '{{法律遵循性說明}}': getAppendix9Description_('法律遵循性', (detailMap['compliance'] || {}).selectedLevel),
+      '{{系統管理人簽章}}': sysManagerName,
+      '{{系統管理單位主管簽章}}': sysManagerBoss
+    };
+    
+    for (var key in mapping) {
+      body.replaceText(key, mapping[key]);
+    }
+    
+    var levelOpts = ['高', '中', '普'];
+    body.replaceText('{{機密性等級}}', buildCheckboxString_((detailMap['confidentiality'] || {}).selectedLevel, levelOpts));
+    body.replaceText('{{完整性等級}}', buildCheckboxString_((detailMap['integrity'] || {}).selectedLevel, levelOpts));
+    body.replaceText('{{可用性等級}}', buildCheckboxString_((detailMap['availability'] || {}).selectedLevel, levelOpts));
+    body.replaceText('{{法律遵循性等級}}', buildCheckboxString_((detailMap['compliance'] || {}).selectedLevel, levelOpts));
+    body.replaceText('{{防護需求等級}}', buildCheckboxString_(summary.finalLevel, ['高', '中', '普', '套裝軟體']));
+    
+    doc.saveAndClose();
+    return { success: true, url: newFile.getUrl(), name: newFileName };
+  } catch (err) {
+    throw new Error('產出文件失敗：' + err.toString());
+  }
+}
+
+function batchGenerateAssessmentDocs(templateKey) {
+  assertRuleAdmin_();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ratingSheet = ss.getSheetByName('防護需求分級評估');
+  if (!ratingSheet) throw new Error('無評估資料');
+  
+  var data = ratingSheet.getDataRange().getValues();
+  var results = [];
+  var errors = [];
+  
+  for (var i = 1; i < data.length; i++) {
+    var systemId = data[i][0];
+    if (!systemId) continue;
+    try {
+      var res = generateAssessmentDoc(systemId, templateKey);
+      results.push(res);
+    } catch (e) {
+      errors.push({ systemId: systemId, error: e.toString() });
+    }
+  }
+  return { results: results, errors: errors };
+}
