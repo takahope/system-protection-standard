@@ -3732,11 +3732,18 @@ function buildCheckboxString_(selectedValue, options) {
   }).join(' / ');
 }
 
+var cachedHRData_ = null;
+var cachedRolesData_ = null;
+var cachedAppendix9Data_ = null;
+
 function getSystemRolesData_(systemId) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SYSTEM_ROLE_ASSIGNMENT_SHEET);
-  if (!sheet) return [];
-  var data = sheet.getDataRange().getValues();
+  if (!cachedRolesData_) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SYSTEM_ROLE_ASSIGNMENT_SHEET);
+    if (!sheet) return [];
+    cachedRolesData_ = sheet.getDataRange().getValues();
+  }
+  var data = cachedRolesData_;
   var roles = [];
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] === systemId) {
@@ -3753,10 +3760,13 @@ function getSystemRolesData_(systemId) {
 function getManagerFromHR_(userEmail) {
   if (!HR_SPREADSHEET_ID) return '';
   try {
-    var hrSs = SpreadsheetApp.openById(HR_SPREADSHEET_ID);
-    var hrSheet = hrSs.getSheetByName(HR_ROLE_ASSIGNMENT_SHEET_NAME);
-    if (!hrSheet) return '';
-    var data = hrSheet.getDataRange().getValues();
+    if (!cachedHRData_) {
+      var hrSs = SpreadsheetApp.openById(HR_SPREADSHEET_ID);
+      var hrSheet = hrSs.getSheetByName(HR_ROLE_ASSIGNMENT_SHEET_NAME);
+      if (!hrSheet) return '';
+      cachedHRData_ = hrSheet.getDataRange().getValues();
+    }
+    var data = cachedHRData_;
     for (var i = 1; i < data.length; i++) {
       var email = data[i][0]; // A欄
       var group = data[i][2]; // C欄
@@ -3772,10 +3782,13 @@ function getManagerFromHR_(userEmail) {
 }
 
 function getAppendix9Description_(dimension, level) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('附表9說明');
-  if (!sheet) return '';
-  var data = sheet.getDataRange().getValues();
+  if (!cachedAppendix9Data_) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('附表9說明');
+    if (!sheet) return '';
+    cachedAppendix9Data_ = sheet.getDataRange().getValues();
+  }
+  var data = cachedAppendix9Data_;
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] === dimension && data[i][1] === level) {
       return data[i][2] || '';
@@ -3848,9 +3861,9 @@ function generateAssessmentDoc(systemId, templateKey) {
       '{{系統開發型態}}': devTypeStr,
       '{{建置單位／廠商}}': (system.builderVendor || '') + (contactStr ? ' - ' + contactStr : ''),
       '{{維運單位／廠商}}': (system.maintenanceVendor || '') + (contactStr ? ' - ' + contactStr : ''),
-      '{{MTPD}}': system.mtpd || '',
-      '{{RTO}}': system.rto || '',
-      '{{RPO}}': system.rpo || '',
+      '{{MTPD}}': system.mtpd != null ? system.mtpd : '',
+      '{{RTO}}': system.rto != null ? system.rto : '',
+      '{{RPO}}': system.rpo != null ? system.rpo : '',
       '{{機密性說明}}': getAppendix9Description_('機密性', (detailMap['confidentiality'] || {}).selectedLevel),
       '{{完整性說明}}': getAppendix9Description_('完整性', (detailMap['integrity'] || {}).selectedLevel),
       '{{可用性說明}}': getAppendix9Description_('可用性', (detailMap['availability'] || {}).selectedLevel),
@@ -3860,7 +3873,7 @@ function generateAssessmentDoc(systemId, templateKey) {
     };
     
     for (var key in mapping) {
-      body.replaceText(key, mapping[key]);
+      body.replaceText(key, mapping[key] != null ? String(mapping[key]) : '');
     }
     
     var levelOpts = ['高', '中', '普'];
