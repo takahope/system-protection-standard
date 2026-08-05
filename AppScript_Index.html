@@ -957,6 +957,10 @@
           </div>
         </div>
       </div>
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <button class="btn btn-outline" onclick="doSingleGenerateDoc()" id="btn-single-gen">產出此系統評估表 (Google Doc)</button>
+        <span id="single-gen-status" style="font-size:12px; color:var(--text2); margin-left: 8px;"></span>
+      </div>
     </div>
 
     <!-- 自評 -->
@@ -5988,6 +5992,30 @@ function doBatchGenerateDocs() {
       showToast('批次產出失敗：' + (err.message || err), 'error');
     })
     .batchGenerateAssessmentDocs(templateKey);
+}
+
+function doSingleGenerateDoc() {
+  if (!currentSystemId) return;
+  var btn = document.getElementById('btn-single-gen');
+  var status = document.getElementById('single-gen-status');
+  
+  btn.disabled = true;
+  status.textContent = '產出中...';
+  
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      status.textContent = '產出成功！';
+      showToast('文件產出成功');
+      window.open(res.url, '_blank');
+      setTimeout(function(){ status.textContent = ''; }, 3000);
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      status.textContent = '';
+      showToast('產出失敗：' + (err.message || err), 'error');
+    })
+    .generateAssessmentDoc(currentSystemId, 'doc_template_transl_center');
 }
 </script>
 </body>
