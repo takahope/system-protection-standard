@@ -840,6 +840,19 @@
             <button class="btn btn-outline" onclick="loadRuleAuditLogs()">檢視變更紀錄</button>
           </div>
           <div id="init-result" style="margin-top:12px"></div>
+
+          <div class="card" style="margin-top: 16px;">
+            <h3 style="margin-top:0; font-size: 14px; color: var(--primary);">文件產出</h3>
+            <p style="font-size:12px; color:var(--text2); margin-bottom: 12px;">將所有已評估之系統產出為 Google Doc。請先確認下方已設定範本及資料夾 ID。</p>
+            <div style="display:flex; gap: 8px; align-items: center;">
+              <select id="doc-template-select" class="form-control" style="width: 200px;">
+                <option value="doc_template_transl_center">轉譯中心評估表</option>
+              </select>
+              <button class="btn btn-outline" onclick="doBatchGenerateDocs()" id="btn-batch-gen">批次產出全部</button>
+            </div>
+            <div id="batch-gen-status" style="font-size:12px; margin-top:8px; color:var(--primary);"></div>
+            <div id="batch-gen-results" style="font-size:12px; margin-top:8px;"></div>
+          </div>
         </div>
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
@@ -5942,6 +5955,40 @@ document.addEventListener('DOMContentLoaded',function(){
   loadRuleSettings();
   loadSystems();
 });
+
+function doBatchGenerateDocs() {
+  var templateKey = document.getElementById('doc-template-select').value;
+  var btn = document.getElementById('btn-batch-gen');
+  var status = document.getElementById('batch-gen-status');
+  var resultsDiv = document.getElementById('batch-gen-results');
+  
+  if (!confirm('即將為所有已評估系統產出文件，這可能需要幾分鐘時間。確定要繼續嗎？')) return;
+  
+  btn.disabled = true;
+  status.textContent = '產出中，請勿關閉視窗...';
+  resultsDiv.innerHTML = '';
+  
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      status.textContent = '產出完成！';
+      var html = '<ul style="padding-left:20px; color:var(--text);">';
+      res.results.forEach(function(r) {
+        html += '<li><a href="' + r.url + '" target="_blank">' + r.name + '</a></li>';
+      });
+      res.errors.forEach(function(e) {
+        html += '<li style="color:var(--danger)">失敗 [' + e.systemId + ']: ' + e.error + '</li>';
+      });
+      html += '</ul>';
+      resultsDiv.innerHTML = html;
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      status.textContent = '';
+      showToast('批次產出失敗：' + (err.message || err), 'error');
+    })
+    .batchGenerateAssessmentDocs(templateKey);
+}
 </script>
 </body>
 </html>
