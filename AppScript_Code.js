@@ -3858,9 +3858,9 @@ function generateAssessmentDoc(systemId, templateKey) {
   
   // 5. 系統開發型態
   var devType = '';
-  if (system.buildMethod === '本機關建置套裝軟體') devType = '套裝軟硬體';
-  else if (system.buildMethod === '本機關委外開發') devType = '委外開發';
-  else if (system.buildMethod === '本機關自行開發') devType = '自行開發';
+  if (system['建置方式'] === '本機關建置套裝軟體') devType = '套裝軟硬體';
+  else if (system['建置方式'] === '本機關委外開發') devType = '委外開發';
+  else if (system['建置方式'] === '本機關自行開發') devType = '自行開發';
   var devTypeStr = buildCheckboxString_(devType, ['自行開發', '委外開發', '套裝軟硬體']);
   
   // 6 & 7. 廠商與單位人員
@@ -3888,8 +3888,8 @@ function generateAssessmentDoc(systemId, templateKey) {
       '{{資通系統名稱}}': system['系統名稱'] || '',
       '{{系統管理人}}': sysManagerName,
       '{{系統開發型態}}': devTypeStr,
-      '{{建置單位／廠商}}': (system.builderVendor || '') + (contactStr ? ' - ' + contactStr : ''),
-      '{{維運單位／廠商}}': (system.maintenanceVendor || '') + (contactStr ? ' - ' + contactStr : ''),
+      '{{建置單位／廠商}}': (system['建置廠商'] || '') + (contactStr ? ' - ' + contactStr : ''),
+      '{{維運單位／廠商}}': (system['維運廠商'] || '') + (contactStr ? ' - ' + contactStr : ''),
       '{{MTPD}}': system['最大可容忍中斷時間'] != null ? system['最大可容忍中斷時間'] : '',
       '{{RTO}}': system['復原目標時間(RTO)'] != null ? system['復原目標時間(RTO)'] : '',
       '{{RPO}}': system['資料回復點目標(RPO)'] != null ? system['資料回復點目標(RPO)'] : '',
