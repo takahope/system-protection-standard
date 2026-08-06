@@ -1120,20 +1120,43 @@ function parseKeywordList_(val) {
 
 function getRuleRows_() {
   var sheet = ensureRuleSettingsSheet_();
-  if (sheet.getLastRow() <= 1) return [];
-  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, RULE_SETTINGS_HEADERS.length).getDisplayValues();
-  return data.map(function(row) {
-    return {
-      group: row[0],
-      key: row[1],
-      label: row[2],
-      type: row[3],
-      value: row[4],
-      description: row[5],
-      enabled: parseRuleBool_(row[6]),
-      sort: parseRuleNumber_(row[7], 0)
-    };
-  }).filter(function(rule) { return rule.group && rule.key; });
+  var rows = [];
+  if (sheet.getLastRow() > 1) {
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, RULE_SETTINGS_HEADERS.length).getDisplayValues();
+    rows = data.map(function(row) {
+      return {
+        group: row[0],
+        key: row[1],
+        label: row[2],
+        type: row[3],
+        value: row[4],
+        description: row[5],
+        enabled: parseRuleBool_(row[6]),
+        sort: parseRuleNumber_(row[7], 0)
+      };
+    }).filter(function(rule) { return rule.group && rule.key; });
+  }
+
+  var defaults = getDefaultRuleDefinitions_();
+  var existingKeys = {};
+  rows.forEach(function(r) { existingKeys[r.group + '|' + r.key] = true; });
+  
+  defaults.forEach(function(d) {
+    if (!existingKeys[d.group + '|' + d.key]) {
+      rows.push({
+        group: d.group,
+        key: d.key,
+        label: d.label,
+        type: d.type,
+        value: d.value,
+        description: d.description,
+        enabled: d.enabled,
+        sort: d.sort
+      });
+    }
+  });
+
+  return rows;
 }
 
 function getRuleConfig_() {
