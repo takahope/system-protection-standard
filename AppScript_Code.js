@@ -3823,8 +3823,8 @@ function getAppendix9Description_(dimension, level) {
 function generateAssessmentDoc(systemId, templateKey) {
   assertPageAccess_();
   var rules = getRuleConfig_();
-  var templateId = rules[templateKey || 'doc_template_transl_center'];
-  var folderId = rules['doc_output_folder'];
+  var templateId = getRuleValue_(rules, 'doc_generation', templateKey || 'doc_template_transl_center', '');
+  var folderId = getRuleValue_(rules, 'doc_generation', 'doc_output_folder', '');
   
   if (!templateId || !folderId) throw new Error('尚未設定範本 ID 或輸出資料夾 ID。');
   
