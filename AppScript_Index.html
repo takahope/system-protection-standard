@@ -1118,7 +1118,7 @@ function confirmTemplateChoice(format) {
     if (pendingGenerateContext.type === 'single') {
       executeSingleGenerateDoc(format);
     } else if (pendingGenerateContext.type === 'batch') {
-      executeBatchGenerateDocs(format);
+      executeBatchGenerateDocs(format, pendingGenerateContext.selectedIds);
     }
   }
 }
@@ -6143,20 +6143,37 @@ document.addEventListener('DOMContentLoaded',function(){
 
 function doBatchGenerateDocs() {
   var selectValue = document.getElementById('doc-template-select').value;
+  var mode = (selectValue === 'inventory_sheet') ? 'inventory' : 'assessment';
 
-  // 清冊模式：跳過格式選擇 Modal，直接產出 Sheet
-  if (selectValue === 'inventory_sheet') {
-    if (!confirm('即將產出資通系統清冊，這可能需要幾分鐘時間。確定要繼續嗎？')) return;
-    executeInventorySheet();
-    return;
-  }
+  // Step 1: 從後端取得可產出的系統清單
+  var status = document.getElementById('batch-gen-status');
+  status.textContent = '載入系統清單中...';
 
-  // 評估表模式：原有流程
-  if (!confirm('即將為所有已評估系統產出文件，這可能需要幾分鐘時間。確定要繼續嗎？')) return;
-  openTemplateChoiceModal({ type: 'batch' });
+  google.script.run
+    .withSuccessHandler(function(systems) {
+      status.textContent = '';
+      if (!systems || systems.length === 0) {
+        showToast('目前沒有可產出的系統資料。', 'error');
+        return;
+      }
+      // Step 2: 彈出勾選 Modal
+      openBatchSelectionModal(mode, systems, function(selectedIds) {
+        // Step 3: 根據模式分流
+        if (mode === 'inventory') {
+          executeInventorySheet(selectedIds);
+        } else {
+          openTemplateChoiceModal({ type: 'batch', selectedIds: selectedIds });
+        }
+      });
+    })
+    .withFailureHandler(function(e) {
+      status.textContent = '';
+      showToast('取得系統清單失敗：' + (e.message || e), 'error');
+    })
+    .getSystemsForBatchSelection(mode);
 }
 
-function executeBatchGenerateDocs(format) {
+function executeBatchGenerateDocs(format, selectedIds) {
   var baseTemplateKey = document.getElementById('doc-template-select').value;
   var templateKey = format === 'sheet' ? baseTemplateKey + '_sheet' : baseTemplateKey;
   
@@ -6187,10 +6204,10 @@ function executeBatchGenerateDocs(format) {
       status.textContent = '';
       showToast('批次產出失敗：' + (err.message || err), 'error');
     })
-    .batchGenerateAssessmentDocs(templateKey);
+    .batchGenerateAssessmentDocs(templateKey, selectedIds || []);
 }
 
-function executeInventorySheet() {
+function executeInventorySheet(selectedIds) {
   var btn = document.getElementById('btn-batch-gen');
   var status = document.getElementById('batch-gen-status');
   var resultsDiv = document.getElementById('batch-gen-results');
@@ -6210,7 +6227,7 @@ function executeInventorySheet() {
       status.textContent = '';
       showToast('清冊產出失敗：' + (err.message || err), 'error');
     })
-    .generateInventorySheet('inventory_sheet_template');
+    .generateInventorySheet('inventory_sheet_template', selectedIds || []);
 }
 
 function doSingleGenerateDoc() {
