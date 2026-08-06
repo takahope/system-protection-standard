@@ -3963,6 +3963,85 @@ function generateAssessmentDoc(systemId, templateKey) {
   }
 }
 
+/**
+ * 取得可供批次產出勾選的系統清單。
+ * @param {string} mode - 'assessment' (評估表) 或 'inventory' (清冊)
+ * @return {Array<{systemId:string, systemName:string, protectionLevel:string, assessmentStatus:string}>}
+ */
+function getSystemsForBatchSelection(mode) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var result = [];
+
+  if (mode === 'assessment') {
+    var ratingSheet = ss.getSheetByName('防護需求分級評估');
+    if (!ratingSheet) return result;
+    var ratingData = ratingSheet.getDataRange().getValues();
+
+    // 一次讀取系統清冊，同時建立名稱與等級對照
+    var sysSheet = ss.getSheetByName('系統清冊');
+    var sysNameMap = {};
+    var sysLevelMap = {};
+    if (sysSheet) {
+      var sysData = sysSheet.getDataRange().getDisplayValues();
+      for (var s = 1; s < sysData.length; s++) {
+        var sObj = mapSystemRowToObject_(sysData[s], s + 1);
+        if (sObj['系統ID']) {
+          sysNameMap[sObj['系統ID']] = sObj['系統名稱'] || '';
+          sysLevelMap[sObj['系統ID']] = sObj['防護需求等級'] || '未評估';
+        }
+      }
+    }
+
+    for (var i = 1; i < ratingData.length; i++) {
+      var systemId = ratingData[i][0];
+      if (!systemId) continue;
+      systemId = String(systemId);
+
+      var assessmentStatus = '未完成';
+      try {
+        var dets = getRatingDetails_(systemId);
+        if (dets && dets.length > 0) assessmentStatus = '已完成';
+      } catch (e) { /* 取得明細失敗視為未完成 */ }
+
+      result.push({
+        systemId: systemId,
+        systemName: sysNameMap[systemId] || systemId,
+        protectionLevel: sysLevelMap[systemId] || '未評估',
+        assessmentStatus: assessmentStatus
+      });
+    }
+
+  } else if (mode === 'inventory') {
+    var sysSheet2 = ss.getSheetByName('系統清冊');
+    if (!sysSheet2) return result;
+    var sysData2 = sysSheet2.getDataRange().getDisplayValues();
+
+    // 建立已評估 systemId 集合
+    var ratingSheet2 = ss.getSheetByName('防護需求分級評估');
+    var ratedIds = {};
+    if (ratingSheet2) {
+      var rData2 = ratingSheet2.getDataRange().getValues();
+      for (var ri = 1; ri < rData2.length; ri++) {
+        if (rData2[ri][0]) ratedIds[String(rData2[ri][0])] = true;
+      }
+    }
+
+    for (var j = 1; j < sysData2.length; j++) {
+      var obj = mapSystemRowToObject_(sysData2[j], j + 1);
+      if (!obj['系統ID'] && !obj['系統名稱']) continue;
+      var sId = obj['系統ID'] ? String(obj['系統ID']) : '';
+      result.push({
+        systemId: sId,
+        systemName: obj['系統名稱'] || sId,
+        protectionLevel: obj['防護需求等級'] || '未評估',
+        assessmentStatus: ratedIds[sId] ? '已評估' : '未評估'
+      });
+    }
+  }
+
+  return result;
+}
+
 function batchGenerateAssessmentDocs(templateKey) {
   assertRuleAdmin_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
