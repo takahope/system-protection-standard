@@ -4046,10 +4046,10 @@ function generateInventorySheet(templateKey) {
 
     for (var r = 0; r < tplData.length; r++) {
       for (var c = 0; c < tplData[r].length; c++) {
-        if (String(tplData[r][c]).trim() === '資通系統名稱') {
+        if (String(tplData[r][c]).replace(/\s+/g, '') === '資通系統名稱') {
           headerRowIdx = r;
           for (var cc = 0; cc < tplData[r].length; cc++) {
-            var h = String(tplData[r][cc]).trim();
+            var h = String(tplData[r][cc]).replace(/\s+/g, '');
             if (h) colMap[h] = cc;
           }
           break;
