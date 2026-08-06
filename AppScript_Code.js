@@ -3844,7 +3844,8 @@ function generateAssessmentDoc(systemId, templateKey) {
   }
   
   // 1 & 2. 填表人與日期
-  var evaluatorName = getCurrentEvaluator().displayName || getCurrentEvaluator().email;
+  var evaluator = getCurrentEvaluator();
+  var evaluatorName = evaluator.name || evaluator.email || '';
   var d = new Date();
   var tzDateStr = Utilities.formatDate(d, 'Asia/Taipei', 'yyyy-MM-dd');
   var dateParts = tzDateStr.split('-');
