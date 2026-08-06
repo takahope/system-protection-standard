@@ -1056,6 +1056,7 @@ function getDefaultRuleDefinitions_() {
 
     {group:'doc_generation', key:'doc_template_transl_center', label:'轉譯中心評估表範本 ID (Doc)', type:'text', value:'', description:'設定用於產出分級評估表的 Google Doc 範本 ID (轉譯中心)', enabled:true, sort:10},
     {group:'doc_generation', key:'doc_template_transl_center_sheet', label:'轉譯中心評估表範本 ID (Sheet)', type:'text', value:'', description:'設定用於產出分級評估表的 Google Sheet 範本 ID (轉譯中心)', enabled:true, sort:11},
+    {group:'doc_generation', key:'inventory_sheet_template', label:'資通系統清冊範本 ID (Sheet)', type:'text', value:'', description:'資通系統清冊的 Google Sheet 範本檔案 ID', enabled:true, sort:12},
     {group:'doc_generation', key:'doc_output_folder', label:'文件輸出資料夾 ID', type:'text', value:'', description:'設定產出文件的目標 Google Drive 資料夾 ID', enabled:true, sort:20}
   ];
 }
@@ -3804,6 +3805,32 @@ function getManagerFromHR_(userEmail) {
     }
   } catch(e) {
     console.error("HR Lookup failed", e);
+  }
+  return '';
+}
+
+/**
+ * 從 HR 人員職務配置表查詢單位主管（C欄 = 'PRE' 對應之 B欄姓名）。
+ * @return {string} 單位主管姓名，查無則回傳空字串。
+ */
+function getPresidentFromHR_() {
+  if (!HR_SPREADSHEET_ID) return '';
+  try {
+    if (!cachedHRData_) {
+      var hrSs = SpreadsheetApp.openById(HR_SPREADSHEET_ID);
+      var hrSheet = hrSs.getSheetByName(HR_ROLE_ASSIGNMENT_SHEET_NAME);
+      if (!hrSheet) return '';
+      cachedHRData_ = hrSheet.getDataRange().getValues();
+    }
+    var data = cachedHRData_;
+    for (var i = 1; i < data.length; i++) {
+      var group = String(data[i][2] || '').trim(); // C欄 (index 2)
+      if (group === 'PRE') {
+        return data[i][1] || ''; // B欄 (index 1) = 姓名
+      }
+    }
+  } catch(e) {
+    console.error('HR President Lookup failed', e);
   }
   return '';
 }
