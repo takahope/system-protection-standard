@@ -817,7 +817,8 @@ function getSystemColumns_() {
   {key:'系統負責人', label:'系統負責人', column:SYSTEM_OWNER_COLUMN},
   {key:'系統運作部署在本地機房', label:'系統運作部署在本地機房', column:SYSTEM_LOCAL_DEPLOYMENT_COLUMN},
   {key:'復原目標時間(RTO)', label:'復原目標時間(RTO)', column:SYSTEM_RTO_COLUMN},
-  {key:'資料回復點目標(RPO)', label:'資料回復點目標(RPO)', column:SYSTEM_RPO_COLUMN}
+  {key:'資料回復點目標(RPO)', label:'資料回復點目標(RPO)', column:SYSTEM_RPO_COLUMN},
+  {key:'系統描述', label:'系統描述', column:SYSTEM_DESCRIPTION_COLUMN}
   ];
 }
 
@@ -831,7 +832,8 @@ function getSystemColumnConstantDebug_() {
     SYSTEM_OWNER_COLUMN: {exists: typeof SYSTEM_OWNER_COLUMN !== 'undefined', value: typeof SYSTEM_OWNER_COLUMN !== 'undefined' ? SYSTEM_OWNER_COLUMN : ''},
     SYSTEM_LOCAL_DEPLOYMENT_COLUMN: {exists: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined', value: typeof SYSTEM_LOCAL_DEPLOYMENT_COLUMN !== 'undefined' ? SYSTEM_LOCAL_DEPLOYMENT_COLUMN : ''},
     SYSTEM_RTO_COLUMN: {exists: typeof SYSTEM_RTO_COLUMN !== 'undefined', value: typeof SYSTEM_RTO_COLUMN !== 'undefined' ? SYSTEM_RTO_COLUMN : ''},
-    SYSTEM_RPO_COLUMN: {exists: typeof SYSTEM_RPO_COLUMN !== 'undefined', value: typeof SYSTEM_RPO_COLUMN !== 'undefined' ? SYSTEM_RPO_COLUMN : ''}
+    SYSTEM_RPO_COLUMN: {exists: typeof SYSTEM_RPO_COLUMN !== 'undefined', value: typeof SYSTEM_RPO_COLUMN !== 'undefined' ? SYSTEM_RPO_COLUMN : ''},
+    SYSTEM_DESCRIPTION_COLUMN: {exists: typeof SYSTEM_DESCRIPTION_COLUMN !== 'undefined', value: typeof SYSTEM_DESCRIPTION_COLUMN !== 'undefined' ? SYSTEM_DESCRIPTION_COLUMN : ''}
   };
 }
 
@@ -4136,7 +4138,7 @@ function generateInventorySheet(templateKey) {
 
       var vals = {
         '資通系統名稱':     sys['系統名稱'] || '',
-        '資通系統描述':     '',
+        '資通系統描述':     sys['系統描述'] || '',
         '管理單位':         unitName,
         '管理人':           mgrName,
         '使用單位':         unitName,
