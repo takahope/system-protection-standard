@@ -4055,6 +4055,7 @@ function batchGenerateAssessmentDocs(templateKey, selectedSystemIds) {
   for (var i = 1; i < data.length; i++) {
     var systemId = data[i][0];
     if (!systemId) continue;
+    systemId = String(systemId);
     if (selectedSystemIds && selectedSystemIds.length > 0 && selectedSystemIds.indexOf(systemId) === -1) continue;
     try {
       var res = generateAssessmentDoc(systemId, templateKey);
