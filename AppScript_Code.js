@@ -3971,74 +3971,62 @@ function generateAssessmentDoc(systemId, templateKey) {
 function getSystemsForBatchSelection(mode) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var result = [];
-
+  
+  // 1. 取得所有系統基本資料 (Base Data)
+  var sysSheet = ss.getSheetByName('系統清冊');
+  if (!sysSheet) return result;
+  var sysData = sysSheet.getDataRange().getDisplayValues();
+  
+  // 2. 建立狀態查詢索引 (O(1) 讀取解決 N+1 效能瓶頸)
+  var ratedIds = {};
   if (mode === 'assessment') {
-    var ratingSheet = ss.getSheetByName('防護需求分級評估');
-    if (!ratingSheet) return result;
-    var ratingData = ratingSheet.getDataRange().getValues();
-
-    // 一次讀取系統清冊，同時建立名稱與等級對照
-    var sysSheet = ss.getSheetByName('系統清冊');
-    var sysNameMap = {};
-    var sysLevelMap = {};
-    if (sysSheet) {
-      var sysData = sysSheet.getDataRange().getDisplayValues();
-      for (var s = 1; s < sysData.length; s++) {
-        var sObj = mapSystemRowToObject_(sysData[s], s + 1);
-        if (sObj['系統ID']) {
-          sysNameMap[sObj['系統ID']] = sObj['系統名稱'] || '';
-          sysLevelMap[sObj['系統ID']] = sObj['防護需求等級'] || '未評估';
-        }
+    var detailSheet = ss.getSheetByName('防護需求分級評估明細');
+    if (detailSheet && detailSheet.getLastRow() > 1) {
+      var dData = detailSheet.getDataRange().getValues();
+      for (var r = 1; r < dData.length; r++) {
+        if (dData[r][0]) ratedIds[String(dData[r][0])] = true;
       }
     }
-
-    for (var i = 1; i < ratingData.length; i++) {
-      var systemId = ratingData[i][0];
-      if (!systemId) continue;
-      systemId = String(systemId);
-
-      var assessmentStatus = '未完成';
-      try {
-        var dets = getRatingDetails_(systemId);
-        if (dets && dets.length > 0) assessmentStatus = '已完成';
-      } catch (e) { /* 取得明細失敗視為未完成 */ }
-
-      result.push({
-        systemId: systemId,
-        systemName: sysNameMap[systemId] || systemId,
-        protectionLevel: sysLevelMap[systemId] || '未評估',
-        assessmentStatus: assessmentStatus
-      });
-    }
-
   } else if (mode === 'inventory') {
-    var sysSheet2 = ss.getSheetByName('系統清冊');
-    if (!sysSheet2) return result;
-    var sysData2 = sysSheet2.getDataRange().getDisplayValues();
-
-    // 建立已評估 systemId 集合
-    var ratingSheet2 = ss.getSheetByName('防護需求分級評估');
-    var ratedIds = {};
-    if (ratingSheet2) {
-      var rData2 = ratingSheet2.getDataRange().getValues();
-      for (var ri = 1; ri < rData2.length; ri++) {
-        if (rData2[ri][0]) ratedIds[String(rData2[ri][0])] = true;
+    var ratingSheet = ss.getSheetByName('防護需求分級評估');
+    if (ratingSheet && ratingSheet.getLastRow() > 1) {
+      var rData = ratingSheet.getDataRange().getValues();
+      for (var ri = 1; ri < rData.length; ri++) {
+        if (rData[ri][0]) ratedIds[String(rData[ri][0])] = true;
       }
-    }
-
-    for (var j = 1; j < sysData2.length; j++) {
-      var obj = mapSystemRowToObject_(sysData2[j], j + 1);
-      if (!obj['系統ID'] && !obj['系統名稱']) continue;
-      var sId = obj['系統ID'] ? String(obj['系統ID']) : '';
-      result.push({
-        systemId: sId,
-        systemName: obj['系統名稱'] || sId,
-        protectionLevel: obj['防護需求等級'] || '未評估',
-        assessmentStatus: ratedIds[sId] ? '已評估' : '未評估'
-      });
     }
   }
 
+  // 3. 處理系統清單
+  for (var i = 1; i < sysData.length; i++) {
+    var obj = mapSystemRowToObject_(sysData[i], i + 1);
+    var sId = obj['系統ID'] ? String(obj['系統ID']) : '';
+    if (!sId) continue;
+    
+    // 過濾：套裝軟體不列入清單
+    var buildMethod = obj['建置方式'] || '';
+    if (buildMethod.indexOf('套裝軟') !== -1) continue;
+    
+    // 第一步驟：等級直接讀取 Q 欄
+    var protectionLevel = String(obj['防護需求等級'] || '').trim();
+    if (!protectionLevel) protectionLevel = '未評估';
+    
+    // 第二步驟：狀態必須查驗是否有實際評分/評估紀錄
+    var assessmentStatus;
+    if (mode === 'assessment') {
+      assessmentStatus = ratedIds[sId] ? '已完成' : '未完成';
+    } else {
+      assessmentStatus = ratedIds[sId] ? '已評估' : '未評估';
+    }
+    
+    result.push({
+      systemId: sId,
+      systemName: obj['系統名稱'] || sId,
+      protectionLevel: protectionLevel,
+      assessmentStatus: assessmentStatus
+    });
+  }
+  
   return result;
 }
 
