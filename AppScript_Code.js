@@ -4042,7 +4042,7 @@ function getSystemsForBatchSelection(mode) {
   return result;
 }
 
-function batchGenerateAssessmentDocs(templateKey) {
+function batchGenerateAssessmentDocs(templateKey, selectedSystemIds) {
   assertRuleAdmin_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var ratingSheet = ss.getSheetByName('防護需求分級評估');
@@ -4055,6 +4055,7 @@ function batchGenerateAssessmentDocs(templateKey) {
   for (var i = 1; i < data.length; i++) {
     var systemId = data[i][0];
     if (!systemId) continue;
+    if (selectedSystemIds && selectedSystemIds.length > 0 && selectedSystemIds.indexOf(systemId) === -1) continue;
     try {
       var res = generateAssessmentDoc(systemId, templateKey);
       results.push(res);
@@ -4068,9 +4069,10 @@ function batchGenerateAssessmentDocs(templateKey) {
 /**
  * 產出資通系統清冊：將所有系統彙整至一份 Google Sheet 範本中。
  * @param {string} templateKey - 規則設定中的範本 key，預設 'inventory_sheet_template'
+ * @param {Array<string>} [selectedSystemIds] - 可選的勾選系統ID陣列
  * @return {{success:boolean, url:string, name:string}}
  */
-function generateInventorySheet(templateKey) {
+function generateInventorySheet(templateKey, selectedSystemIds) {
   assertRuleAdmin_();
 
   var rules = getRuleConfig_();
@@ -4159,6 +4161,14 @@ function generateInventorySheet(templateKey) {
       }
       if (obj['系統ID'] || obj['系統名稱']) systems.push(obj);
     }
+
+    // 依據使用者勾選過濾
+    if (selectedSystemIds && selectedSystemIds.length > 0) {
+      systems = systems.filter(function(sys) {
+        return selectedSystemIds.indexOf(sys['系統ID']) !== -1;
+      });
+    }
+    if (systems.length === 0) throw new Error('所選系統無資料可產出。');
 
     // ---- 5. 確保輸出表有足夠列數並清空可能殘留的範例資料 ----
     var dataStartRow = headerRowIdx + 2; // Sheet 行號 1-based
