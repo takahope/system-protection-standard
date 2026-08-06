@@ -3843,7 +3843,11 @@ function generateAssessmentDoc(systemId, templateKey) {
   // 1 & 2. 填表人與日期
   var evaluatorName = getCurrentEvaluator().displayName || getCurrentEvaluator().email;
   var d = new Date();
-  var dateStr = Utilities.formatDate(d, 'Asia/Taipei', 'yyyy/MM/dd');
+  var tzDateStr = Utilities.formatDate(d, 'Asia/Taipei', 'yyyy-MM-dd');
+  var dateParts = tzDateStr.split('-');
+  var rocYear = String(parseInt(dateParts[0], 10) - 1911);
+  var monthStr = String(parseInt(dateParts[1], 10)); // 不補零
+  var dayStr = String(parseInt(dateParts[2], 10));   // 不補零
   
   // 4. 系統管理人
   var roles = getSystemRolesData_(systemId);
@@ -3878,7 +3882,9 @@ function generateAssessmentDoc(systemId, templateKey) {
     
     var mapping = {
       '{{填表人}}': evaluatorName,
-      '{{填表日期}}': dateStr,
+      '{{填表日期_民國年}}': rocYear,
+      '{{填表日期_月}}': monthStr,
+      '{{填表日期_日}}': dayStr,
       '{{資通系統名稱}}': system.name || '',
       '{{系統管理人}}': sysManagerName,
       '{{系統開發型態}}': devTypeStr,
