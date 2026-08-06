@@ -3985,6 +3985,175 @@ function batchGenerateAssessmentDocs(templateKey) {
 }
 
 /**
+ * 產出資通系統清冊：將所有系統彙整至一份 Google Sheet 範本中。
+ * @param {string} templateKey - 規則設定中的範本 key，預設 'inventory_sheet_template'
+ * @return {{success:boolean, url:string, name:string}}
+ */
+function generateInventorySheet(templateKey) {
+  assertRuleAdmin_();
+
+  var rules = getRuleConfig_();
+  var tplId = getRuleValue_(rules, 'doc_generation', templateKey || 'inventory_sheet_template', '');
+  var folderId = getRuleValue_(rules, 'doc_generation', 'doc_output_folder', '');
+
+  if (!tplId) throw new Error('請先在系統設定中設定資通系統清冊範本 ID。');
+  if (!folderId) throw new Error('請先在系統設定中設定文件輸出資料夾 ID。');
+
+  try {
+    // ---- 1. 複製範本 ----
+    var tplFile = DriveApp.getFileById(tplId);
+    var folder  = DriveApp.getFolderById(folderId);
+    var now     = new Date();
+    var dateStr = Utilities.formatDate(now, 'Asia/Taipei', 'yyyy-MM-dd');
+    var newName = '資通系統清冊_' + dateStr;
+    var newFile = tplFile.makeCopy(newName, folder);
+    var outSs   = SpreadsheetApp.openById(newFile.getId());
+
+    // ---- 2. 表頭佔位符替換 ----
+    var evaluator     = getCurrentEvaluator();
+    var evaluatorName = evaluator.name || evaluator.email || '';
+    var parts    = dateStr.split('-');
+    var rocYear  = String(parseInt(parts[0], 10) - 1911);
+    var monthStr = String(parseInt(parts[1], 10));
+    var dayStr   = String(parseInt(parts[2], 10));
+    var president = getPresidentFromHR_();
+
+    var headerMap = {
+      '{{填表人}}':        evaluatorName,
+      '{{單位主管}}':      president,
+      '{{填表日期_民國年}}': rocYear,
+      '{{填表日期_月}}':    monthStr,
+      '{{填表日期_日}}':    dayStr
+    };
+    for (var ph in headerMap) {
+      outSs.createTextFinder(ph).replaceAllWith(
+        headerMap[ph] != null ? String(headerMap[ph]) : ''
+      );
+    }
+
+    // ---- 3. 定位欄位標題列 ----
+    var outSheet = outSs.getSheets()[0];
+    var tplData  = outSheet.getDataRange().getValues();
+    var headerRowIdx = -1;
+    var colMap = {};
+
+    for (var r = 0; r < tplData.length; r++) {
+      for (var c = 0; c < tplData[r].length; c++) {
+        if (String(tplData[r][c]).trim() === '資通系統名稱') {
+          headerRowIdx = r;
+          for (var cc = 0; cc < tplData[r].length; cc++) {
+            var h = String(tplData[r][cc]).trim();
+            if (h) colMap[h] = cc;
+          }
+          break;
+        }
+      }
+      if (headerRowIdx >= 0) break;
+    }
+    if (headerRowIdx < 0) throw new Error('範本中找不到「資通系統名稱」欄位標題。');
+
+    // ---- 4. 讀取系統清冊資料 ----
+    var srcSs    = SpreadsheetApp.getActiveSpreadsheet();
+    var sysSheet = srcSs.getSheetByName('系統清冊');
+    if (!sysSheet) throw new Error('找不到「系統清冊」工作表。');
+    var sysData = sysSheet.getDataRange().getDisplayValues();
+    if (sysData.length <= 1) throw new Error('系統清冊無資料。');
+
+    var sysHeaders = sysData[0];
+    var systems = [];
+    for (var i = 1; i < sysData.length; i++) {
+      var obj = {};
+      for (var j = 0; j < sysHeaders.length; j++) {
+        obj[sysHeaders[j]] = sysData[i][j];
+      }
+      if (obj['系統ID'] || obj['系統名稱']) systems.push(obj);
+    }
+
+    // ---- 5. 確保輸出表有足夠列數 ----
+    var dataStartRow = headerRowIdx + 2; // Sheet 行號 1-based
+    var availRows = outSheet.getMaxRows() - dataStartRow + 1;
+    if (systems.length > availRows) {
+      outSheet.insertRowsAfter(outSheet.getMaxRows(), systems.length - availRows);
+    }
+
+    // ---- 6. 確定寫入範圍 ----
+    var fieldNames = [
+      '資通系統名稱', '資通系統描述', '管理單位', '管理人',
+      '使用單位', '開發型態', '機密性等級', '完整性等級',
+      '可用性等級', '法規遵循性等級', '資通系統防護等級', '是否含個人資料'
+    ];
+    var minCol = Infinity, maxCol = -1;
+    for (var fi = 0; fi < fieldNames.length; fi++) {
+      if (colMap.hasOwnProperty(fieldNames[fi])) {
+        if (colMap[fieldNames[fi]] < minCol) minCol = colMap[fieldNames[fi]];
+        if (colMap[fieldNames[fi]] > maxCol) maxCol = colMap[fieldNames[fi]];
+      }
+    }
+    var numCols = maxCol - minCol + 1;
+
+    // ---- 7. 組裝所有系統列 ----
+    var rowsToWrite = [];
+    for (var s = 0; s < systems.length; s++) {
+      var sys = systems[s];
+      var sysId = sys['系統ID'];
+
+      // 評估明細
+      var detailMap = {};
+      try {
+        var dets = getRatingDetails_(sysId);
+        for (var di = 0; di < dets.length; di++) detailMap[dets[di].field] = dets[di];
+      } catch(e) { /* 無評估資料，等級欄位留空 */ }
+
+      // 管理人
+      var mgrName = '';
+      try {
+        var roles = getSystemRolesData_(sysId);
+        var mgr = roles.filter(function(r){ return r.roleName === '系統部署維護人員'; })[0]
+               || roles.filter(function(r){ return r.roleName === '系統承辦窗口'; })[0];
+        mgrName = mgr ? mgr.name : '';
+      } catch(e) {}
+
+      // 是否含個人資料
+      var piiCount = parseInt(sys['個資數量'] || '0', 10);
+      var hasPII = isNaN(piiCount) || piiCount <= 0 ? '否' : '是';
+
+      var vals = {
+        '資通系統名稱':     sys['系統名稱'] || '',
+        '資通系統描述':     '',
+        '管理單位':         '',
+        '管理人':           mgrName,
+        '使用單位':         '',
+        '開發型態':         sys['建置方式'] || '',
+        '機密性等級':       (detailMap['confidentiality'] || {}).selectedLevel || '',
+        '完整性等級':       (detailMap['integrity'] || {}).selectedLevel || '',
+        '可用性等級':       (detailMap['availability'] || {}).selectedLevel || '',
+        '法規遵循性等級':   (detailMap['compliance'] || {}).selectedLevel || '',
+        '資通系統防護等級': sys['防護需求等級'] || '',
+        '是否含個人資料':   hasPII
+      };
+
+      var row = new Array(numCols);
+      for (var ci = 0; ci < numCols; ci++) row[ci] = '';
+      for (var fn in vals) {
+        if (colMap.hasOwnProperty(fn)) row[colMap[fn] - minCol] = vals[fn];
+      }
+      rowsToWrite.push(row);
+    }
+
+    // ---- 8. 批次寫入 ----
+    if (rowsToWrite.length > 0) {
+      outSheet.getRange(dataStartRow, minCol + 1, rowsToWrite.length, numCols)
+              .setValues(rowsToWrite);
+    }
+    SpreadsheetApp.flush();
+
+    return { success: true, url: newFile.getUrl(), name: newName };
+  } catch (err) {
+    throw new Error('產出清冊失敗：' + err.toString());
+  }
+}
+
+/**
  * 測試用函式：驗證是否能從 HR 表格正確抓取主管姓名。
  * 使用方法：
  * 1. 將 targetEmail 替換為您想要測試的信箱
