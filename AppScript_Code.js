@@ -3760,6 +3760,7 @@ var cachedRolesData_ = null;
 var cachedAppendix9Data_ = null;
 
 function getSystemRolesData_(systemId) {
+  var hrDirectory = loadHrDirectory_();
   if (!cachedRolesData_) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(SYSTEM_ROLE_ASSIGNMENT_SHEET);
@@ -3770,10 +3771,12 @@ function getSystemRolesData_(systemId) {
   var roles = [];
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] === systemId) {
+      var email = String(data[i][3] || '').trim();
+      var userInfo = hrDirectory.map && hrDirectory.map[normalizeEmail_(email)] || {};
       roles.push({
         roleName: data[i][2],
-        email: data[i][3],
-        name: data[i][4]
+        email: email,
+        name: userInfo.name || email
       });
     }
   }
