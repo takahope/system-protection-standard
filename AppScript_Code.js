@@ -4037,6 +4037,13 @@ function generateInventorySheet(templateKey) {
     var headerRowIdx = -1;
     var colMap = {};
 
+    // ---- 3.5 提取填表單位 ----
+    var b2Value = String(tplData[1] && tplData[1][1] ? tplData[1][1] : '').trim();
+    var unitName = b2Value.replace(/^.*填表單位[：:]\s*/, '').trim();
+    if (unitName === b2Value) {
+      unitName = ''; 
+    }
+
     for (var r = 0; r < tplData.length; r++) {
       for (var c = 0; c < tplData[r].length; c++) {
         if (String(tplData[r][c]).trim() === '資通系統名稱') {
@@ -4123,9 +4130,9 @@ function generateInventorySheet(templateKey) {
       var vals = {
         '資通系統名稱':     sys['系統名稱'] || '',
         '資通系統描述':     '',
-        '管理單位':         '',
+        '管理單位':         unitName,
         '管理人':           mgrName,
-        '使用單位':         '',
+        '使用單位':         unitName,
         '開發型態':         sys['建置方式'] || '',
         '機密性等級':       (detailMap['confidentiality'] || {}).selectedLevel || '',
         '完整性等級':       (detailMap['integrity'] || {}).selectedLevel || '',
