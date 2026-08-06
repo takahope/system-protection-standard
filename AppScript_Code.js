@@ -4003,9 +4003,9 @@ function getSystemsForBatchSelection(mode) {
     var sId = obj['系統ID'] ? String(obj['系統ID']) : '';
     if (!sId) continue;
     
-    // 過濾：套裝軟體不列入清單
+    // 過濾：僅在「評估表」模式下，套裝軟體才不列入清單（因為不需評估）；「清冊」模式則需保留。
     var buildMethod = obj['建置方式'] || '';
-    if (buildMethod.indexOf('套裝軟') !== -1) continue;
+    if (mode === 'assessment' && buildMethod.indexOf('套裝軟') !== -1) continue;
     
     // 第一步驟：等級直接讀取 Q 欄
     var protectionLevel = String(obj['防護需求等級'] || '').trim();
