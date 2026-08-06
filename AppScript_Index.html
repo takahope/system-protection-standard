@@ -5996,7 +5996,8 @@ function doBatchGenerateDocs() {
 }
 
 function doSingleGenerateDoc() {
-  if (!currentSystemId) return;
+  if (!currentSystem || !currentSystem['系統ID']) return;
+  var sysId = currentSystem['系統ID'];
   var btn = document.getElementById('btn-single-gen');
   var status = document.getElementById('single-gen-status');
   
@@ -6016,7 +6017,7 @@ function doSingleGenerateDoc() {
       status.textContent = '';
       showToast('產出失敗：' + (err.message || err), 'error');
     })
-    .generateAssessmentDoc(currentSystemId, 'doc_template_transl_center');
+    .generateAssessmentDoc(sysId, 'doc_template_transl_center');
 }
 </script>
 </body>
