@@ -4166,7 +4166,7 @@ function generateInventorySheet(templateKey, selectedSystemIds) {
     // 依據使用者勾選過濾
     if (selectedSystemIds && selectedSystemIds.length > 0) {
       systems = systems.filter(function(sys) {
-        return selectedSystemIds.indexOf(sys['系統ID']) !== -1;
+        return selectedSystemIds.indexOf(String(sys['系統ID'])) !== -1;
       });
     }
     if (systems.length === 0) throw new Error('所選系統無資料可產出。');
