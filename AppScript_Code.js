@@ -3882,8 +3882,6 @@ function generateAssessmentDoc(systemId, templateKey) {
     var targetFolder = DriveApp.getFolderById(folderId);
     var newFileName = (system['系統名稱'] || '') + '_資通系統防護需求分級評估表';
     var newFile = templateFile.makeCopy(newFileName, targetFolder);
-    var doc = DocumentApp.openById(newFile.getId());
-    var body = doc.getBody();
     
     var mapping = {
       '{{填表人}}': evaluatorName,
@@ -3903,20 +3901,33 @@ function generateAssessmentDoc(systemId, templateKey) {
       '{{可用性說明}}': getAppendix9Description_('可用性', (detailMap['availability'] || {}).selectedLevel),
       '{{法律遵循性說明}}': getAppendix9Description_('法律遵循性', (detailMap['compliance'] || {}).selectedLevel),
       '{{系統管理人簽章}}': sysManagerName,
-      '{{系統管理單位主管簽章}}': sysManagerBoss
+      '{{系統管理單位主管簽章}}': sysManagerBoss,
+      '{{機密性等級}}': (detailMap['confidentiality'] || {}).selectedLevel || '',
+      '{{完整性等級}}': (detailMap['integrity'] || {}).selectedLevel || '',
+      '{{可用性等級}}': (detailMap['availability'] || {}).selectedLevel || '',
+      '{{法律遵循性等級}}': (detailMap['compliance'] || {}).selectedLevel || '',
+      '{{防護需求等級}}': summary.finalLevel || ''
     };
     
-    for (var key in mapping) {
-      body.replaceText(key, mapping[key] != null ? String(mapping[key]) : '');
+    var mimeType = templateFile.getMimeType();
+    
+    if (mimeType === MimeType.GOOGLE_DOCS) {
+      var doc = DocumentApp.openById(newFile.getId());
+      var body = doc.getBody();
+      for (var key in mapping) {
+        body.replaceText(key, mapping[key] != null ? String(mapping[key]) : '');
+      }
+      doc.saveAndClose();
+    } else if (mimeType === MimeType.GOOGLE_SHEETS) {
+      var ss = SpreadsheetApp.openById(newFile.getId());
+      for (var key in mapping) {
+        var replacement = mapping[key] != null ? String(mapping[key]) : '';
+        ss.createTextFinder(key).replaceAllWith(replacement);
+      }
+    } else {
+      throw new Error('不支援的範本格式。請使用 Google Doc 或 Google Sheet。');
     }
     
-    body.replaceText('{{機密性等級}}', (detailMap['confidentiality'] || {}).selectedLevel || '');
-    body.replaceText('{{完整性等級}}', (detailMap['integrity'] || {}).selectedLevel || '');
-    body.replaceText('{{可用性等級}}', (detailMap['availability'] || {}).selectedLevel || '');
-    body.replaceText('{{法律遵循性等級}}', (detailMap['compliance'] || {}).selectedLevel || '');
-    body.replaceText('{{防護需求等級}}', summary.finalLevel || '');
-    
-    doc.saveAndClose();
     return { success: true, url: newFile.getUrl(), name: newFileName };
   } catch (err) {
     throw new Error('產出文件失敗：' + err.toString());
