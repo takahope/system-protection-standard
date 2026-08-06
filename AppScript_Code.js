@@ -3909,7 +3909,7 @@ function generateAssessmentDoc(systemId, templateKey) {
   try {
     var templateFile = DriveApp.getFileById(templateId);
     var targetFolder = DriveApp.getFolderById(folderId);
-    var newFileName = (system['系統名稱'] || '') + '_資通系統防護需求分級評估表';
+    var newFileName = '轉譯中心資通系統防護需求分級評估表_' + (system['系統名稱'] || '') + '_' + tzDateStr;
     var newFile = templateFile.makeCopy(newFileName, targetFolder);
     
     var mapping = {
@@ -4007,7 +4007,7 @@ function generateInventorySheet(templateKey) {
     var folder  = DriveApp.getFolderById(folderId);
     var now     = new Date();
     var dateStr = Utilities.formatDate(now, 'Asia/Taipei', 'yyyy-MM-dd');
-    var newName = '資通系統清冊_' + dateStr;
+    var newName = '轉譯中心資通系統清冊_' + dateStr;
     var newFile = tplFile.makeCopy(newName, folder);
     var outSs   = SpreadsheetApp.openById(newFile.getId());
 
