@@ -840,20 +840,21 @@
             <button class="btn btn-outline" onclick="loadRuleAuditLogs()">檢視變更紀錄</button>
           </div>
           <div id="init-result" style="margin-top:12px"></div>
-
-          <div class="card" style="margin-top: 16px;">
-            <h3 style="margin-top:0; font-size: 14px; color: var(--primary);">文件產出</h3>
-            <p style="font-size:12px; color:var(--text2); margin-bottom: 12px;">將所有已評估之系統產出為 Google Doc。請先確認下方已設定範本及資料夾 ID。</p>
-            <div style="display:flex; gap: 8px; align-items: center;">
-              <select id="doc-template-select" class="form-control" style="width: 200px;">
-                <option value="doc_template_transl_center">轉譯中心評估表</option>
-              </select>
-              <button class="btn btn-outline" onclick="doBatchGenerateDocs()" id="btn-batch-gen">批次產出全部</button>
-            </div>
-            <div id="batch-gen-status" style="font-size:12px; margin-top:8px; color:var(--primary);"></div>
-            <div id="batch-gen-results" style="font-size:12px; margin-top:8px;"></div>
-          </div>
         </div>
+
+        <div class="card">
+          <h3 style="margin-top:0; font-size: 14px; color: var(--primary);">文件產出</h3>
+          <p style="font-size:12px; color:var(--text2); margin-bottom: 12px;">將所有已評估之系統產出為 Google Doc。請先確認下方已設定範本及資料夾 ID。</p>
+          <div style="display:flex; gap: 8px; align-items: center;">
+            <select id="doc-template-select" class="form-control" style="width: 200px;">
+              <option value="doc_template_transl_center">轉譯中心評估表</option>
+            </select>
+            <button class="btn btn-outline" onclick="doBatchGenerateDocs()" id="btn-batch-gen">批次產出全部</button>
+          </div>
+          <div id="batch-gen-status" style="font-size:12px; margin-top:8px; color:var(--primary);"></div>
+          <div id="batch-gen-results" style="font-size:12px; margin-top:8px;"></div>
+        </div>
+
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
             <div>
