@@ -1066,6 +1066,44 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- 範本選擇 Modal -->
+<div id="modal-template-choice" class="modal-overlay" style="display:none; z-index:9999;">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h3 style="margin-top:0; color:var(--primary);">請選擇要匯出的檔案格式</h3>
+    <p style="color:var(--text2); font-size:14px; margin-bottom: 20px;">針對您選擇的表單，系統將使用對應格式的範本進行產出。</p>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <button class="btn btn-primary" onclick="confirmTemplateChoice('doc')" style="width: 100%; padding: 12px; font-size: 16px;">📄 使用 Google Doc 範本</button>
+      <button class="btn btn-primary" onclick="confirmTemplateChoice('sheet')" style="width: 100%; padding: 12px; font-size: 16px; background: #0f9d58; border-color: #0f9d58;">📊 使用 Google Sheet 範本</button>
+      <button class="btn btn-outline" onclick="closeTemplateChoiceModal()" style="width: 100%;">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var pendingGenerateContext = null;
+
+function openTemplateChoiceModal(context) {
+  pendingGenerateContext = context;
+  document.getElementById('modal-template-choice').style.display = 'flex';
+}
+
+function closeTemplateChoiceModal() {
+  pendingGenerateContext = null;
+  document.getElementById('modal-template-choice').style.display = 'none';
+}
+
+function confirmTemplateChoice(format) {
+  document.getElementById('modal-template-choice').style.display = 'none';
+  if (pendingGenerateContext) {
+    if (pendingGenerateContext.type === 'single') {
+      executeSingleGenerateDoc(format);
+    } else if (pendingGenerateContext.type === 'batch') {
+      executeBatchGenerateDocs(format);
+    }
+  }
+}
+</script>
+
 <script>
 var allSystems = [], currentSystem = null, currentAssessment = [], dashboardData = null;
 var dashboardSnapshots = [], currentDashboardSnapshotKey = '';
