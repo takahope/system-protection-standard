@@ -513,6 +513,25 @@
     .system-modal-tour-arrow{position:absolute;width:16px;height:16px;background:#fff;border-left:1px solid rgba(148,163,184,.24);border-top:1px solid rgba(148,163,184,.24);transform:rotate(45deg);transition:top .24s ease,left .24s ease,opacity .18s ease}
     .modal .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px 18px;margin-top:0;border-top:1px solid #e5eaf2;background:#fff}
     .modal-action-left,.modal-action-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+    /* Batch Selection Modal */
+    .batch-select-search{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box}
+    .batch-select-search:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(79,70,229,.15)}
+    .batch-select-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;margin-bottom:4px}
+    .batch-select-toolbar button{font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--text2)}
+    .batch-select-toolbar button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .batch-select-count{font-size:12px;color:var(--text2)}
+    .batch-select-list{max-height:360px;overflow-y:auto;padding:0 24px 8px;margin:0;list-style:none}
+    .batch-select-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:background .15s}
+    .batch-select-item:hover{background:rgba(79,70,229,.06)}
+    .batch-select-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0}
+    .batch-select-item .sys-name{flex:1;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .batch-select-item .level-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
+    .level-badge.level-high{background:#fee2e2;color:#dc2626}
+    .level-badge.level-mid{background:#fff7ed;color:#ea580c}
+    .level-badge.level-normal{background:#f0fdf4;color:#16a34a}
+    .level-badge.level-none{background:#f1f5f9;color:#94a3b8}
+    .batch-select-item .assess-status{font-size:11px;color:var(--text2);flex-shrink:0;min-width:48px;text-align:right}
     .export-modal{width:min(92vw,680px)}
     .export-modal-head{padding:24px 24px 18px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border-bottom:1px solid #dbe7f6}
     .export-modal-head h2{margin:0 0 8px;font-size:18px;color:#0f172a}
@@ -6000,6 +6019,127 @@ document.addEventListener('DOMContentLoaded',function(){
   loadRuleSettings();
   loadSystems();
 });
+
+  /**
+   * 開啟批次產出系統勾選 Modal。
+   * @param {string} mode - 'assessment' 或 'inventory'
+   * @param {Array} systems - 後端回傳的系統清單
+   * @param {Function} callback - 確認後的回呼，參數為 selectedSystemIds 陣列
+   */
+  function openBatchSelectionModal(mode, systems, callback) {
+    var modeLabel = mode === 'inventory' ? '清冊' : '評估表';
+    var total = systems.length;
+
+    var html = '<div class="modal-overlay" onclick="if(event.target===this)closeBatchSelectionModal()">';
+    html += '<div class="modal" style="max-width:620px">';
+
+    // 標題列
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 12px">';
+    html += '<h2 style="margin:0;font-size:16px">選擇要產出的系統（' + escH(modeLabel) + '）</h2>';
+    html += '<button class="btn btn-outline" style="padding:4px 8px;font-size:16px;line-height:1;border:none" onclick="closeBatchSelectionModal()">✕</button>';
+    html += '</div>';
+
+    // 搜尋欄
+    html += '<div style="padding:0 24px 8px">';
+    html += '<input type="text" class="batch-select-search" id="batch-select-search" placeholder="🔍 搜尋系統名稱..." oninput="filterBatchSelectList()">';
+    html += '</div>';
+
+    // 工具列
+    html += '<div class="batch-select-toolbar">';
+    html += '<div style="display:flex;gap:6px">';
+    html += '<button onclick="toggleBatchSelectAll(true)">全選</button>';
+    html += '<button onclick="toggleBatchSelectAll(false)">全不選</button>';
+    html += '</div>';
+    html += '<span class="batch-select-count" id="batch-select-count">已選 ' + total + ' / ' + total + '</span>';
+    html += '</div>';
+
+    // 系統清單
+    html += '<ul class="batch-select-list" id="batch-select-list">';
+    for (var i = 0; i < systems.length; i++) {
+      var sys = systems[i];
+      var levelClass = 'level-none';
+      if (sys.protectionLevel === '高') levelClass = 'level-high';
+      else if (sys.protectionLevel === '中') levelClass = 'level-mid';
+      else if (sys.protectionLevel === '普') levelClass = 'level-normal';
+
+      html += '<li class="batch-select-item" data-name="' + escH(sys.systemName) + '" onclick="toggleBatchCheckbox(this)">';
+      html += '<input type="checkbox" checked data-system-id="' + escH(sys.systemId) + '" onclick="event.stopPropagation();updateBatchSelectCount()">';
+      html += '<span class="sys-name">' + escH(sys.systemName) + '</span>';
+      html += '<span class="level-badge ' + levelClass + '">' + escH(sys.protectionLevel) + '</span>';
+      html += '<span class="assess-status">' + escH(sys.assessmentStatus) + '</span>';
+      html += '</li>';
+    }
+    html += '</ul>';
+
+    // 底部按鈕
+    html += '<div class="modal-actions">';
+    html += '<button class="btn btn-outline" onclick="closeBatchSelectionModal()">取消</button>';
+    html += '<button class="btn btn-primary" id="btn-batch-select-confirm" onclick="confirmBatchSelection()">確認產出</button>';
+    html += '</div>';
+
+    html += '</div></div>';
+
+    window._batchSelectionCallback = callback;
+    document.getElementById('modal-container').innerHTML = html;
+  }
+
+  /** 關閉批次勾選 Modal */
+  function closeBatchSelectionModal() {
+    window._batchSelectionCallback = null;
+    document.getElementById('modal-container').innerHTML = '';
+  }
+
+  /** 切換單一 checkbox（點擊整列時觸發） */
+  function toggleBatchCheckbox(li) {
+    var cb = li.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked;
+    updateBatchSelectCount();
+  }
+
+  /** 全選或全不選（僅作用於目前可見項目） */
+  function toggleBatchSelectAll(selectAll) {
+    var items = document.querySelectorAll('#batch-select-list .batch-select-item');
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].style.display !== 'none') {
+        items[i].querySelector('input[type=checkbox]').checked = selectAll;
+      }
+    }
+    updateBatchSelectCount();
+  }
+
+  /** 更新已選計數 */
+  function updateBatchSelectCount() {
+    var all = document.querySelectorAll('#batch-select-list input[type=checkbox]');
+    var checked = document.querySelectorAll('#batch-select-list input[type=checkbox]:checked');
+    var countEl = document.getElementById('batch-select-count');
+    if (countEl) countEl.textContent = '已選 ' + checked.length + ' / ' + all.length;
+  }
+
+  /** 搜尋過濾 */
+  function filterBatchSelectList() {
+    var keyword = document.getElementById('batch-select-search').value.trim().toLowerCase();
+    var items = document.querySelectorAll('#batch-select-list .batch-select-item');
+    for (var i = 0; i < items.length; i++) {
+      var name = (items[i].getAttribute('data-name') || '').toLowerCase();
+      items[i].style.display = (!keyword || name.indexOf(keyword) !== -1) ? '' : 'none';
+    }
+  }
+
+  /** 確認產出 */
+  function confirmBatchSelection() {
+    var checked = document.querySelectorAll('#batch-select-list input[type=checkbox]:checked');
+    if (checked.length === 0) {
+      showToast('請至少選擇一個系統', 'error');
+      return;
+    }
+    var selectedIds = [];
+    for (var i = 0; i < checked.length; i++) {
+      selectedIds.push(checked[i].getAttribute('data-system-id'));
+    }
+    var cb = window._batchSelectionCallback;
+    closeBatchSelectionModal();
+    if (typeof cb === 'function') cb(selectedIds);
+  }
 
 function doBatchGenerateDocs() {
   var selectValue = document.getElementById('doc-template-select').value;
