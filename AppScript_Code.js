@@ -4130,7 +4130,7 @@ function generateInventorySheet(templateKey) {
       // 開發型態轉換
       var rawDevType = sys['建置方式'] || '';
       var mappedDevType = rawDevType;
-      if (rawDevType === '本機關建置套裝軟體') mappedDevType = '套裝軟硬體';
+      if (rawDevType === '本機關購置套裝軟體' || rawDevType === '本機關建置套裝軟體' || rawDevType === '機關購置套裝軟體') mappedDevType = '套裝軟硬體';
       else if (rawDevType === '本機關委外開發') mappedDevType = '委外開發';
       else if (rawDevType === '本機關自行開發') mappedDevType = '自行開發';
 
