@@ -848,6 +848,7 @@
           <div style="display:flex; gap: 8px; align-items: center;">
             <select id="doc-template-select" class="form-control" style="width: 200px;">
               <option value="doc_template_transl_center">轉譯中心評估表</option>
+              <option value="inventory_sheet">資通系統清冊</option>
             </select>
             <button class="btn btn-outline" onclick="doBatchGenerateDocs()" id="btn-batch-gen">批次產出全部</button>
           </div>
@@ -6001,6 +6002,16 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 function doBatchGenerateDocs() {
+  var selectValue = document.getElementById('doc-template-select').value;
+
+  // 清冊模式：跳過格式選擇 Modal，直接產出 Sheet
+  if (selectValue === 'inventory_sheet') {
+    if (!confirm('即將產出資通系統清冊，這可能需要幾分鐘時間。確定要繼續嗎？')) return;
+    executeInventorySheet();
+    return;
+  }
+
+  // 評估表模式：原有流程
   if (!confirm('即將為所有已評估系統產出文件，這可能需要幾分鐘時間。確定要繼續嗎？')) return;
   openTemplateChoiceModal({ type: 'batch' });
 }
@@ -6037,6 +6048,29 @@ function executeBatchGenerateDocs(format) {
       showToast('批次產出失敗：' + (err.message || err), 'error');
     })
     .batchGenerateAssessmentDocs(templateKey);
+}
+
+function executeInventorySheet() {
+  var btn = document.getElementById('btn-batch-gen');
+  var status = document.getElementById('batch-gen-status');
+  var resultsDiv = document.getElementById('batch-gen-results');
+
+  btn.disabled = true;
+  status.textContent = '清冊產出中，請勿關閉視窗...';
+  resultsDiv.innerHTML = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      status.textContent = '產出完成！';
+      resultsDiv.innerHTML = '<p><a href="' + res.url + '" target="_blank">' + res.name + '</a></p>';
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      status.textContent = '';
+      showToast('清冊產出失敗：' + (err.message || err), 'error');
+    })
+    .generateInventorySheet('inventory_sheet_template');
 }
 
 function doSingleGenerateDoc() {
