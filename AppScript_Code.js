@@ -3797,7 +3797,7 @@ function getManagerFromHR_(userEmail) {
       var email = data[i][0]; // A欄
       var group = data[i][2]; // C欄
       var mgrName = data[i][6]; // G欄 (index 6)
-      if (email === userEmail && group && group.toString().indexOf('grp-') === 0) {
+      if (email === userEmail && group && group.toString().indexOf('GRP-') === 0) {
         return mgrName || '';
       }
     }
@@ -3942,4 +3942,27 @@ function batchGenerateAssessmentDocs(templateKey) {
     }
   }
   return { results: results, errors: errors };
+}
+
+/**
+ * 測試用函式：驗證是否能從 HR 表格正確抓取主管姓名。
+ * 使用方法：
+ * 1. 將 targetEmail 替換為您想要測試的信箱
+ * 2. 在 GAS 編輯器上方的下拉選單選擇 debugGetManagerFromHR
+ * 3. 點擊「執行」，並在下方的「執行記錄」查看結果
+ */
+function debugGetManagerFromHR() {
+  // 請在這裡填寫您想要測試的信箱
+  var targetEmail = 'test@example.com'; 
+  
+  console.log('開始測試查詢主管姓名...');
+  console.log('目標信箱: ' + targetEmail);
+  
+  var managerName = getManagerFromHR_(targetEmail);
+  
+  if (managerName) {
+    console.log('✅ 查詢成功！主管姓名為: ' + managerName);
+  } else {
+    console.log('❌ 查詢不到主管姓名。請確認 HR 表格中是否有該信箱，且 C 欄 (群組) 為 grp- 開頭。');
+  }
 }
