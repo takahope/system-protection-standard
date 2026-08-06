@@ -3905,12 +3905,11 @@ function generateAssessmentDoc(systemId, templateKey) {
       body.replaceText(key, mapping[key] != null ? String(mapping[key]) : '');
     }
     
-    var levelOpts = ['高', '中', '普'];
-    body.replaceText('{{機密性等級}}', buildCheckboxString_((detailMap['confidentiality'] || {}).selectedLevel, levelOpts));
-    body.replaceText('{{完整性等級}}', buildCheckboxString_((detailMap['integrity'] || {}).selectedLevel, levelOpts));
-    body.replaceText('{{可用性等級}}', buildCheckboxString_((detailMap['availability'] || {}).selectedLevel, levelOpts));
-    body.replaceText('{{法律遵循性等級}}', buildCheckboxString_((detailMap['compliance'] || {}).selectedLevel, levelOpts));
-    body.replaceText('{{防護需求等級}}', buildCheckboxString_(summary.finalLevel, ['高', '中', '普', '套裝軟體']));
+    body.replaceText('{{機密性等級}}', (detailMap['confidentiality'] || {}).selectedLevel || '');
+    body.replaceText('{{完整性等級}}', (detailMap['integrity'] || {}).selectedLevel || '');
+    body.replaceText('{{可用性等級}}', (detailMap['availability'] || {}).selectedLevel || '');
+    body.replaceText('{{法律遵循性等級}}', (detailMap['compliance'] || {}).selectedLevel || '');
+    body.replaceText('{{防護需求等級}}', summary.finalLevel || '');
     
     doc.saveAndClose();
     return { success: true, url: newFile.getUrl(), name: newFileName };
