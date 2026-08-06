@@ -3875,7 +3875,7 @@ function generateAssessmentDoc(systemId, templateKey) {
   try {
     var templateFile = DriveApp.getFileById(templateId);
     var targetFolder = DriveApp.getFolderById(folderId);
-    var newFileName = system.name + '_資通系統防護需求分級評估表';
+    var newFileName = (system['系統名稱'] || '') + '_資通系統防護需求分級評估表';
     var newFile = templateFile.makeCopy(newFileName, targetFolder);
     var doc = DocumentApp.openById(newFile.getId());
     var body = doc.getBody();
@@ -3885,7 +3885,7 @@ function generateAssessmentDoc(systemId, templateKey) {
       '{{填表日期_民國年}}': rocYear,
       '{{填表日期_月}}': monthStr,
       '{{填表日期_日}}': dayStr,
-      '{{資通系統名稱}}': system.name || '',
+      '{{資通系統名稱}}': system['系統名稱'] || '',
       '{{系統管理人}}': sysManagerName,
       '{{系統開發型態}}': devTypeStr,
       '{{建置單位／廠商}}': (system.builderVendor || '') + (contactStr ? ' - ' + contactStr : ''),
