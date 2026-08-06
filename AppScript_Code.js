@@ -4069,9 +4069,12 @@ function generateInventorySheet(templateKey) {
       if (obj['系統ID'] || obj['系統名稱']) systems.push(obj);
     }
 
-    // ---- 5. 確保輸出表有足夠列數 ----
+    // ---- 5. 確保輸出表有足夠列數並清空可能殘留的範例資料 ----
     var dataStartRow = headerRowIdx + 2; // Sheet 行號 1-based
     var availRows = outSheet.getMaxRows() - dataStartRow + 1;
+    if (availRows > 0) {
+      outSheet.getRange(dataStartRow, 1, availRows, outSheet.getMaxColumns()).clearContent();
+    }
     if (systems.length > availRows) {
       outSheet.insertRowsAfter(outSheet.getMaxRows(), systems.length - availRows);
     }
@@ -4102,7 +4105,7 @@ function generateInventorySheet(templateKey) {
       try {
         var dets = getRatingDetails_(sysId);
         for (var di = 0; di < dets.length; di++) detailMap[dets[di].field] = dets[di];
-      } catch(e) { /* 無評估資料，等級欄位留空 */ }
+      } catch(e) { console.warn('System ' + sysId + ' rating details lookup failed:', e); }
 
       // 管理人
       var mgrName = '';
@@ -4111,7 +4114,7 @@ function generateInventorySheet(templateKey) {
         var mgr = roles.filter(function(r){ return r.roleName === '系統部署維護人員'; })[0]
                || roles.filter(function(r){ return r.roleName === '系統承辦窗口'; })[0];
         mgrName = mgr ? mgr.name : '';
-      } catch(e) {}
+      } catch(e) { console.warn('System ' + sysId + ' roles lookup failed:', e); }
 
       // 是否含個人資料
       var piiCount = parseInt(sys['個資數量'] || '0', 10);
