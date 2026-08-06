@@ -3834,10 +3834,10 @@ function generateAssessmentDoc(systemId, templateKey) {
   var summary = getSummaryRatingRow_(systemId);
   if (!summary) throw new Error('該系統尚未完成評估。');
   
-  var details = getRatingDetailsReadOnly_(systemId);
+  var details = getRatingDetails_(systemId);
   var detailMap = {};
   for (var i = 0; i < details.length; i++) {
-    detailMap[details[i].dimension] = details[i];
+    detailMap[details[i].field] = details[i];
   }
   
   // 1 & 2. 填表人與日期

@@ -45,3 +45,7 @@ For pull requests, include:
 - affected files and sheet tabs
 - deployment or migration steps, if any
 - screenshots for UI changes
+
+## 事件紀錄
+- **2026-08-06**: 修正文件產出佔位符空白問題。發現 `generateAssessmentDoc` 錯誤引用英文屬性（如 `system.name`, `system.mtpd`），改為中文表頭 key（如 `system['系統名稱']`）。另外驗證了「卡在產出中」問題實為部署版本未更新所致，符合 PLAYBOOK P2 部署問題排除法則。
+- **2026-08-06**: 修正防護需求分級評估等級佔位符空白問題。發現 `generateAssessmentDoc` 誤呼叫唯讀版本的 `getRatingDetailsReadOnly_` 導致無法取得構面與判定等級資料，且錯誤地引用 `.dimension` 而非 `.field`。已修正為呼叫 `getRatingDetails_` 並將映射屬性改為 `.field`。
