@@ -3749,7 +3749,7 @@ function importDefaultSystems() {
 // ===== 文件產出功能 (Document Generation) =====
 
 function buildCheckboxString_(selectedValue, options) {
-  var CHECKED = '☑';
+  var CHECKED = '■';
   var UNCHECKED = '□';
   return options.map(function(opt) {
     return (opt === selectedValue ? CHECKED : UNCHECKED) + opt;
