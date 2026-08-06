@@ -3890,7 +3890,7 @@ function generateAssessmentDoc(systemId, templateKey) {
   
   // 5. 系統開發型態
   var devType = '';
-  if (system['建置方式'] === '本機關建置套裝軟體') devType = '套裝軟硬體';
+  if (system['建置方式'] === '本機關購置套裝軟體') devType = '套裝軟硬體';
   else if (system['建置方式'] === '本機關委外開發') devType = '委外開發';
   else if (system['建置方式'] === '本機關自行開發') devType = '自行開發';
   var devTypeStr = buildCheckboxString_(devType, ['自行開發', '委外開發', '套裝軟硬體']);
@@ -4127,13 +4127,20 @@ function generateInventorySheet(templateKey) {
       var piiCount = parseInt(sys['個資數量'] || '0', 10);
       var hasPII = isNaN(piiCount) || piiCount <= 0 ? '否' : '是';
 
+      // 開發型態轉換
+      var rawDevType = sys['建置方式'] || '';
+      var mappedDevType = rawDevType;
+      if (rawDevType === '本機關建置套裝軟體') mappedDevType = '套裝軟硬體';
+      else if (rawDevType === '本機關委外開發') mappedDevType = '委外開發';
+      else if (rawDevType === '本機關自行開發') mappedDevType = '自行開發';
+
       var vals = {
         '資通系統名稱':     sys['系統名稱'] || '',
         '資通系統描述':     '',
         '管理單位':         unitName,
         '管理人':           mgrName,
         '使用單位':         unitName,
-        '開發型態':         sys['建置方式'] || '',
+        '開發型態':         mappedDevType,
         '機密性等級':       (detailMap['confidentiality'] || {}).selectedLevel || '',
         '完整性等級':       (detailMap['integrity'] || {}).selectedLevel || '',
         '可用性等級':       (detailMap['availability'] || {}).selectedLevel || '',

@@ -87,7 +87,7 @@
 在 `#doc-template-select` 新增選項：
 
 ```html
-<option value="inventory_sheet">資通系統清冊</option>
+<option value="inventory_sheet">轉譯中心資通系統清冊</option>
 ```
 
 #### 產出流程
