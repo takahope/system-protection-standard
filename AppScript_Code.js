@@ -4071,9 +4071,12 @@ function generateInventorySheet(templateKey) {
     var sysHeaders = sysData[0];
     var systems = [];
     for (var i = 1; i < sysData.length; i++) {
-      var obj = {};
+      var obj = mapSystemRowToObject_(sysData[i], i + 1);
+      // Fallback for any dynamic headers not defined in getSystemColumns_()
       for (var j = 0; j < sysHeaders.length; j++) {
-        obj[sysHeaders[j]] = sysData[i][j];
+        if (sysHeaders[j] && obj[sysHeaders[j]] === undefined) {
+          obj[sysHeaders[j]] = sysData[i][j];
+        }
       }
       if (obj['系統ID'] || obj['系統名稱']) systems.push(obj);
     }
