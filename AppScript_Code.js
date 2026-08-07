@@ -3898,10 +3898,38 @@ function generateAssessmentDoc(systemId, templateKey) {
   var devTypeStr = buildCheckboxString_(devType, ['自行開發', '委外開發', '套裝軟硬體']);
   
   // 6 & 7. 廠商與單位人員
-  var vendorContact = roles.filter(function(r) { return r.roleName === '開發'; })[0]
+  // 依據廠商是否為「中央研究院」決定聯絡人優先順序
+  // 非中央研究院（委外）→ 優先抓「系統承辦窗口」
+  // 中央研究院（院內）→ 優先抓「開發」
+  var buildVendor = system['建置廠商'] || '';
+  var maintainVendor = system['維運廠商'] || '';
+
+  var buildContact, maintainContact;
+  if (buildVendor !== '中央研究院' && buildVendor !== '') {
+    // 委外：優先系統承辦窗口
+    buildContact = roles.filter(function(r) { return r.roleName === '系統承辦窗口'; })[0]
+                || roles.filter(function(r) { return r.roleName === '開發'; })[0]
+                || roles.filter(function(r) { return r.roleName === '系統部署維護人員'; })[0];
+  } else {
+    // 院內：優先開發
+    buildContact = roles.filter(function(r) { return r.roleName === '開發'; })[0]
+                || roles.filter(function(r) { return r.roleName === '系統部署維護人員'; })[0]
+                || roles.filter(function(r) { return r.roleName === '系統承辦窗口'; })[0];
+  }
+  var buildContactStr = buildContact ? buildContact.name : '';
+
+  if (maintainVendor !== '中央研究院' && maintainVendor !== '') {
+    // 委外：優先系統承辦窗口
+    maintainContact = roles.filter(function(r) { return r.roleName === '系統承辦窗口'; })[0]
+                   || roles.filter(function(r) { return r.roleName === '開發'; })[0]
+                   || roles.filter(function(r) { return r.roleName === '系統部署維護人員'; })[0];
+  } else {
+    // 院內：優先開發
+    maintainContact = roles.filter(function(r) { return r.roleName === '開發'; })[0]
                    || roles.filter(function(r) { return r.roleName === '系統部署維護人員'; })[0]
                    || roles.filter(function(r) { return r.roleName === '系統承辦窗口'; })[0];
-  var contactStr = vendorContact ? vendorContact.name : '';
+  }
+  var maintainContactStr = maintainContact ? maintainContact.name : '';
   
   // 14. 系統管理人主管
   var sysManagerBoss = getManagerFromHR_(sysManagerEmail);
@@ -3920,8 +3948,8 @@ function generateAssessmentDoc(systemId, templateKey) {
       '{{資通系統名稱}}': system['系統名稱'] || '',
       '{{系統管理人}}': sysManagerName,
       '{{系統開發型態}}': devTypeStr,
-      '{{建置單位／廠商}}': (system['建置廠商'] || '') + (contactStr ? ' - ' + contactStr : ''),
-      '{{維運單位／廠商}}': (system['維運廠商'] || '') + (contactStr ? ' - ' + contactStr : ''),
+      '{{建置單位／廠商}}': (system['建置廠商'] || '') + (buildContactStr ? ' - ' + buildContactStr : ''),
+      '{{維運單位／廠商}}': (system['維運廠商'] || '') + (maintainContactStr ? ' - ' + maintainContactStr : ''),
       '{{MTPD}}': system['最大可容忍中斷時間'] != null ? system['最大可容忍中斷時間'] : '',
       '{{RTO}}': system['復原目標時間(RTO)'] != null ? system['復原目標時間(RTO)'] : '',
       '{{RPO}}': system['資料回復點目標(RPO)'] != null ? system['資料回復點目標(RPO)'] : '',
