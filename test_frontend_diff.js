@@ -10,6 +10,9 @@ global.document = {
   querySelector: function() { return null; },
   querySelectorAll: function() { return []; }
 };
+global.showToast = function() {};
+global.closeModal = function() {};
+global.loadAssessment = function() {};
 
 var html = fs.readFileSync('AppScript_Index.html', 'utf-8');
 
@@ -23,6 +26,7 @@ while ((match = regex.exec(html)) !== null) {
 
 eval(scriptContent);
 
+// Test 1: buildAssessmentImportPreviewClient
 var mockCurrentAssessment = [
   { '項次': '1.1', '符合性': '符合', 'id': 'A1' }
 ];
@@ -38,6 +42,39 @@ var preview = buildAssessmentImportPreviewClient(mockRows, mockCurrentAssessment
 if (preview.updateCount === 1 && preview.previewChanges[0].fields[0].key === '現況說明') {
   console.log("PASS: buildAssessmentImportPreviewClient");
 } else {
-  console.error("FAIL", JSON.stringify(preview, null, 2));
+  console.error("FAIL buildAssessmentImportPreviewClient", JSON.stringify(preview, null, 2));
+  process.exit(1);
+}
+
+// Test 2: applyAssessmentImportPreview
+var applyCalledWith = null;
+global.google = {
+  script: {
+    run: {
+      withSuccessHandler: function(cb) {
+        return {
+          withFailureHandler: function(failCb) {
+            return {
+              applyAssessmentImportChanges: function(sysId, changes) {
+                applyCalledWith = { sysId: sysId, changes: changes };
+              }
+            };
+          }
+        };
+      }
+    }
+  }
+};
+
+global.currentSystem = { '系統ID': 'SYS001' };
+global.assessmentImportSubmitting = false;
+global.assessmentImportPreview = preview;
+
+applyAssessmentImportPreview();
+
+if (applyCalledWith && applyCalledWith.sysId === 'SYS001' && applyCalledWith.changes.length === 1) {
+  console.log("PASS: applyAssessmentImportPreview");
+} else {
+  console.error("FAIL applyAssessmentImportPreview", applyCalledWith);
   process.exit(1);
 }

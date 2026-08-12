@@ -4135,14 +4135,18 @@ function previewAssessmentImportFile() {
       try {
         var data = new Uint8Array(e.target.result);
         var workbook = XLSX.read(data, {type: 'array'});
+        var firstSheetName = workbook.SheetNames[0];
+        var rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {header: 1, defval: '', raw: false});
         setProgressToastValue(50, '解析完成，比對中...');
         
-        // TODO: Diff logic (Task 2 & 3)
         setTimeout(function() {
+          assessmentImportPreview = buildAssessmentImportPreviewClient(rows, currentAssessment, currentSystem);
+          renderAssessmentImportPreview(assessmentImportPreview);
+          
           setAssessmentImportBusy(false);
           setProgressToastValue(100, '比對完成');
-          setTimeout(clearToastTimers, 500); // Close toast
-          showToast('匯入內容已在本機檢查完畢');
+          setTimeout(clearToastTimers, 500);
+          showToast(assessmentImportPreview.canApply ? '匯入內容已檢查，可套用更新' : '匯入內容已檢查');
         }, 50);
       } catch (err) {
         setAssessmentImportBusy(false);
@@ -4155,7 +4159,9 @@ function previewAssessmentImportFile() {
 }
 
 function applyAssessmentImportPreview() {
-  if (!currentSystem || assessmentImportSubmitting || !assessmentImportPreview || !assessmentImportPreview.importToken) return;
+  if (!currentSystem || assessmentImportSubmitting || !assessmentImportPreview || !assessmentImportPreview.canApply) return;
+  if (!assessmentImportPreview.changes || !assessmentImportPreview.changes.length) return;
+  
   setAssessmentImportBusy(true);
   showToast('正在套用匯入更新...');
   google.script.run.withSuccessHandler(function(res) {
@@ -4170,7 +4176,7 @@ function applyAssessmentImportPreview() {
   }).withFailureHandler(function(e) {
     setAssessmentImportBusy(false);
     showToast('匯入套用失敗：' + e.message);
-  }).applyAssessmentImport(currentSystem['系統ID'], assessmentImportPreview.importToken);
+  }).applyAssessmentImportChanges(currentSystem['系統ID'], assessmentImportPreview.changes);
 }
 
 // ===== System CRUD Modal =====
