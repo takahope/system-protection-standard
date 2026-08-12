@@ -3060,274 +3060,10 @@ function batchSaveAssessment(items) {
   return {success: true, updated: updated};
 }
 
-// ===== 匯入自評報告 =====
-var ASSESSMENT_IMPORT_CACHE_PREFIX = 'assessment_import_';
-var ASSESSMENT_IMPORT_TTL_SECONDS = 600;
-var ASSESSMENT_IMPORT_MAX_BYTES = 5 * 1024 * 1024;
-var ASSESSMENT_IMPORT_CACHE_CHUNK_SIZE = 85000;
+// ===== 匯入自評報告 Zero-Trust Validation =====
 var ASSESSMENT_IMPORT_EDITABLE_FIELDS = [
-  {key:'compliance', label:'符合性'},
-  {key:'currentStatus', label:'現況說明'},
-  {key:'evidence', label:'佐證資料'},
-  {key:'corrective', label:'矯正作為'},
-  {key:'targetDate', label:'目標日期'},
-  {key:'note', label:'備註'}
+  '符合性', '現況說明', '佐證資料', '矯正作為', '目標日期', '備註'
 ];
-
-function putAssessmentImportCache_(token, payload) {
-  var cache = CacheService.getScriptCache();
-  var text = JSON.stringify(payload);
-  var chunks = [];
-  for (var i = 0; i < text.length; i += ASSESSMENT_IMPORT_CACHE_CHUNK_SIZE) {
-    chunks.push(text.substring(i, i + ASSESSMENT_IMPORT_CACHE_CHUNK_SIZE));
-  }
-  cache.put(ASSESSMENT_IMPORT_CACHE_PREFIX + token + '_meta', JSON.stringify({chunks:chunks.length}), ASSESSMENT_IMPORT_TTL_SECONDS);
-  for (var c = 0; c < chunks.length; c++) {
-    cache.put(ASSESSMENT_IMPORT_CACHE_PREFIX + token + '_' + c, chunks[c], ASSESSMENT_IMPORT_TTL_SECONDS);
-  }
-}
-
-function getAssessmentImportCache_(token) {
-  var cache = CacheService.getScriptCache();
-  var metaText = cache.get(ASSESSMENT_IMPORT_CACHE_PREFIX + token + '_meta');
-  if (!metaText) return null;
-  var meta = JSON.parse(metaText);
-  var text = '';
-  for (var i = 0; i < meta.chunks; i++) {
-    var part = cache.get(ASSESSMENT_IMPORT_CACHE_PREFIX + token + '_' + i);
-    if (part === null) return null;
-    text += part;
-  }
-  return JSON.parse(text);
-}
-
-function parseCsvRows_(text) {
-  var src = String(text || '').replace(/^\ufeff/, '');
-  var rows = [];
-  var row = [];
-  var cell = '';
-  var inQuotes = false;
-  for (var i = 0; i < src.length; i++) {
-    var ch = src.charAt(i);
-    if (inQuotes) {
-      if (ch === '"') {
-        if (src.charAt(i + 1) === '"') {
-          cell += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        cell += ch;
-      }
-    } else if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === ',') {
-      row.push(cell);
-      cell = '';
-    } else if (ch === '\n') {
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = '';
-    } else if (ch === '\r') {
-      if (src.charAt(i + 1) === '\n') continue;
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = '';
-    } else {
-      cell += ch;
-    }
-  }
-  row.push(cell);
-  rows.push(row);
-  return rows;
-}
-
-function getXlsxNs_() {
-  return XmlService.getNamespace('http://schemas.openxmlformats.org/spreadsheetml/2006/main');
-}
-
-function getXmlText_(files, name) {
-  var target = String(name || '').replace(/^\/+/, '');
-  for (var i = 0; i < files.length; i++) {
-    var fileName = String(files[i].getName() || '').replace(/^\/+/, '');
-    if (fileName === target) return files[i].getDataAsString('UTF-8');
-  }
-  return '';
-}
-
-function getXmlChildrenByName_(node, name) {
-  if (!node) return [];
-  var ns = getXlsxNs_();
-  var list = node.getChildren(name, ns);
-  if (list && list.length) return list;
-  list = [];
-  var children = node.getChildren();
-  for (var i = 0; i < children.length; i++) {
-    if (children[i].getName() === name) list.push(children[i]);
-  }
-  return list;
-}
-
-function getXmlChildText_(node, name) {
-  if (!node) return '';
-  var ns = node.getNamespace() || getXlsxNs_();
-  var child = node.getChild(name, ns);
-  if (!child && ns !== getXlsxNs_()) child = node.getChild(name, getXlsxNs_());
-  return child ? child.getText() : '';
-}
-
-function getImportRowMaxColumnIndex_(row) {
-  var max = -1;
-  if (!row) return max;
-  if (row.length) max = row.length - 1;
-  for (var key in row) {
-    if (!Object.prototype.hasOwnProperty.call(row, key)) continue;
-    var idx = parseInt(key, 10);
-    if (!isNaN(idx) && idx > max) max = idx;
-  }
-  return max;
-}
-
-function columnNameToIndex_(ref) {
-  var letters = String(ref || '').replace(/[^A-Z]/gi, '').toUpperCase();
-  var idx = 0;
-  for (var i = 0; i < letters.length; i++) idx = idx * 26 + letters.charCodeAt(i) - 64;
-  return idx - 1;
-}
-
-function parseXlsxSharedStrings_(xmlText) {
-  if (!xmlText) return [];
-  var root = XmlService.parse(xmlText).getRootElement();
-  var items = getXmlChildrenByName_(root, 'si');
-  var strings = [];
-  for (var i = 0; i < items.length; i++) {
-    var textParts = [];
-    var direct = items[i].getChild('t', getXlsxNs_()) || items[i].getChild('t', items[i].getNamespace());
-    if (direct) {
-      textParts.push(direct.getText());
-    } else {
-      var runs = getXmlChildrenByName_(items[i], 'r');
-      for (var j = 0; j < runs.length; j++) {
-        var t = runs[j].getChild('t', getXlsxNs_()) || runs[j].getChild('t', runs[j].getNamespace());
-        if (t) textParts.push(t.getText());
-      }
-    }
-    strings.push(textParts.join(''));
-  }
-  return strings;
-}
-
-function parseXlsxSheetRows_(sheetXml, sharedStrings) {
-  var root = XmlService.parse(sheetXml).getRootElement();
-  var sheetData = root.getChild('sheetData', getXlsxNs_()) || root.getChild('sheetData', root.getNamespace());
-  var rowNodes = getXmlChildrenByName_(sheetData, 'row');
-  var rows = [];
-  for (var r = 0; r < rowNodes.length; r++) {
-    var cells = getXmlChildrenByName_(rowNodes[r], 'c');
-    var row = [];
-    for (var c = 0; c < cells.length; c++) {
-      var cell = cells[c];
-      var refAttr = cell.getAttribute('r');
-      var colIndex = columnNameToIndex_(refAttr ? refAttr.getValue() : '');
-      if (colIndex < 0) colIndex = row.length;
-      var typeAttr = cell.getAttribute('t');
-      var type = typeAttr ? typeAttr.getValue() : '';
-      var value = '';
-      if (type === 's') {
-        var sidx = parseInt(getXmlChildText_(cell, 'v'), 10);
-        value = sharedStrings[sidx] || '';
-      } else if (type === 'inlineStr') {
-        var inline = cell.getChild('is', getXlsxNs_()) || cell.getChild('is', cell.getNamespace());
-        value = inline ? getXmlChildText_(inline, 't') : '';
-      } else {
-        value = getXmlChildText_(cell, 'v');
-      }
-      row[colIndex] = value;
-    }
-    rows.push(row);
-  }
-  return rows;
-}
-
-function parseXlsxRows_(blob) {
-  // XLSX 本質上是 ZIP 封裝（OOXML/OPC）。Utilities.unzip() 只接受 ContentType 為
-  // application/zip 的 blob，而前端上傳帶的是瀏覽器 MIME
-  // （application/vnd.openxmlformats-officedocument.spreadsheetml.sheet），
-  // 故先複製並覆寫 ContentType 再解壓，避免「以下引數無效：ContentType」錯誤。
-  var zipBlob = blob.copyBlob().setContentType('application/zip');
-  var files = Utilities.unzip(zipBlob);
-  var worksheetFiles = [];
-  for (var f = 0; f < files.length; f++) {
-    var fileName = String(files[f].getName() || '').replace(/^\/+/, '');
-    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(fileName)) worksheetFiles.push({name: fileName, blob: files[f]});
-  }
-  worksheetFiles.sort(function(a, b) {
-    return parseInt((a.name.match(/\d+/) || ['0'])[0], 10) - parseInt((b.name.match(/\d+/) || ['0'])[0], 10);
-  });
-  if (!worksheetFiles.length) throw new Error('找不到 XLSX 工作表內容');
-
-  var sharedStrings = parseXlsxSharedStrings_(getXmlText_(files, 'xl/sharedStrings.xml'));
-
-  var fallbackRows = [];
-  for (var i = 0; i < worksheetFiles.length; i++) {
-    var sheetXml = worksheetFiles[i].blob.getDataAsString('UTF-8');
-    var rows = parseXlsxSheetRows_(sheetXml, sharedStrings);
-    if (!fallbackRows.length || rows.length > fallbackRows.length) fallbackRows = rows;
-    if (findAssessmentImportHeader_(rows)) return rows;
-  }
-
-  return fallbackRows;
-}
-
-function parseAssessmentImportRows_(filePayload) {
-  if (!filePayload || !filePayload.base64) throw new Error('請選擇要匯入的檔案');
-  var fileName = String(filePayload.fileName || '').toLowerCase();
-  var bytes = Utilities.base64Decode(filePayload.base64);
-  if (bytes.length > ASSESSMENT_IMPORT_MAX_BYTES) throw new Error('匯入檔案過大，請使用 5MB 以下的 CSV 或 XLSX');
-  var mimeType = String(filePayload.mimeType || '');
-  var blob = Utilities.newBlob(bytes, mimeType || 'application/octet-stream', filePayload.fileName || 'assessment-import');
-  if (/\.xlsx$/.test(fileName) || mimeType.indexOf('spreadsheetml.sheet') !== -1) return parseXlsxRows_(blob);
-  if (/\.csv$/.test(fileName) || mimeType.indexOf('csv') !== -1 || mimeType.indexOf('text/plain') !== -1) {
-    return parseCsvRows_(blob.getDataAsString('UTF-8'));
-  }
-  throw new Error('目前僅支援匯入 CSV 或 XLSX 檔案');
-}
-
-function findAssessmentImportHeader_(rows) {
-  var aliasMap = {
-    '項次': '項次',
-    '符合性': '符合性',
-    '是否符合(y、n、不適用)': '符合性',
-    '現況說明': '現況說明',
-    '符合性或不適用情況說明': '現況說明',
-    '佐證資料': '佐證資料',
-    '矯正作為': '矯正作為',
-    '如不符合預計規劃執行方式': '矯正作為',
-    '目標日期': '目標日期',
-    '預計辦理時程': '目標日期',
-    '備註': '備註'
-  };
-
-  for (var i = 0; i < rows.length; i++) {
-    var map = {};
-    var hits = 0;
-    var maxCol = getImportRowMaxColumnIndex_(rows[i]);
-    for (var c = 0; c <= maxCol; c++) {
-      var rawLabel = String(rows[i][c] || '');
-      var normalizedLabel = rawLabel.replace(/\s+/g, '').toLowerCase();
-      var stdLabel = aliasMap[normalizedLabel];
-      if (stdLabel && map[stdLabel] === undefined) {
-        map[stdLabel] = c;
-        hits++;
-      }
-    }
-    if (map['項次'] !== undefined && hits >= 4) return {rowIndex:i, columnMap:map};
-  }
-  return null;
-}
 
 function normalizeImportCompliance_(value, naLabel) {
   var raw = String(value || '').trim();
@@ -3356,163 +3092,86 @@ function normalizeAssessmentIndexKey_(value) {
   return raw;
 }
 
-function buildAssessmentImportPreview_(systemId, filePayload) {
-  var sys = getSystems().filter(function(s) { return s['系統ID'] == systemId; })[0];
-  if (!sys) throw new Error('找不到系統');
-  var assessment = getAssessment(systemId);
-  if (!assessment.length) throw new Error('此系統尚無自評資料，請先初始化自評項目');
+function applyAssessmentImportChanges(systemId, changes) {
+  assertCanEditSystem_(systemId);
+  
+  if (!changes || !changes.length) {
+    return { success: false, message: '無變更資料' };
+  }
 
-  var rows = parseAssessmentImportRows_(filePayload);
-  var header = findAssessmentImportHeader_(rows);
-  if (!header) throw new Error('找不到可匯入的自評欄位，請使用本系統匯出的 CSV 或 XLSX 檔案');
-
+  var sysRecord = getSystemRecord_(systemId);
+  if (!sysRecord) throw new Error('系統不存在');
+  var sysLevel = sysRecord['防護需求等級'] || '普';
+  var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
+  
+  var currentAssessment = getAssessment(systemId);
   var currentMap = {};
-  for (var i = 0; i < assessment.length; i++) currentMap[normalizeAssessmentIndexKey_(assessment[i].index)] = assessment[i];
+  for (var i = 0; i < currentAssessment.length; i++) {
+    var item = currentAssessment[i];
+    var k = normalizeAssessmentIndexKey_(item['項次']);
+    if (k) currentMap[k] = item;
+  }
 
-  var naLabel = getAssessmentApplicabilityConfig_().naLabel;
-  var sysLevel = sys['防護需求等級'] || '';
-  var changes = [];
-  var warnings = [];
-  var errors = [];
-  var unchangedCount = 0;
-  var skippedCount = 0;
-  var totalRows = 0;
-  var seen = {};
-  var col = header.columnMap;
+  var updates = [];
+  var rejectedCount = 0;
 
-  for (var r = header.rowIndex + 1; r < rows.length; r++) {
-    var row = rows[r] || [];
-    var index = normalizeAssessmentIndexKey_(row[col['項次']]);
-    if (!index) continue;
-    if (index.indexOf('不符合防護基準') !== -1) continue;
-    totalRows++;
-    if (seen[index]) {
-      warnings.push({row:r + 1, index:index, message:'重複項次已略過'});
-      skippedCount++;
-      continue;
-    }
-    seen[index] = true;
-    var current = currentMap[index];
-    if (!current) {
-      errors.push({row:r + 1, index:index, message:'此項次不存在於目前系統的自評項目'});
-      continue;
-    }
-    if (isAssessmentNa_(current, sysLevel)) {
-      warnings.push({row:r + 1, index:index, message:'此項目不適用於目前防護需求等級，已略過'});
-      skippedCount++;
-      continue;
-    }
+  for (var i = 0; i < changes.length; i++) {
+    var change = changes[i];
+    var idx = String(change.index || '').trim();
+    if (!idx || !currentMap[idx]) { rejectedCount++; continue; }
+    
+    var currentItem = currentMap[idx];
+    if (isAssessmentNa_(currentItem, sysLevel)) { rejectedCount++; continue; }
 
-    var imported = {};
-    for (var f = 0; f < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; f++) {
-      var field = ASSESSMENT_IMPORT_EDITABLE_FIELDS[f];
-      var cellIndex = col[field.label];
-      imported[field.key] = cellIndex === undefined ? '' : String(row[cellIndex] || '').trim();
-    }
-    var normalizedCompliance = normalizeImportCompliance_(imported.compliance, naLabel);
-    if (normalizedCompliance === null) {
-      errors.push({row:r + 1, index:index, message:'符合性只能為符合、部分符合、不符合或' + naLabel});
-      continue;
-    }
-    imported.compliance = normalizedCompliance;
+    var validFields = {};
+    var hasValidChange = false;
 
-    var changedFields = [];
-    for (var cf = 0; cf < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; cf++) {
-      var editable = ASSESSMENT_IMPORT_EDITABLE_FIELDS[cf];
-      var oldValue = String(current[editable.key] || '').trim();
-      var newValue = String(imported[editable.key] || '').trim();
-      if (oldValue !== newValue) {
-        changedFields.push({
-          key: editable.key,
-          label: editable.label,
-          newValue: newValue
-        });
+    for (var j = 0; j < (change.fields || []).length; j++) {
+      var field = change.fields[j];
+      if (!field || !field.key) continue;
+      
+      // Zero-Trust: Only allow editable fields
+      if (ASSESSMENT_IMPORT_EDITABLE_FIELDS.indexOf(field.key) < 0) continue;
+      
+      var parsedVal = String(field.newValue || '').trim();
+      
+      if (field.key === '符合性' && parsedVal) {
+        var comp = normalizeImportCompliance_(parsedVal, naLabel);
+        if (comp === null) {
+          parsedVal = null; // Mark invalid
+        } else {
+          parsedVal = comp;
+        }
+      }
+      
+      if (parsedVal === null) continue; // Skip invalid compliance
+      
+      var oldVal = String(currentItem[field.key] || '').trim();
+      if (parsedVal !== oldVal) {
+        validFields[field.key] = parsedVal;
+        hasValidChange = true;
       }
     }
-    if (!changedFields.length) {
-      unchangedCount++;
-      continue;
+    
+    if (hasValidChange) {
+      updates.push({
+        systemId: systemId,
+        index: currentItem['項次'],
+        fields: validFields
+      });
+    } else {
+      rejectedCount++;
     }
-    changes.push({
-      index: index,
-      dimension: current.dimension || '',
-      category: current.category || '',
-      description: current.description || '',
-      fields: changedFields
-    });
   }
 
-  return {
-    systemId: systemId,
-    fileName: filePayload.fileName || '',
-    totalRows: totalRows,
-    updateCount: changes.length,
-    unchangedCount: unchangedCount,
-    skippedCount: skippedCount,
-    errorCount: errors.length,
-    warningCount: warnings.length,
-    canApply: changes.length > 0 && errors.length === 0,
-    changes: changes,
-    warnings: warnings,
-    errors: errors
-  };
-}
-
-function previewAssessmentImport(systemId, filePayload) {
-  assertCanEditSystem_(systemId);
-  var preview = buildAssessmentImportPreview_(systemId, filePayload);
-  var token = Utilities.getUuid();
-  var cacheChanges = preview.changes.map(function(change) {
-    return {
-      index: change.index,
-      fields: change.fields.map(function(field) {
-        return {key:field.key, newValue:field.newValue};
-      })
-    };
-  });
-  var cachePayload = {
-    systemId: preview.systemId,
-    changes: cacheChanges,
-    errorCount: preview.errorCount,
-    warningCount: preview.warningCount,
-    errors: preview.errors
-  };
-  putAssessmentImportCache_(token, cachePayload);
-  preview.success = true;
-  preview.importToken = token;
-  preview.previewChanges = preview.changes.slice(0, 30);
-  delete preview.changes;
-  return preview;
-}
-
-function applyAssessmentImport(systemId, importToken) {
-  assertCanEditSystem_(systemId);
-  var preview = getAssessmentImportCache_(String(importToken || ''));
-  if (!preview) return {success:false, message:'匯入預覽已逾時，請重新選擇檔案檢查'};
-  if (preview.systemId != systemId) return {success:false, message:'匯入資料與目前系統不一致'};
-  if (preview.errors && preview.errors.length) return {success:false, message:'匯入內容仍有錯誤，請修正後重新檢查'};
-  if (!preview.changes || !preview.changes.length) return {success:false, message:'沒有可套用的變更'};
-
-  var assessment = getAssessment(systemId);
-  var currentMap = {};
-  for (var i = 0; i < assessment.length; i++) currentMap[normalizeAssessmentIndexKey_(assessment[i].index)] = assessment[i];
-  var updates = [];
-  for (var c = 0; c < preview.changes.length; c++) {
-    var change = preview.changes[c];
-    var item = currentMap[normalizeAssessmentIndexKey_(change.index)];
-    if (!item) continue;
-    for (var f = 0; f < change.fields.length; f++) {
-      item[change.fields[f].key] = change.fields[f].newValue;
-    }
-    updates.push(item);
+  if (updates.length > 0) {
+    var savedCount = batchSaveAssessment(updates);
+    return { success: true, updated: savedCount, rejected: rejectedCount };
+  } else {
+    return { success: false, message: '沒有可套用的有效變更' };
   }
-  var result = batchSaveAssessment(updates);
-  return {
-    success: true,
-    updated: result.updated || updates.length,
-    warningCount: preview.warningCount || 0
-  };
 }
+
 
 // ===== 匯出自評報告 =====
 function buildAssessmentReportPayload_(systemId) {

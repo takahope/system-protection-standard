@@ -66,9 +66,9 @@ global.google = {
   }
 };
 
-global.currentSystem = { '系統ID': 'SYS001' };
-global.assessmentImportSubmitting = false;
-global.assessmentImportPreview = preview;
+currentSystem = { '系統ID': 'SYS001' };
+assessmentImportSubmitting = false;
+assessmentImportPreview = preview;
 
 applyAssessmentImportPreview();
 
