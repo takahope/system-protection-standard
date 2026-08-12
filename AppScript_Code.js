@@ -3279,6 +3279,9 @@ function normalizeImportCompliance_(value, naLabel) {
   var raw = String(value || '').trim();
   if (!raw) return '';
   if (raw === '未符合') return '不符合';
+  var upper = raw.toUpperCase();
+  if (upper === 'Y') return '符合';
+  if (upper === 'N') return '不符合';
   var allowed = {'符合':true,'部分符合':true,'不符合':true};
   allowed[naLabel] = true;
   if (allowed[raw]) return raw;
