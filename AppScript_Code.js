@@ -3123,11 +3123,13 @@ function applyAssessmentImportChanges(systemId, changes) {
 
   var updates = [];
   var rejectedCount = 0;
+  var seenIndices = {};
 
   for (var i = 0; i < changes.length; i++) {
     var change = changes[i];
-    var idx = String(change.index || '').trim();
-    if (!idx || !currentMap[idx]) { rejectedCount++; continue; }
+    var idx = normalizeAssessmentIndexKey_(change.index);
+    if (!idx || !currentMap[idx] || seenIndices[idx]) { rejectedCount++; continue; }
+    seenIndices[idx] = true;
     
     var currentItem = currentMap[idx];
     if (isAssessmentNa_(currentItem, sysLevel)) { rejectedCount++; continue; }

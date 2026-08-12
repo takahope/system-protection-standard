@@ -102,3 +102,41 @@ None.
 
 ## Status & Conclusion
 All 5 code review findings (4 Critical, 1 Minor) have been fully resolved, verified, and re-tested.
+
+---
+
+# Task Review Findings Fix Report (Second Round)
+
+## Summary of Fixes Applied
+
+1. **Important: Symmetric Index Key Normalization (`normalizeAssessmentIndexKey_`)**:
+   - `AppScript_Code.js`: Changed `var idx = String(change.index || '').trim();` to `var idx = normalizeAssessmentIndexKey_(change.index);` in `applyAssessmentImportChanges`.
+   - Ensures index key lookup for `currentMap[idx]` is symmetric with `currentMap` creation (e.g. `'1.0'` vs `'1'` normalize to `'1'`), preventing valid change entries from failing key lookup and getting wrongly rejected.
+
+2. **Minor: Index Change Deduplication (`seenIndices`)**:
+   - `AppScript_Code.js`: Added `seenIndices` dictionary inside `applyAssessmentImportChanges`.
+   - Tracks processed normalized index keys (`seenIndices[idx] = true`) to prevent untrusted change payloads containing duplicate entries for the same index from pushing `currentItem` to `updates` multiple times and double-counting updates in `batchSaveAssessment`.
+
+3. **Test Suite Enhancements**:
+   - `test_backend_validation.js`: Added unit tests verifying asymmetric index key normalization (`'1.0'` vs `'1'`) and deduplication of duplicate index entries in change payloads (`rejectedCount: 1`).
+
+## Re-Run Test Evidence
+
+- **Command 1:** `node test_backend_validation.js`
+  - Output:
+    ```text
+    PASS: applyAssessmentImportChanges basic update
+    PASS: applyAssessmentImportChanges index normalization (1.0 vs 1)
+    PASS: applyAssessmentImportChanges duplicate index deduplication
+    ```
+- **Command 2:** `node test_frontend_diff.js`
+  - Output:
+    ```text
+    PASS: buildAssessmentImportPreviewClient
+    PASS: applyAssessmentImportPreview
+    ```
+
+## Status & Conclusion
+- **Status:** DONE
+- All findings from the task reviewer (1 Important, 1 Minor) have been resolved, covered with unit tests, and verified.
+
