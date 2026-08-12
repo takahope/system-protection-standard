@@ -47,7 +47,7 @@ if (preview.updateCount === 1 && preview.previewChanges[0].fields[0].key === '�
 }
 
 // Test 2: applyAssessmentImportPreview
-var applyCalledWith = null;
+global.applyCalledWith = null;
 global.google = {
   script: {
     run: {
@@ -56,7 +56,7 @@ global.google = {
           withFailureHandler: function(failCb) {
             return {
               applyAssessmentImportChanges: function(sysId, changes) {
-                applyCalledWith = { sysId: sysId, changes: changes };
+                global.applyCalledWith = { sysId: sysId, changes: changes };
               }
             };
           }
@@ -66,15 +66,15 @@ global.google = {
   }
 };
 
-currentSystem = { '系統ID': 'SYS001' };
-assessmentImportSubmitting = false;
-assessmentImportPreview = preview;
+global.currentSystem = { '系統ID': 'SYS001' };
+global.assessmentImportSubmitting = false;
+global.assessmentImportPreview = preview;
 
 applyAssessmentImportPreview();
 
-if (applyCalledWith && applyCalledWith.sysId === 'SYS001' && applyCalledWith.changes.length === 1) {
+if (global.applyCalledWith && global.applyCalledWith.sysId === 'SYS001' && global.applyCalledWith.changes.length === 1) {
   console.log("PASS: applyAssessmentImportPreview");
 } else {
-  console.error("FAIL applyAssessmentImportPreview", applyCalledWith);
+  console.error("FAIL applyAssessmentImportPreview", global.applyCalledWith);
   process.exit(1);
 }

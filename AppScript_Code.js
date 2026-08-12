@@ -3065,6 +3065,15 @@ var ASSESSMENT_IMPORT_EDITABLE_FIELDS = [
   '符合性', '現況說明', '佐證資料', '矯正作為', '目標日期', '備註'
 ];
 
+var ASSESSMENT_IMPORT_FIELD_MAP = {
+  '符合性': 'compliance',
+  '現況說明': 'currentStatus',
+  '佐證資料': 'evidence',
+  '矯正作為': 'corrective',
+  '目標日期': 'targetDate',
+  '備註': 'note'
+};
+
 function normalizeImportCompliance_(value, naLabel) {
   var raw = String(value || '').trim();
   if (!raw) return '';
@@ -3108,7 +3117,7 @@ function applyAssessmentImportChanges(systemId, changes) {
   var currentMap = {};
   for (var i = 0; i < currentAssessment.length; i++) {
     var item = currentAssessment[i];
-    var k = normalizeAssessmentIndexKey_(item['項次']);
+    var k = normalizeAssessmentIndexKey_(item.index);
     if (k) currentMap[k] = item;
   }
 
@@ -3133,6 +3142,9 @@ function applyAssessmentImportChanges(systemId, changes) {
       // Zero-Trust: Only allow editable fields
       if (ASSESSMENT_IMPORT_EDITABLE_FIELDS.indexOf(field.key) < 0) continue;
       
+      var propName = ASSESSMENT_IMPORT_FIELD_MAP[field.key];
+      if (!propName) continue;
+
       var parsedVal = String(field.newValue || '').trim();
       
       if (field.key === '符合性' && parsedVal) {
@@ -3146,26 +3158,26 @@ function applyAssessmentImportChanges(systemId, changes) {
       
       if (parsedVal === null) continue; // Skip invalid compliance
       
-      var oldVal = String(currentItem[field.key] || '').trim();
+      var oldVal = String(currentItem[propName] || '').trim();
       if (parsedVal !== oldVal) {
-        validFields[field.key] = parsedVal;
+        validFields[propName] = parsedVal;
         hasValidChange = true;
       }
     }
     
     if (hasValidChange) {
-      updates.push({
-        systemId: systemId,
-        index: currentItem['項次'],
-        fields: validFields
-      });
+      for (var prop in validFields) {
+        currentItem[prop] = validFields[prop];
+      }
+      updates.push(currentItem);
     } else {
       rejectedCount++;
     }
   }
 
   if (updates.length > 0) {
-    var savedCount = batchSaveAssessment(updates);
+    var saveResult = batchSaveAssessment(updates);
+    var savedCount = (saveResult && typeof saveResult.updated === 'number') ? saveResult.updated : saveResult;
     return { success: true, updated: savedCount, rejected: rejectedCount };
   } else {
     return { success: false, message: '沒有可套用的有效變更' };
