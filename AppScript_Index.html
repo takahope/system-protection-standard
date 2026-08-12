@@ -3987,40 +3987,84 @@ var ASSESSMENT_IMPORT_EDITABLE_FIELDS = [
 
 function normalizeAssessmentIndexKey(val) {
   if (!val) return '';
-  return String(val).replace(/第/g, '').replace(/[項次]/g, '').trim();
+  var raw = String(val).replace(/第/g, '').replace(/[項次]/g, '').trim();
+  if (/^-?\d+(\.\d+)?$/.test(raw)) {
+    var num = Number(raw);
+    if (!isNaN(num) && isFinite(num)) return String(num);
+  }
+  return raw;
 }
 
 function normalizeImportCompliance(val, naLabel) {
-  var s = String(val || '').trim().toUpperCase();
-  if (!s || s === '-' || s === '無') return '';
-  if (s === 'Y' || s === '符合') return '符合';
-  if (s === 'N' || s === '不符合') return '不符合';
-  if (s === 'NA' || s === 'N/A' || s === '不適用' || s === naLabel) return naLabel;
+  var raw = String(val || '').trim();
+  if (!raw || raw === '-' || raw === '無') return '';
+  if (raw === '未符合') return '不符合';
+  var upper = raw.toUpperCase();
+  if (upper === 'Y' || upper === '符合') return '符合';
+  if (upper === 'N' || upper === '不符合') return '不符合';
+  if (upper === 'NA' || upper === 'N/A' || upper === '不適用' || raw === naLabel) return naLabel;
+  
+  var allowed = {'符合':true,'部分符合':true,'不符合':true};
+  allowed[naLabel] = true;
+  if (allowed[raw]) return raw;
+  
   return null; // Invalid
 }
 
 function findAssessmentImportHeader(rows) {
+  var aliasMap = {
+    '項次': '項次',
+    '項目': '項次',
+    '編號': '項次',
+    '符合性': '符合性',
+    '是否符合(y、n、不適用)': '符合性',
+    '現況說明': '現況說明',
+    '符合性或不適用情況說明': '現況說明',
+    '佐證資料': '佐證資料',
+    '矯正作為': '矯正作為',
+    '如不符合預計規劃執行方式': '矯正作為',
+    '目標日期': '目標日期',
+    '預計辦理時程': '目標日期',
+    '備註': '備註'
+  };
+
   for (var r = 0; r < Math.min(rows.length, 30); r++) {
     var row = rows[r];
     var hasIndex = false;
     var editableCount = 0;
     var colMap = {};
     for (var c = 0; c < row.length; c++) {
-      var val = String(row[c] || '').trim().replace(/\s/g, '');
+      var val = String(row[c] || '').trim().replace(/\s/g, '').toLowerCase();
       if (!val) continue;
-      if (val.indexOf('項次') >= 0 || val === '項目' || val === '編號') {
-        hasIndex = true;
-        colMap['項次'] = c;
-      }
-      for (var i = 0; i < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; i++) {
-        var key = ASSESSMENT_IMPORT_EDITABLE_FIELDS[i];
-        if (val.indexOf(key) >= 0) {
+      
+      var stdLabel = aliasMap[val];
+      if (stdLabel) {
+        if (stdLabel === '項次') {
+          hasIndex = true;
+          colMap['項次'] = c;
+        } else if (ASSESSMENT_IMPORT_EDITABLE_FIELDS.indexOf(stdLabel) >= 0) {
           editableCount++;
-          colMap[key] = c;
+          colMap[stdLabel] = c;
+        }
+      } else {
+        if (val.indexOf('項次') >= 0 || val.indexOf('項目') >= 0 || val.indexOf('編號') >= 0) {
+          hasIndex = true;
+          colMap['項次'] = c;
+        } else {
+          for (var i = 0; i < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; i++) {
+            var key = ASSESSMENT_IMPORT_EDITABLE_FIELDS[i];
+            if (val.indexOf(key) >= 0) {
+              editableCount++;
+              colMap[key] = c;
+              break;
+            }
+          }
         }
       }
     }
-    if (hasIndex && editableCount >= 2) return { rowIdx: r, colMap: colMap };
+    if (hasIndex && editableCount >= 2) {
+      return { rowIdx: r, colMap: colMap };
+    }
   }
   return null;
 }

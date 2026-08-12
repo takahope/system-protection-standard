@@ -6,7 +6,7 @@ global.window = { addEventListener: function() {}, removeEventListener: function
 global.document = {
   addEventListener: function() {},
   removeEventListener: function() {},
-  getElementById: function() { return null; },
+  getElementById: function(id) { if (id === "assessment-import-file") return { files: [] }; return { classList: { add: function(){}, remove: function(){} } }; },
   querySelector: function() { return null; },
   querySelectorAll: function() { return []; }
 };
@@ -56,7 +56,7 @@ global.google = {
           withFailureHandler: function(failCb) {
             return {
               applyAssessmentImportChanges: function(sysId, changes) {
-                global.applyCalledWith = { sysId: sysId, changes: changes };
+                console.log("Mock called!"); global.applyCalledWith = { sysId: sysId, changes: changes };
               }
             };
           }
@@ -66,15 +66,60 @@ global.google = {
   }
 };
 
-global.currentSystem = { '系統ID': 'SYS001' };
-global.assessmentImportSubmitting = false;
-global.assessmentImportPreview = preview;
+currentSystem = { '系統ID': 'SYS001' };
+assessmentImportSubmitting = false;
+assessmentImportPreview = preview;
 
-applyAssessmentImportPreview();
+try { applyAssessmentImportPreview(); } catch (e) { console.error("Error in applyAssessmentImportPreview:", e); }
 
 if (global.applyCalledWith && global.applyCalledWith.sysId === 'SYS001' && global.applyCalledWith.changes.length === 1) {
   console.log("PASS: applyAssessmentImportPreview");
 } else {
-  console.error("FAIL applyAssessmentImportPreview", global.applyCalledWith);
+  console.error("FAIL applyAssessmentImportPreview", global.applyCalledWith, global.currentSystem, global.assessmentImportSubmitting, global.assessmentImportPreview.canApply, global.assessmentImportPreview.changes);
+  process.exit(1);
+}
+
+// Test 3: numeric index normalization
+var mockRowsNum = [
+  ['項次', '符合性', '現況說明'],
+  ['1.10', 'Y', 'ok']
+];
+var previewNum = buildAssessmentImportPreviewClient(mockRowsNum, [{ '項次': '1.1', '符合性': '不符合' }], { '防護需求等級': '普' });
+if (previewNum.updateCount === 1) {
+  console.log("PASS: numeric index normalization");
+} else {
+  console.error("FAIL numeric index normalization", previewNum);
+  process.exit(1);
+}
+
+// Test 4: legacy column headers
+var mockRowsLegacy = [
+  ['項目', '是否符合(y、n、不適用)', '符合性或不適用情況說明'],
+  ['1.1', 'N', 'Legacy test']
+];
+var previewLegacy = buildAssessmentImportPreviewClient(mockRowsLegacy, [{ '項次': '1.1', '符合性': '符合', '現況說明': '' }], { '防護需求等級': '普' });
+if (previewLegacy.updateCount === 1 && previewLegacy.previewChanges[0].fields.length === 2) {
+  console.log("PASS: legacy column headers");
+} else {
+  console.error("FAIL legacy column headers", JSON.stringify(previewLegacy));
+  process.exit(1);
+}
+
+// Test 5: partial compliance
+var mockRowsPartial = [
+  ['項次', '符合性', '現況說明'],
+  ['1.1', '部分符合', ''],
+  ['1.2', '未符合', '']
+];
+var previewPartial = buildAssessmentImportPreviewClient(mockRowsPartial, [
+  { '項次': '1.1', '符合性': '' },
+  { '項次': '1.2', '符合性': '' }
+], { '防護需求等級': '普' });
+if (previewPartial.updateCount === 2 && 
+    previewPartial.previewChanges[0].fields[0].newValue === '部分符合' &&
+    previewPartial.previewChanges[1].fields[0].newValue === '不符合') {
+  console.log("PASS: partial compliance");
+} else {
+  console.error("FAIL partial compliance", JSON.stringify(previewPartial));
   process.exit(1);
 }
