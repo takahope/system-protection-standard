@@ -3259,14 +3259,29 @@ function parseAssessmentImportRows_(filePayload) {
 }
 
 function findAssessmentImportHeader_(rows) {
-  var required = {'項次':true,'符合性':true,'現況說明':true,'佐證資料':true,'矯正作為':true,'目標日期':true,'備註':true};
+  var aliasMap = {
+    '項次': '項次',
+    '符合性': '符合性',
+    '是否符合(y、n、不適用)': '符合性',
+    '現況說明': '現況說明',
+    '符合性或不適用情況說明': '現況說明',
+    '佐證資料': '佐證資料',
+    '矯正作為': '矯正作為',
+    '如不符合預計規劃執行方式': '矯正作為',
+    '目標日期': '目標日期',
+    '預計辦理時程': '目標日期',
+    '備註': '備註'
+  };
+
   for (var i = 0; i < rows.length; i++) {
     var map = {};
     var hits = 0;
     for (var c = 0; c < rows[i].length; c++) {
-      var label = String(rows[i][c] || '').trim();
-      if (required[label] && map[label] === undefined) {
-        map[label] = c;
+      var rawLabel = String(rows[i][c] || '');
+      var normalizedLabel = rawLabel.replace(/\s+/g, '').toLowerCase();
+      var stdLabel = aliasMap[normalizedLabel];
+      if (stdLabel && map[stdLabel] === undefined) {
+        map[stdLabel] = c;
         hits++;
       }
     }
