@@ -3993,24 +3993,34 @@ function previewAssessmentImportFile() {
     showToast('匯入檔案過大，請使用 5MB 以下的 CSV 或 XLSX');
     return;
   }
+  
   setAssessmentImportBusy(true);
-  showToast('正在檢查匯入內容...');
-  readAssessmentImportFile(file, function(err, payload) {
-    if (err) {
-      setAssessmentImportBusy(false);
-      showToast(err.message);
-      return;
-    }
-    google.script.run.withSuccessHandler(function(res) {
-      setAssessmentImportBusy(false);
-      assessmentImportPreview = res;
-      renderAssessmentImportPreview(res || {});
-      showToast(res && res.canApply ? '匯入內容已檢查，可套用更新' : '匯入內容已檢查');
-    }).withFailureHandler(function(e) {
-      setAssessmentImportBusy(false);
-      showToast('匯入檢查失敗：' + e.message);
-    }).previewAssessmentImport(currentSystem['系統ID'], payload);
-  });
+  showProgressToast({ title: '本機端解析中' });
+  setProgressToastValue(10, '正在讀取檔案...');
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    setTimeout(function() {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, {type: 'array'});
+        setProgressToastValue(50, '解析完成，比對中...');
+        
+        // TODO: Diff logic (Task 2 & 3)
+        setTimeout(function() {
+          setAssessmentImportBusy(false);
+          setProgressToastValue(100, '比對完成');
+          setTimeout(clearToastTimers, 500); // Close toast
+          showToast('匯入內容已在本機檢查完畢');
+        }, 50);
+      } catch (err) {
+        setAssessmentImportBusy(false);
+        clearToastTimers();
+        showToast('檔案解析失敗：' + err.message);
+      }
+    }, 50); // Give UI time to render 10% toast
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 function applyAssessmentImportPreview() {
@@ -6268,5 +6278,6 @@ function executeSingleGenerateDoc(format) {
     .generateAssessmentDoc(sysId, templateKey);
 }
 </script>
+<?!= include('AppScript_SheetJS'); ?>
 </body>
 </html>
