@@ -534,6 +534,7 @@
     .batch-select-item .assess-status{font-size:11px;color:var(--text2);flex-shrink:0;min-width:48px;text-align:right}
     .export-modal{width:min(92vw,680px)}
     .export-modal-head{padding:24px 24px 18px;background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%);border-bottom:1px solid #dbe7f6}
+    .export-modal-body{flex:1;overflow-y:auto;min-height:0}
     .export-modal-head h2{margin:0 0 8px;font-size:18px;color:#0f172a}
     .export-modal-head p{font-size:12px;line-height:1.8;color:#52677a;margin:0}
     .export-meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:16px 24px 0}
@@ -3759,6 +3760,7 @@ function openAssessmentExportModal() {
   var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal export-modal">';
   html += '<div class="export-modal-head"><h2>匯出防護基準自評報告</h2>';
   html += '<p>選擇要下載的檔案格式。XLSX 會保留報告版面與標色，CSV 適合後續資料彙整。</p></div>';
+  html += '<div class="export-modal-body">';
   html += '<div class="export-meta-grid">';
   html += '<div class="export-meta-item"><label>系統名稱</label><div>' + escH(currentSystem['系統名稱'] || '-') + '</div></div>';
   html += '<div class="export-meta-item"><label>防護需求等級</label><div>' + escH(currentSystem['防護需求等級'] || '-') + '</div></div>';
@@ -3771,6 +3773,7 @@ function openAssessmentExportModal() {
   html += '<span class="export-format-icon">CSV</span><span class="export-format-copy"><strong>下載 CSV</strong><span>純資料格式，適合匯入分析工具、彙整跨系統自評狀態。</span></span></button>';
   html += '<button type="button" class="export-format-card xlsx" onclick="downloadAssessmentReportFile(\'xlsx\')" ' + (disabled ? 'disabled' : '') + '>';
   html += '<span class="export-format-icon">XLSX</span><span class="export-format-copy"><strong>下載 XLSX</strong><span>保留檢核表標題、欄寬、表頭與異動標色，適合正式留存。</span></span></button>';
+  html += '</div>';
   html += '</div>';
   html += '<div class="modal-actions"><div class="modal-action-left"></div><div class="modal-action-right"><button class="btn btn-outline" onclick="closeModal()">關閉</button></div></div>';
   html += '</div></div>';
@@ -3867,6 +3870,7 @@ function openAssessmentImportModal() {
   var html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal export-modal">';
   html += '<div class="export-modal-head"><h2>匯入防護基準自評</h2>';
   html += '<p>支援匯入本系統匯出的 CSV 或 XLSX 報告。匯入只會更新符合性、現況說明、佐證資料、矯正作為、目標日期與備註，不會覆蓋控制措施基準欄位。</p></div>';
+  html += '<div class="export-modal-body">';
   html += '<div class="export-meta-grid">';
   html += '<div class="export-meta-item"><label>系統名稱</label><div>' + escH(currentSystem['系統名稱'] || '-') + '</div></div>';
   html += '<div class="export-meta-item"><label>防護需求等級</label><div>' + escH(currentSystem['防護需求等級'] || '-') + '</div></div>';
@@ -3879,6 +3883,7 @@ function openAssessmentImportModal() {
   html += '<p>建議先由此頁匯出報告，離線填寫後再匯入。送出前會先產生預覽，不會直接寫入資料。</p>';
   html += '</div>';
   html += '<div id="assessment-import-preview" class="import-preview"></div>';
+  html += '</div>';
   html += '<div class="modal-actions"><div class="modal-action-left"></div><div class="modal-action-right">';
   html += '<button class="btn btn-outline" onclick="closeModal()">關閉</button>';
   html += '<button class="btn btn-primary" id="assessment-import-check-btn" onclick="previewAssessmentImportFile()" disabled>檢查匯入內容</button>';
