@@ -3981,6 +3981,137 @@ function renderAssessmentImportPreview(preview) {
   }
 }
 
+var ASSESSMENT_IMPORT_EDITABLE_FIELDS = [
+  '符合性', '現況說明', '佐證資料', '矯正作為', '目標日期', '備註'
+];
+
+function normalizeAssessmentIndexKey(val) {
+  if (!val) return '';
+  return String(val).replace(/第/g, '').replace(/[項次]/g, '').trim();
+}
+
+function normalizeImportCompliance(val, naLabel) {
+  var s = String(val || '').trim().toUpperCase();
+  if (!s || s === '-' || s === '無') return '';
+  if (s === 'Y' || s === '符合') return '符合';
+  if (s === 'N' || s === '不符合') return '不符合';
+  if (s === 'NA' || s === 'N/A' || s === '不適用' || s === naLabel) return naLabel;
+  return null; // Invalid
+}
+
+function findAssessmentImportHeader(rows) {
+  for (var r = 0; r < Math.min(rows.length, 30); r++) {
+    var row = rows[r];
+    var hasIndex = false;
+    var editableCount = 0;
+    var colMap = {};
+    for (var c = 0; c < row.length; c++) {
+      var val = String(row[c] || '').trim().replace(/\s/g, '');
+      if (!val) continue;
+      if (val.indexOf('項次') >= 0 || val === '項目' || val === '編號') {
+        hasIndex = true;
+        colMap['項次'] = c;
+      }
+      for (var i = 0; i < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; i++) {
+        var key = ASSESSMENT_IMPORT_EDITABLE_FIELDS[i];
+        if (val.indexOf(key) >= 0) {
+          editableCount++;
+          colMap[key] = c;
+        }
+      }
+    }
+    if (hasIndex && editableCount >= 2) return { rowIdx: r, colMap: colMap };
+  }
+  return null;
+}
+
+function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSystem) {
+  var header = findAssessmentImportHeader(rows);
+  if (!header) return { errors: [{ message: '找不到可匯入的自評欄位，請確認檔案格式' }] };
+
+  var sysLevel = currentSystem['防護需求等級'] || '普';
+  var naLabel = typeof getPersistedRuleValue !== 'undefined' ? getPersistedRuleValue('assessment_applicability', 'na_label', '不適用') : '不適用';
+  var currentMap = {};
+  for (var i = 0; i < currentAssessment.length; i++) {
+    var item = currentAssessment[i];
+    var k = normalizeAssessmentIndexKey(item['項次']);
+    if (k) currentMap[k] = item;
+  }
+
+  var res = {
+    updateCount: 0, unchangedCount: 0, skippedCount: 0, errorCount: 0,
+    errors: [], warnings: [], previewChanges: [], changes: [], canApply: false
+  };
+
+  for (var r = header.rowIdx + 1; r < rows.length; r++) {
+    var row = rows[r];
+    var rawIndex = row[header.colMap['項次']];
+    var idx = normalizeAssessmentIndexKey(rawIndex);
+    if (!idx) continue;
+
+    var currentItem = currentMap[idx];
+    if (!currentItem) {
+      res.warnings.push({ row: r + 1, index: idx, message: '系統中無此項次，已略過' });
+      res.skippedCount++;
+      continue;
+    }
+
+    if (typeof isAssessmentNaItem !== 'undefined' && isAssessmentNaItem(currentItem, sysLevel)) {
+      res.warnings.push({ row: r + 1, index: idx, message: '此項目依防護基準規定為不適用，已略過' });
+      res.skippedCount++;
+      continue;
+    }
+
+    var fieldsToUpdate = [];
+    var hasError = false;
+
+    for (var c = 0; c < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; c++) {
+      var key = ASSESSMENT_IMPORT_EDITABLE_FIELDS[c];
+      if (header.colMap[key] === undefined) continue;
+      
+      var rawVal = row[header.colMap[key]];
+      var parsedVal = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).trim();
+      
+      if (key === '符合性' && parsedVal) {
+        var comp = normalizeImportCompliance(parsedVal, naLabel);
+        if (comp === null) {
+          res.errors.push({ row: r + 1, index: idx, message: '符合性格式錯誤（僅支援 Y/N/NA）' });
+          res.errorCount++;
+          hasError = true;
+          break;
+        }
+        parsedVal = comp;
+      }
+      
+      var oldVal = String(currentItem[key] || '').trim();
+      if (parsedVal !== oldVal) {
+        fieldsToUpdate.push({ key: key, newValue: parsedVal, label: key });
+      }
+    }
+
+    if (hasError) continue;
+
+    if (fieldsToUpdate.length > 0) {
+      res.updateCount++;
+      res.previewChanges.push({
+        index: idx,
+        dimension: currentItem['構面'],
+        category: currentItem['類別'],
+        fields: fieldsToUpdate
+      });
+      res.changes.push({
+        index: idx,
+        fields: fieldsToUpdate.map(function(f) { return { key: f.key, newValue: f.newValue }; })
+      });
+    } else {
+      res.unchangedCount++;
+    }
+  }
+
+  res.canApply = (res.updateCount > 0 && res.errorCount === 0);
+  return res;
+}
+
 function previewAssessmentImportFile() {
   if (!currentSystem || assessmentImportSubmitting) return;
   var input = document.getElementById('assessment-import-file');
