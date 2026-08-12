@@ -3145,16 +3145,26 @@ function parseCsvRows_(text) {
   return rows;
 }
 
+function getXlsxNs_() {
+  return XmlService.getNamespace('http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+}
+
 function getXmlText_(files, name) {
+  var target = String(name || '').replace(/^\/+/, '');
   for (var i = 0; i < files.length; i++) {
-    if (files[i].getName() === name) return files[i].getDataAsString('UTF-8');
+    var fileName = String(files[i].getName() || '').replace(/^\/+/, '');
+    if (fileName === target) return files[i].getDataAsString('UTF-8');
   }
   return '';
 }
 
 function getXmlChildrenByName_(node, name) {
-  var list = [];
-  var children = node ? node.getChildren() : [];
+  if (!node) return [];
+  var ns = getXlsxNs_();
+  var list = node.getChildren(name, ns);
+  if (list && list.length) return list;
+  list = [];
+  var children = node.getChildren();
   for (var i = 0; i < children.length; i++) {
     if (children[i].getName() === name) list.push(children[i]);
   }
@@ -3162,8 +3172,23 @@ function getXmlChildrenByName_(node, name) {
 }
 
 function getXmlChildText_(node, name) {
-  var child = node ? node.getChild(name, node.getNamespace()) : null;
+  if (!node) return '';
+  var ns = node.getNamespace() || getXlsxNs_();
+  var child = node.getChild(name, ns);
+  if (!child && ns !== getXlsxNs_()) child = node.getChild(name, getXlsxNs_());
   return child ? child.getText() : '';
+}
+
+function getImportRowMaxColumnIndex_(row) {
+  var max = -1;
+  if (!row) return max;
+  if (row.length) max = row.length - 1;
+  for (var key in row) {
+    if (!Object.prototype.hasOwnProperty.call(row, key)) continue;
+    var idx = parseInt(key, 10);
+    if (!isNaN(idx) && idx > max) max = idx;
+  }
+  return max;
 }
 
 function columnNameToIndex_(ref) {
@@ -3180,13 +3205,13 @@ function parseXlsxSharedStrings_(xmlText) {
   var strings = [];
   for (var i = 0; i < items.length; i++) {
     var textParts = [];
-    var direct = items[i].getChild('t', items[i].getNamespace());
+    var direct = items[i].getChild('t', getXlsxNs_()) || items[i].getChild('t', items[i].getNamespace());
     if (direct) {
       textParts.push(direct.getText());
     } else {
       var runs = getXmlChildrenByName_(items[i], 'r');
       for (var j = 0; j < runs.length; j++) {
-        var t = runs[j].getChild('t', runs[j].getNamespace());
+        var t = runs[j].getChild('t', getXlsxNs_()) || runs[j].getChild('t', runs[j].getNamespace());
         if (t) textParts.push(t.getText());
       }
     }
@@ -3195,26 +3220,9 @@ function parseXlsxSharedStrings_(xmlText) {
   return strings;
 }
 
-function parseXlsxRows_(blob) {
-  // XLSX 本質上是 ZIP 封裝（OOXML/OPC）。Utilities.unzip() 只接受 ContentType 為
-  // application/zip 的 blob，而前端上傳帶的是瀏覽器 MIME
-  // （application/vnd.openxmlformats-officedocument.spreadsheetml.sheet），
-  // 故先複製並覆寫 ContentType 再解壓，避免「以下引數無效：ContentType」錯誤。
-  var zipBlob = blob.copyBlob().setContentType('application/zip');
-  var files = Utilities.unzip(zipBlob);
-  var sharedStrings = parseXlsxSharedStrings_(getXmlText_(files, 'xl/sharedStrings.xml'));
-  var sheetXml = '';
-  for (var i = 0; i < files.length; i++) {
-    var name = files[i].getName();
-    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) {
-      sheetXml = files[i].getDataAsString('UTF-8');
-      break;
-    }
-  }
-  if (!sheetXml) throw new Error('找不到 XLSX 工作表內容');
-
+function parseXlsxSheetRows_(sheetXml, sharedStrings) {
   var root = XmlService.parse(sheetXml).getRootElement();
-  var sheetData = root.getChild('sheetData', root.getNamespace());
+  var sheetData = root.getChild('sheetData', getXlsxNs_()) || root.getChild('sheetData', root.getNamespace());
   var rowNodes = getXmlChildrenByName_(sheetData, 'row');
   var rows = [];
   for (var r = 0; r < rowNodes.length; r++) {
@@ -3232,7 +3240,7 @@ function parseXlsxRows_(blob) {
         var sidx = parseInt(getXmlChildText_(cell, 'v'), 10);
         value = sharedStrings[sidx] || '';
       } else if (type === 'inlineStr') {
-        var inline = cell.getChild('is', cell.getNamespace());
+        var inline = cell.getChild('is', getXlsxNs_()) || cell.getChild('is', cell.getNamespace());
         value = inline ? getXmlChildText_(inline, 't') : '';
       } else {
         value = getXmlChildText_(cell, 'v');
@@ -3242,6 +3250,36 @@ function parseXlsxRows_(blob) {
     rows.push(row);
   }
   return rows;
+}
+
+function parseXlsxRows_(blob) {
+  // XLSX 本質上是 ZIP 封裝（OOXML/OPC）。Utilities.unzip() 只接受 ContentType 為
+  // application/zip 的 blob，而前端上傳帶的是瀏覽器 MIME
+  // （application/vnd.openxmlformats-officedocument.spreadsheetml.sheet），
+  // 故先複製並覆寫 ContentType 再解壓，避免「以下引數無效：ContentType」錯誤。
+  var zipBlob = blob.copyBlob().setContentType('application/zip');
+  var files = Utilities.unzip(zipBlob);
+  var worksheetFiles = [];
+  for (var f = 0; f < files.length; f++) {
+    var fileName = String(files[f].getName() || '').replace(/^\/+/, '');
+    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(fileName)) worksheetFiles.push({name: fileName, blob: files[f]});
+  }
+  worksheetFiles.sort(function(a, b) {
+    return parseInt((a.name.match(/\d+/) || ['0'])[0], 10) - parseInt((b.name.match(/\d+/) || ['0'])[0], 10);
+  });
+  if (!worksheetFiles.length) throw new Error('找不到 XLSX 工作表內容');
+
+  var sharedStrings = parseXlsxSharedStrings_(getXmlText_(files, 'xl/sharedStrings.xml'));
+
+  var fallbackRows = [];
+  for (var i = 0; i < worksheetFiles.length; i++) {
+    var sheetXml = worksheetFiles[i].blob.getDataAsString('UTF-8');
+    var rows = parseXlsxSheetRows_(sheetXml, sharedStrings);
+    if (!fallbackRows.length || rows.length > fallbackRows.length) fallbackRows = rows;
+    if (findAssessmentImportHeader_(rows)) return rows;
+  }
+
+  return fallbackRows;
 }
 
 function parseAssessmentImportRows_(filePayload) {
@@ -3276,7 +3314,8 @@ function findAssessmentImportHeader_(rows) {
   for (var i = 0; i < rows.length; i++) {
     var map = {};
     var hits = 0;
-    for (var c = 0; c < rows[i].length; c++) {
+    var maxCol = getImportRowMaxColumnIndex_(rows[i]);
+    for (var c = 0; c <= maxCol; c++) {
       var rawLabel = String(rows[i][c] || '');
       var normalizedLabel = rawLabel.replace(/\s+/g, '').toLowerCase();
       var stdLabel = aliasMap[normalizedLabel];

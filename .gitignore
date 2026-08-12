@@ -17,3 +17,11 @@ TWB資通系統防護基準自評表_釋出系統_普_1130911.xlsx
 ~$資通系統防護基準_三文件交叉對照表.xlsx
 example/
 docs/
+node_modules/
+.cursor/
+.remember/
+.superpowers/
+docs/
+example/
+venv/
+原始表格/
