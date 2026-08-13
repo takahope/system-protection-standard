@@ -3137,7 +3137,7 @@ function applyAssessmentImportChanges(systemId, changes) {
     seenIndices[idx] = true;
     
     var currentItem = currentMap[idx];
-    if (isAssessmentNa_(currentItem, sysLevel)) { rejectedCount++; continue; }
+    if (!isAssessmentControlApplicable_(currentItem.level, sysLevel)) { rejectedCount++; continue; }
 
     var validFields = {};
     var hasValidChange = false;

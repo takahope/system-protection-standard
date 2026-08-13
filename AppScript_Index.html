@@ -4122,7 +4122,7 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       continue;
     }
 
-    if (typeof isAssessmentNaItem !== 'undefined' && isAssessmentNaItem(currentItem, sysLevel)) {
+    if (typeof isAssessmentApplicable !== 'undefined' && !isAssessmentApplicable(currentItem.level, sysLevel)) {
       res.warnings.push({ row: r + 1, index: idx, message: '此項目依防護基準規定為不適用，已略過' });
       res.skippedCount++;
       continue;
