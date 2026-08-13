@@ -4244,12 +4244,12 @@ function applyAssessmentImportPreview() {
   if (!assessmentImportPreview.changes || !assessmentImportPreview.changes.length) return;
   
   setAssessmentImportBusy(true);
-  showToast('正在套用匯入更新...');
+  showProgressToast({ title: '套用匯入更新', message: '正在寫入後端資料庫...' });
   google.script.run.withSuccessHandler(function(res) {
     setAssessmentImportBusy(false);
     if (res && res.success) {
       closeModal();
-      showToast('已匯入 ' + (res.updated || 0) + ' 項自評內容');
+      finishProgressToast('已匯入 ' + (res.updated || 0) + ' 項自評內容', '匯入成功');
       loadAssessment(currentSystem['系統ID']);
     } else {
       showToast(res && res.message ? res.message : '匯入套用失敗');

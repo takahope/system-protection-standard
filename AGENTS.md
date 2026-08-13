@@ -64,3 +64,4 @@ For pull requests, include:
 - **2026-08-13**: 調整匯入模組自動降級「不符合」的預覽邏輯。移除 `AppScript_Index.html` 中的強制顯示條件 `|| wasFallback`，讓原本會被強制顯示的異常文字（例如：「還沒做」降級為「不符合」），若與資料庫中既有值（也是「不符合」）完全相同時，不再顯示於差異清單中，減少無謂的干擾；但若既有值不同，則仍會如期顯示 `(原內容: 還沒做)` 供參考。
 - **2026-08-13**: 變更匯入模組的預覽畫面顯示順序。修改 `AppScript_Index.html` 內的 `renderAssessmentImportPreview`，將黃色的 Warning 訊息（包含略過的重複項次、不適用項目以及無法識別文字的降級警告）從實際變更清單的上方移至下方，使得畫面呈現依照「紅色錯誤 ➔ 實際更新清單 ➔ 黃色警告/略過項目」的順序，提升閱讀體驗。
 - **2026-08-13**: 調整匯入模組略過不適用項目的判斷邏輯。將前端 `AppScript_Index.html` 與後端 `AppScript_Code.js` 在檢查是否略過匯入項目時，從原本呼叫 `isAssessmentNaItem` / `isAssessmentNa_` 改為嚴格檢查 `!isAssessmentApplicable` / `!isAssessmentControlApplicable_`。解決了過去使用者手動將符合性設為「不適用」後，系統就連同現況說明（不適用原因）的修改一併拒絕匯入的 Bug；現在只有真正因系統等級而不適用的項目才會被略過。
+- **2026-08-13**: 增強匯入更新寫入後端時的使用者體驗。在 `AppScript_Index.html` 的 `applyAssessmentImportPreview` 中，將送出匯入時單純的文字提示 `showToast`，升級為具有動態進度條效果的 `showProgressToast` 與 `finishProgressToast`。這樣使用者在等待後端寫入資料庫時，能有更明確的視覺回饋（顯示進度條並在完成時填滿轉為綠色成功狀態）。
