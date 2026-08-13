@@ -4161,7 +4161,7 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       
       var propKey = propMap[key] || key;
       var oldVal = normalizeAssessmentDraftValue(currentItem[propKey]);
-      if (parsedVal !== oldVal || wasFallback) {
+      if (parsedVal !== oldVal) {
         var displayNew = parsedVal;
         if (wasFallback) {
           displayNew = parsedVal ? (parsedVal + ' (原內容: ' + originalRaw + ')') : ('無 (原內容: ' + originalRaw + ')');
