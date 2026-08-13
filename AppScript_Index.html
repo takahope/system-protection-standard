@@ -3966,10 +3966,15 @@ function renderAssessmentImportPreview(preview) {
   if (preview.previewChanges && preview.previewChanges.length) {
     html += '<div class="import-change-list">';
     preview.previewChanges.forEach(function(change) {
-      var labels = (change.fields || []).map(function(field) { return field.label; }).join('、');
       html += '<div class="import-change-item">';
-      html += '<div class="import-change-title">項次 ' + escH(change.index) + '｜' + escH(change.category || change.dimension || '-') + '</div>';
-      html += '<div class="import-change-fields">將更新：' + escH(labels || '-') + '</div>';
+      html += '<div class="import-change-title">項次 ' + escH(change.index) + '｜' + escH(change.category || change.dimension || '-') + ' 將更新：</div>';
+      html += '<div class="import-change-fields" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">';
+      (change.fields || []).forEach(function(field) {
+        var oldDisplay = field.oldValue ? escH(field.oldValue) : '無';
+        var newDisplay = field.newValue ? escH(field.newValue) : '無';
+        html += '<div><strong>' + escH(field.label) + '：</strong> <del style="color:#94a3b8; margin-right:4px;">' + oldDisplay + '</del> ➔ ' + newDisplay + '</div>';
+      });
+      html += '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -4155,7 +4160,7 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       var propKey = propMap[key] || key;
       var oldVal = String(currentItem[propKey] || '').trim();
       if (parsedVal !== oldVal) {
-        fieldsToUpdate.push({ key: key, newValue: parsedVal, label: key });
+        fieldsToUpdate.push({ key: key, newValue: parsedVal, label: key, oldValue: oldVal });
       }
     }
 
