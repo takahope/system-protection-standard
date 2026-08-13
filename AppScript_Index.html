@@ -4145,7 +4145,7 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       if (header.colMap[key] === undefined) continue;
       
       var rawVal = row[header.colMap[key]];
-      var parsedVal = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).trim();
+      var parsedVal = normalizeAssessmentDraftValue(rawVal);
       
       var originalRaw = parsedVal;
       var wasFallback = false;
@@ -4160,7 +4160,7 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       }
       
       var propKey = propMap[key] || key;
-      var oldVal = String(currentItem[propKey] || '').trim();
+      var oldVal = normalizeAssessmentDraftValue(currentItem[propKey]);
       if (parsedVal !== oldVal || wasFallback) {
         var displayNew = parsedVal;
         if (wasFallback) {

@@ -60,3 +60,4 @@ For pull requests, include:
 - **2026-08-13**: 優化系統詳情頁面的預設顯示分頁。修改 `AppScript_Index.html` 中的 HTML 結構與 `viewSystem` 的分頁重置邏輯，將預設開啟的頁籤從「防護需求分級評估」改為「防護基準自評」，減少使用者切換頁籤的操作負擔。並同步在 `viewSystem` 初始化流程中加入 `loadAssessment(sysId)`，確保預設進入自評頁籤時能正確觸發「懶載入（Lazy Loading）」機制拉取資料，解決原先畫面空白的問題。
 - **2026-08-13**: 修正套用自評匯入時引發的 `ReferenceError`。因為前次重構時將讀取設定的程式碼從前端複製到後端，導致後端的 `applyAssessmentImportChanges` 誤呼叫了僅存在於前端的 `getPersistedRuleValue`。已將其替換為後端專用的 `getAssessmentApplicabilityConfig_().naLabel`，確保資料能成功寫入。
 - **2026-08-13**: 修復匯入自評後，因換行與空白字元導致的「誤判為未儲存變更」問題。在 `AppScript_Index.html` 的 `normalizeAssessmentDraftValue` 中加入 `.replace(/\r\n/g, '\n').trim()`，統一將 Excel 匯入的 CRLF 轉換為瀏覽器 `<textarea>` 讀取的 LF，並濾除首尾空白，確保快照與 DOM 的資料能正確比對，不再觸發錯誤的未儲存警告。
+- **2026-08-13**: 修正匯入模組預覽階段的差異誤判（False Positives）。將 `AppScript_Index.html` 內 `buildAssessmentImportPreviewClient` 的取值邏輯從單純的 `.trim()` 升級為呼叫 `normalizeAssessmentDraftValue`，讓新舊資料在比對前，統一先經過換行（CRLF 轉 LF）與空白濾除的正規化處理，確保預覽清單只顯示真正有意義的文字異動。
