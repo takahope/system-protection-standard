@@ -28,7 +28,7 @@ eval(scriptContent);
 
 // Test 1: buildAssessmentImportPreviewClient
 var mockCurrentAssessment = [
-  { '項次': '1.1', '符合性': '符合', 'id': 'A1' }
+  { index: '1.1', compliance: '符合', currentStatus: '', id: 'A1' }
 ];
 
 var mockRows = [
@@ -84,7 +84,7 @@ var mockRowsNum = [
   ['項次', '符合性', '現況說明'],
   ['1.10', 'Y', 'ok']
 ];
-var previewNum = buildAssessmentImportPreviewClient(mockRowsNum, [{ '項次': '1.1', '符合性': '不符合' }], { '防護需求等級': '普' });
+var previewNum = buildAssessmentImportPreviewClient(mockRowsNum, [{ index: '1.1', compliance: '不符合' }], { '防護需求等級': '普' });
 if (previewNum.updateCount === 1) {
   console.log("PASS: numeric index normalization");
 } else {
@@ -97,7 +97,7 @@ var mockRowsLegacy = [
   ['項目', '是否符合(y、n、不適用)', '符合性或不適用情況說明'],
   ['1.1', 'N', 'Legacy test']
 ];
-var previewLegacy = buildAssessmentImportPreviewClient(mockRowsLegacy, [{ '項次': '1.1', '符合性': '符合', '現況說明': '' }], { '防護需求等級': '普' });
+var previewLegacy = buildAssessmentImportPreviewClient(mockRowsLegacy, [{ index: '1.1', compliance: '符合', currentStatus: '' }], { '防護需求等級': '普' });
 if (previewLegacy.updateCount === 1 && previewLegacy.previewChanges[0].fields.length === 2) {
   console.log("PASS: legacy column headers");
 } else {
@@ -112,8 +112,8 @@ var mockRowsPartial = [
   ['1.2', '未符合', '']
 ];
 var previewPartial = buildAssessmentImportPreviewClient(mockRowsPartial, [
-  { '項次': '1.1', '符合性': '' },
-  { '項次': '1.2', '符合性': '' }
+  { index: '1.1', compliance: '' },
+  { index: '1.2', compliance: '' }
 ], { '防護需求等級': '普' });
 if (previewPartial.updateCount === 2 && 
     previewPartial.previewChanges[0].fields[0].newValue === '部分符合' &&

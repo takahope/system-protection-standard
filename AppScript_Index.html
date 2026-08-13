@@ -4078,7 +4078,7 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
   var currentMap = {};
   for (var i = 0; i < currentAssessment.length; i++) {
     var item = currentAssessment[i];
-    var k = normalizeAssessmentIndexKey(item['項次']);
+    var k = normalizeAssessmentIndexKey(item.index);
     if (k) currentMap[k] = item;
   }
 
@@ -4087,11 +4087,20 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
     errors: [], warnings: [], previewChanges: [], changes: [], canApply: false
   };
 
+  var seenIndices = {};
+
   for (var r = header.rowIdx + 1; r < rows.length; r++) {
     var row = rows[r];
     var rawIndex = row[header.colMap['項次']];
     var idx = normalizeAssessmentIndexKey(rawIndex);
     if (!idx) continue;
+
+    if (seenIndices[idx]) {
+      res.warnings.push({ row: r + 1, index: idx, message: '重複項次已略過' });
+      res.skippedCount++;
+      continue;
+    }
+    seenIndices[idx] = true;
 
     var currentItem = currentMap[idx];
     if (!currentItem) {
@@ -4108,6 +4117,15 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
 
     var fieldsToUpdate = [];
     var hasError = false;
+
+    var propMap = {
+      '符合性': 'compliance',
+      '現況說明': 'currentStatus',
+      '佐證資料': 'evidence',
+      '矯正作為': 'corrective',
+      '目標日期': 'targetDate',
+      '備註': 'note'
+    };
 
     for (var c = 0; c < ASSESSMENT_IMPORT_EDITABLE_FIELDS.length; c++) {
       var key = ASSESSMENT_IMPORT_EDITABLE_FIELDS[c];
@@ -4127,7 +4145,8 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
         parsedVal = comp;
       }
       
-      var oldVal = String(currentItem[key] || '').trim();
+      var propKey = propMap[key] || key;
+      var oldVal = String(currentItem[propKey] || '').trim();
       if (parsedVal !== oldVal) {
         fieldsToUpdate.push({ key: key, newValue: parsedVal, label: key });
       }
@@ -4139,8 +4158,8 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       res.updateCount++;
       res.previewChanges.push({
         index: idx,
-        dimension: currentItem['構面'],
-        category: currentItem['類別'],
+        dimension: currentItem.dimension,
+        category: currentItem.category,
         fields: fieldsToUpdate
       });
       res.changes.push({
