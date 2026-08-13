@@ -137,7 +137,8 @@ if (previewInvalid.updateCount === 1 &&
     previewInvalid.errorCount === 0 && 
     previewInvalid.warnings.length === 1 &&
     previewInvalid.warnings[0].message.indexOf('還沒做') >= 0 &&
-    previewInvalid.previewChanges[0].fields[0].newValue === '不符合') {
+    previewInvalid.previewChanges[0].fields[0].newValue === '不符合' &&
+    previewInvalid.previewChanges[0].fields[0].displayNew === '不符合 (原內容: 還沒做)') {
   console.log("PASS: invalid compliance fallback");
 } else {
   console.error("FAIL invalid compliance fallback", JSON.stringify(previewInvalid, null, 2));

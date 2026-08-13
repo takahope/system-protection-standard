@@ -3971,7 +3971,7 @@ function renderAssessmentImportPreview(preview) {
       html += '<div class="import-change-fields" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">';
       (change.fields || []).forEach(function(field) {
         var oldDisplay = field.oldValue ? escH(field.oldValue) : '無';
-        var newDisplay = field.newValue ? escH(field.newValue) : '無';
+        var newDisplay = field.displayNew ? escH(field.displayNew) : (field.newValue ? escH(field.newValue) : '無');
         html += '<div><strong>' + escH(field.label) + '：</strong> <del style="color:#94a3b8; margin-right:4px;">' + oldDisplay + '</del> ➔ ' + newDisplay + '</div>';
       });
       html += '</div>';
@@ -4146,19 +4146,26 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       var rawVal = row[header.colMap[key]];
       var parsedVal = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).trim();
       
+      var originalRaw = parsedVal;
+      var wasFallback = false;
       if (key === '符合性' && parsedVal) {
         var comp = normalizeImportCompliance(parsedVal, naLabel);
         if (comp === null) {
           res.warnings.push({ row: r + 1, index: idx, message: '符合性出現未識別文字「' + parsedVal + '」，已自動轉為「不符合」' });
           comp = '不符合';
+          wasFallback = true;
         }
         parsedVal = comp;
       }
       
       var propKey = propMap[key] || key;
       var oldVal = String(currentItem[propKey] || '').trim();
-      if (parsedVal !== oldVal) {
-        fieldsToUpdate.push({ key: key, newValue: parsedVal, label: key, oldValue: oldVal });
+      if (parsedVal !== oldVal || wasFallback) {
+        var displayNew = parsedVal;
+        if (wasFallback) {
+          displayNew = parsedVal ? (parsedVal + ' (原內容: ' + originalRaw + ')') : ('無 (原內容: ' + originalRaw + ')');
+        }
+        fieldsToUpdate.push({ key: key, newValue: parsedVal, label: key, oldValue: oldVal, displayNew: displayNew });
       }
     }
 
