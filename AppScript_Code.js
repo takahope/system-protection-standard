@@ -22,10 +22,15 @@ function doGet(e) {
   var access = getPageAccessStatus_();
   if (!access.allowed) return createAccessDeniedOutput_();
   if (!isPagePasscodeVerified_(access.email)) return createPasscodeOutput_(access);
-  return HtmlService.createHtmlOutputFromFile('Index')
+  return HtmlService.createTemplateFromFile('Index')
+    .evaluate()
     .setTitle('資通系統防護基準管理系統')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
 function createAccessDeniedOutput_() {

@@ -52,3 +52,4 @@ For pull requests, include:
 - **2026-08-06**: 變更文件產出的 `{{填表人}}` 顯示格式。修改 `generateAssessmentDoc` 邏輯，從讀取 `.displayName` 改為優先讀取乾淨的 `.name`，達成僅文件產出時不顯示信箱，且不影響其他試算表與 UI 的紀錄格式。
 - **2026-08-07**: 調整「資通系統清冊範本」的「開發型態」寫入規則。將 `generateInventorySheet` 中原本直接寫入 `建置方式` 的邏輯改為先透過字串對照，將「本機關購置套裝軟體」、「本機關委外開發」、「本機關自行開發」分別轉換為「套裝軟硬體」、「委外開發」、「自行開發」。（並於稍後修正了字串比對的錯字，從「建置」修正為「購置」）。
 - **2026-08-07**: 調整分級評估表中建置與維運單位的聯絡人抓取邏輯。將原本兩者共用單一 `contactStr` 的邏輯拆分，並依據廠商名稱是否為「中央研究院」判斷是否為委外：若是委外（非中央研究院），優先抓取「系統承辦窗口」角色；若是院內（中央研究院或空白），則維持優先抓取「開發」角色。
+- **2026-08-13**: 修正 SheetJS 匯入功能引發的「檔案解析失敗」錯誤。發現前次任務雖在 `AppScript_Index.html` 中加入了 `<?!= include('AppScript_SheetJS'); ?>`，但未將 `AppScript_Code.js` 中的 `doGet` 從 `createHtmlOutputFromFile` 升級為 `createTemplateFromFile('Index').evaluate()`，亦未實作 `include` 函式，導致範本標籤未被解析而直接傳送到前端，進而造成前端找不到 `XLSX` 物件。已修正 `doGet` 邏輯並補上 `include` 函式。
