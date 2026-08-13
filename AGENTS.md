@@ -65,3 +65,4 @@ For pull requests, include:
 - **2026-08-13**: 變更匯入模組的預覽畫面顯示順序。修改 `AppScript_Index.html` 內的 `renderAssessmentImportPreview`，將黃色的 Warning 訊息（包含略過的重複項次、不適用項目以及無法識別文字的降級警告）從實際變更清單的上方移至下方，使得畫面呈現依照「紅色錯誤 ➔ 實際更新清單 ➔ 黃色警告/略過項目」的順序，提升閱讀體驗。
 - **2026-08-13**: 調整匯入模組略過不適用項目的判斷邏輯。將前端 `AppScript_Index.html` 與後端 `AppScript_Code.js` 在檢查是否略過匯入項目時，從原本呼叫 `isAssessmentNaItem` / `isAssessmentNa_` 改為嚴格檢查 `!isAssessmentApplicable` / `!isAssessmentControlApplicable_`。解決了過去使用者手動將符合性設為「不適用」後，系統就連同現況說明（不適用原因）的修改一併拒絕匯入的 Bug；現在只有真正因系統等級而不適用的項目才會被略過。
 - **2026-08-13**: 增強匯入更新寫入後端時的使用者體驗。在 `AppScript_Index.html` 的 `applyAssessmentImportPreview` 中，將送出匯入時單純的文字提示 `showToast`，升級為具有動態進度條效果的 `showProgressToast` 與 `finishProgressToast`。這樣使用者在等待後端寫入資料庫時，能有更明確的視覺回饋（顯示進度條並在完成時填滿轉為綠色成功狀態）。
+- **2026-08-13**: 修復首頁系統卡片（`.sys-card`）中標籤（`.sys-tag`）因 Flexbox 特性被異常拉伸的問題。在 `AppScript_Index.html` 內的 CSS 中，為 `.sys-tags` 容器加上 `align-items: center`，並為 `.sys-tag` 加上 `white-space: nowrap`，確保彩色外框能緊密包覆文字，維持整齊一致的膠囊形狀。
