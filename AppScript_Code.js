@@ -3116,7 +3116,7 @@ function applyAssessmentImportChanges(systemId, changes) {
   var sysRecord = getSystemById_(systemId);
   if (!sysRecord) throw new Error('系統不存在');
   var sysLevel = sysRecord['防護需求等級'] || '普';
-  var naLabel = getPersistedRuleValue('assessment_applicability', 'na_label', '不適用');
+  var naLabel = getAssessmentApplicabilityConfig_().naLabel;
   
   var currentAssessment = getAssessment(systemId);
   var currentMap = {};
