@@ -3887,7 +3887,7 @@ function openAssessmentImportModal() {
   html += '<div class="modal-actions"><div class="modal-action-left"></div><div class="modal-action-right">';
   html += '<button class="btn btn-outline" onclick="closeModal()">關閉</button>';
   html += '<button class="btn btn-primary" id="assessment-import-check-btn" onclick="previewAssessmentImportFile()" disabled>檢查匯入內容</button>';
-  html += '<button class="btn btn-primary hidden" id="assessment-import-apply-btn" onclick="applyAssessmentImportPreview()">套用更新</button>';
+  html += '<button class="btn btn-primary hidden" id="assessment-import-apply-btn" onclick="applyAssessmentImportPreview()">確認匯入</button>';
   html += '</div></div>';
   html += '</div></div>';
   document.getElementById('modal-container').innerHTML = html;
@@ -3904,7 +3904,10 @@ function onAssessmentImportFileChange() {
     preview.innerHTML = '';
   }
   if (applyBtn) applyBtn.classList.add('hidden');
-  if (checkBtn) checkBtn.disabled = !(input && input.files && input.files.length);
+  if (checkBtn) {
+    checkBtn.classList.remove('hidden');
+    checkBtn.disabled = !(input && input.files && input.files.length);
+  }
 }
 
 function readAssessmentImportFile(file, callback) {
@@ -3975,9 +3978,13 @@ function renderAssessmentImportPreview(preview) {
   }
   el.innerHTML = html;
   el.style.display = 'block';
+  var checkBtn = document.getElementById('assessment-import-check-btn');
   if (applyBtn) {
     applyBtn.classList.toggle('hidden', !preview.canApply);
     applyBtn.disabled = !preview.canApply;
+  }
+  if (checkBtn && preview.canApply) {
+    checkBtn.classList.add('hidden');
   }
 }
 
