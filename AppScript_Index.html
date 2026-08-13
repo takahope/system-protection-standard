@@ -3963,7 +3963,6 @@ function renderAssessmentImportPreview(preview) {
   html += '<div class="import-preview-stat"><label>錯誤</label><strong>' + (preview.errorCount || 0) + '</strong></div>';
   html += '</div>';
   html += renderAssessmentImportMessages(preview.errors || [], 'error');
-  html += renderAssessmentImportMessages(preview.warnings || [], 'warn');
   if (preview.previewChanges && preview.previewChanges.length) {
     html += '<div class="import-change-list">';
     preview.previewChanges.forEach(function(change) {
@@ -3982,6 +3981,7 @@ function renderAssessmentImportPreview(preview) {
   } else if (!(preview.errors && preview.errors.length)) {
     html += '<div class="import-message warn">匯入檔與目前自評資料相同，沒有需要套用的變更。</div>';
   }
+  html += renderAssessmentImportMessages(preview.warnings || [], 'warn');
   el.innerHTML = html;
   el.style.display = 'block';
   var checkBtn = document.getElementById('assessment-import-check-btn');

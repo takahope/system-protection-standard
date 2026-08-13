@@ -62,3 +62,4 @@ For pull requests, include:
 - **2026-08-13**: 修復匯入自評後，因換行與空白字元導致的「誤判為未儲存變更」問題。在 `AppScript_Index.html` 的 `normalizeAssessmentDraftValue` 中加入 `.replace(/\r\n/g, '\n').trim()`，統一將 Excel 匯入的 CRLF 轉換為瀏覽器 `<textarea>` 讀取的 LF，並濾除首尾空白，確保快照與 DOM 的資料能正確比對，不再觸發錯誤的未儲存警告。
 - **2026-08-13**: 修正匯入模組預覽階段的差異誤判（False Positives）。將 `AppScript_Index.html` 內 `buildAssessmentImportPreviewClient` 的取值邏輯從單純的 `.trim()` 升級為呼叫 `normalizeAssessmentDraftValue`，讓新舊資料在比對前，統一先經過換行（CRLF 轉 LF）與空白濾除的正規化處理，確保預覽清單只顯示真正有意義的文字異動。
 - **2026-08-13**: 調整匯入模組自動降級「不符合」的預覽邏輯。移除 `AppScript_Index.html` 中的強制顯示條件 `|| wasFallback`，讓原本會被強制顯示的異常文字（例如：「還沒做」降級為「不符合」），若與資料庫中既有值（也是「不符合」）完全相同時，不再顯示於差異清單中，減少無謂的干擾；但若既有值不同，則仍會如期顯示 `(原內容: 還沒做)` 供參考。
+- **2026-08-13**: 變更匯入模組的預覽畫面顯示順序。修改 `AppScript_Index.html` 內的 `renderAssessmentImportPreview`，將黃色的 Warning 訊息（包含略過的重複項次、不適用項目以及無法識別文字的降級警告）從實際變更清單的上方移至下方，使得畫面呈現依照「紅色錯誤 ➔ 實際更新清單 ➔ 黃色警告/略過項目」的順序，提升閱讀體驗。
