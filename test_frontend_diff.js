@@ -123,3 +123,23 @@ if (previewPartial.updateCount === 2 &&
   console.error("FAIL partial compliance", JSON.stringify(previewPartial));
   process.exit(1);
 }
+
+// Test 6: invalid compliance fallback
+var mockRowsInvalid = [
+  ['項次', '符合性', '現況說明'],
+  ['1.1', '還沒做', '']
+];
+var previewInvalid = buildAssessmentImportPreviewClient(mockRowsInvalid, [
+  { index: '1.1', compliance: '符合' }
+], { '防護需求等級': '普' });
+
+if (previewInvalid.updateCount === 1 && 
+    previewInvalid.errorCount === 0 && 
+    previewInvalid.warnings.length === 1 &&
+    previewInvalid.warnings[0].message.indexOf('還沒做') >= 0 &&
+    previewInvalid.previewChanges[0].fields[0].newValue === '不符合') {
+  console.log("PASS: invalid compliance fallback");
+} else {
+  console.error("FAIL invalid compliance fallback", JSON.stringify(previewInvalid, null, 2));
+  process.exit(1);
+}

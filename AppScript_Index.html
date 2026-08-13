@@ -4149,10 +4149,8 @@ function buildAssessmentImportPreviewClient(rows, currentAssessment, currentSyst
       if (key === '符合性' && parsedVal) {
         var comp = normalizeImportCompliance(parsedVal, naLabel);
         if (comp === null) {
-          res.errors.push({ row: r + 1, index: idx, message: '符合性格式錯誤（僅支援 Y/N/NA）' });
-          res.errorCount++;
-          hasError = true;
-          break;
+          res.warnings.push({ row: r + 1, index: idx, message: '符合性出現未識別文字「' + parsedVal + '」，已自動轉為「不符合」' });
+          comp = '不符合';
         }
         parsedVal = comp;
       }

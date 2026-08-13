@@ -55,3 +55,4 @@ For pull requests, include:
 - **2026-08-13**: 修正 SheetJS 匯入功能引發的「檔案解析失敗」錯誤。發現前次任務雖在 `AppScript_Index.html` 中加入了 `<?!= include('AppScript_SheetJS'); ?>`，但未將 `AppScript_Code.js` 中的 `doGet` 從 `createHtmlOutputFromFile` 升級為 `createTemplateFromFile('Index').evaluate()`，亦未實作 `include` 函式，導致範本標籤未被解析而直接傳送到前端，進而造成前端找不到 `XLSX` 物件。已修正 `doGet` 邏輯並補上 `include` 函式。
 - **2026-08-13**: 優化匯入模組的按鈕 UX。將 `AppScript_Index.html` 中原本會在檢查通過後並存的「檢查匯入內容」與「套用更新」兩個主按鈕，修改為互斥顯示狀態，並將後者文字改為「確認匯入」。當匯入檢查通過（`canApply`）時，原檢查按鈕會隱藏，並在同位置顯示確認按鈕，讓使用者操作更直覺；重新選擇檔案時則會重置此狀態。
 - **2026-08-13**: 改進匯入模組的比對預覽畫面。原本僅會列出「將更新：符合性、現況說明」，現已修改 `buildAssessmentImportPreviewClient` 以紀錄 `oldValue`，並在 `renderAssessmentImportPreview` 中將變更渲染為具體的新舊對照格式（例如：`符合性：<del>不符合</del> ➔ 符合`），舊資料並加上灰色刪除線效果，讓使用者在確認匯入前能明確檢視每一項具體的資料異動。
+- **2026-08-13**: 變更匯入模組的符合性驗證邏輯。原本只要「符合性」欄位出現無法識別的文字（如「未知」、「還沒做」）就會觸發 Error 並阻擋整個檔案匯入。現已放寬此限制：遇到無法識別的文字時不再阻擋匯入，而是自動將其降級為「不符合」，並在預覽畫面發出 Warning（「符合性出現未識別文字『...』，已自動轉為『不符合』」），讓使用者能順利匯入其他正常的項目。
