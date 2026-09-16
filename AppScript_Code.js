@@ -58,21 +58,44 @@ function createPasscodeOutput_(access) {
     'h1{position:relative;margin:18px 0 8px;font-size:24px;line-height:1.25;color:#0f172a}.copy{position:relative;margin:0 0 20px;font-size:13px;line-height:1.8;color:var(--muted)}' +
     '.user{position:relative;margin:0 0 16px;padding:12px 14px;border-radius:16px;background:var(--soft);border:1px solid var(--line);font-size:12px;color:#334155;line-height:1.6}.user strong{display:block;color:#0f172a;font-size:13px}' +
     'label{position:relative;display:block;margin-bottom:8px;font-size:12px;font-weight:800;color:#334155}.field{position:relative;display:flex;gap:8px}' +
-    'input{width:100%;height:46px;border:1px solid #cbd5e1;border-radius:14px;padding:0 14px;font-size:15px;outline:none;background:#fff;color:#111827;transition:border-color .16s ease,box-shadow .16s ease}' +
-    'input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(23,78,166,.12)}button{height:46px;border:0;border-radius:14px;padding:0 18px;background:var(--blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 12px 24px rgba(23,78,166,.2);transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}' +
-    'button:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(23,78,166,.26)}button:disabled{opacity:.62;cursor:not-allowed;transform:none;box-shadow:none}' +
+    '.input-wrap{position:relative;flex:1;display:flex;align-items:center}' +
+    '.input-wrap input{width:100%;height:46px;border:1px solid #cbd5e1;border-radius:14px;padding:0 44px 0 14px;font-size:15px;outline:none;background:#fff;color:#111827;transition:border-color .16s ease,box-shadow .16s ease}' +
+    '.input-wrap input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(23,78,166,.12)}' +
+    '.toggle-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:0;border-radius:8px;padding:6px;margin:0;cursor:pointer;color:#64748b;display:flex;align-items:center;justify-content:center;transition:color .16s ease,background-color .16s ease}' +
+    '.toggle-eye:hover{color:#0f172a;background:#f1f5f9}' +
+    '.toggle-eye:focus-visible{outline:2px solid var(--blue);outline-offset:1px}' +
+    '.toggle-eye:disabled{opacity:.4;cursor:not-allowed}' +
+    '.toggle-eye svg{width:20px;height:20px;display:block}' +
+    '#submit-btn{height:46px;border:0;border-radius:14px;padding:0 18px;background:var(--blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 12px 24px rgba(23,78,166,.2);transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}' +
+    '#submit-btn:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(23,78,166,.26)}' +
+    '#submit-btn:disabled{opacity:.62;cursor:not-allowed;transform:none;box-shadow:none}' +
     '.msg{position:relative;min-height:20px;margin-top:12px;font-size:12px;line-height:1.7;color:var(--muted)}.msg.error{color:var(--danger);font-weight:700}.msg.ok{color:#0f7a4f;font-weight:700}' +
     '</style></head><body><main class="gate">' +
     '<div class="eyebrow">SECURE ACCESS</div><h1>輸入通行碼</h1>' +
     '<p class="copy">你已通過人員名單檢查。請輸入通行碼後進入資通系統防護基準管理頁面。</p>' +
     '<div class="user"><strong>' + escapeHtml_(displayName) + '</strong></div>' +
-    '<form id="passcode-form"><label for="passcode">通行碼</label><div class="field"><input id="passcode" type="password" autocomplete="current-password"><button id="submit-btn" type="submit">進入</button></div><div id="msg" class="msg"></div></form>' +
+    '<form id="passcode-form"><label for="passcode">通行碼</label>' +
+    '<div class="field">' +
+    '<div class="input-wrap">' +
+    '<input id="passcode" type="password" autocomplete="current-password" placeholder="請輸入通行碼">' +
+    '<button id="toggle-passcode" type="button" class="toggle-eye" aria-label="顯示通行碼" title="顯示通行碼">' +
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
+    '</button>' +
+    '</div>' +
+    '<button id="submit-btn" type="submit">進入</button>' +
+    '</div>' +
+    '<div id="msg" class="msg"></div>' +
+    '</form>' +
+    '<span id="svg-eye" style="display:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>' +
+    '<span id="svg-eye-off" style="display:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg></span>' +
     '</main><script>' +
-    'var form=document.getElementById("passcode-form"),input=document.getElementById("passcode"),btn=document.getElementById("submit-btn"),msg=document.getElementById("msg");' +
+    'var form=document.getElementById("passcode-form"),input=document.getElementById("passcode"),btn=document.getElementById("submit-btn"),toggleBtn=document.getElementById("toggle-passcode"),msg=document.getElementById("msg");' +
+    'var eyeSvg=document.getElementById("svg-eye").innerHTML,eyeOffSvg=document.getElementById("svg-eye-off").innerHTML;' +
     'function setMsg(t,c){msg.textContent=t||"";msg.className="msg"+(c?" "+c:"");}' +
-    'function restore(){btn.disabled=false;input.disabled=false;}' +
+    'function restore(){btn.disabled=false;input.disabled=false;if(toggleBtn)toggleBtn.disabled=false;}' +
     'function focusInput(){try{input.focus();input.select();}catch(e){}}' +
-    'form.addEventListener("submit",function(e){e.preventDefault();var v=input.value||"";if(!v.trim()){setMsg("請輸入通行碼。","error");focusInput();return;}btn.disabled=true;input.disabled=true;setMsg("正在驗證通行碼...","");google.script.run.withSuccessHandler(function(res){if(res&&res.success){if(res.appUrl){setMsg("驗證成功，正在進入頁面。","ok");window.open(res.appUrl,"_top");return;}restore();setMsg("無法取得系統網址，請重新開啟部署連結。","error");return;}restore();setMsg((res&&res.message)||"通行碼錯誤，請重新輸入。","error");focusInput();}).withFailureHandler(function(err){restore();setMsg((err&&err.message)||"驗證失敗，請稍後再試。","error");focusInput();}).verifyPagePasscode(v);});' +
+    'if(toggleBtn){toggleBtn.addEventListener("click",function(e){e.preventDefault();var isPassword=input.type==="password";input.type=isPassword?"text":"password";toggleBtn.innerHTML=isPassword?eyeOffSvg:eyeSvg;var tip=isPassword?"隱藏通行碼":"顯示通行碼";toggleBtn.setAttribute("title",tip);toggleBtn.setAttribute("aria-label",tip);try{input.focus();}catch(err){}});}' +
+    'form.addEventListener("submit",function(e){e.preventDefault();var v=input.value||"";if(!v.trim()){setMsg("請輸入通行碼。","error");focusInput();return;}btn.disabled=true;input.disabled=true;if(toggleBtn)toggleBtn.disabled=true;setMsg("正在驗證通行碼...","");google.script.run.withSuccessHandler(function(res){if(res&&res.success){if(res.appUrl){setMsg("驗證成功，正在進入頁面。","ok");window.open(res.appUrl,"_top");return;}restore();setMsg("無法取得系統網址，請重新開啟部署連結。","error");return;}restore();setMsg((res&&res.message)||"通行碼錯誤，請重新輸入。","error");focusInput();}).withFailureHandler(function(err){restore();setMsg((err&&err.message)||"驗證失敗，請稍後再試。","error");focusInput();}).verifyPagePasscode(v);});' +
     '</script></body></html>';
   return HtmlService.createHtmlOutput(html)
     .setTitle('通行碼驗證')
