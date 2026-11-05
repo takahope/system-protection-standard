@@ -3258,8 +3258,8 @@ function populateAssessmentReportSheet_(ws, report) {
   var assessment = report.assessment;
 
   var colCount = headers.length;
-  ws.getRange('A1').setValue('資通系統防護基準檢核表（依據附表十修正規定）');
-  ws.getRange(1, 1, 1, colCount).merge().setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
+  ws.getRange('A1').setValue('資通系統防護基準檢核表（依據附表十修正規定）')
+    .setFontSize(14).setFontWeight('bold');
 
   ws.getRange('A2').setValue('機關單位名稱'); ws.getRange('B2').setValue(report.agencyName);
   ws.getRange('D2').setValue('檢核日期'); ws.getRange('E2').setValue(report.checkDate);
@@ -3269,11 +3269,14 @@ function populateAssessmentReportSheet_(ws, report) {
   ws.getRange('D2:D3').setFontWeight('bold');
 
   ws.getRange(5, 1, 1, headers.length).setValues([headers])
-    .setFontWeight('bold').setBackground('#4472C4').setFontColor('#FFFFFF');
+    .setFontWeight('bold').setBackground('#4472C4').setFontColor('#FFFFFF')
+    .setBorder(true, true, true, true, true, true);
   ws.setFrozenRows(5);
 
   if (rows.length > 0) {
-    ws.getRange(6, 1, rows.length, colCount).setValues(rows);
+    var dataRange = ws.getRange(6, 1, rows.length, colCount);
+    dataRange.setValues(rows);
+    dataRange.setBorder(true, true, true, true, true, true);
   }
 
   // Formatting（欄序：構面/類別/項次/等級/安全控制措施/符合性/現況說明/佐證資料/矯正作為/目標日期/備註/開發面/開發面說明/部署維運面/部署維運面說明/流程面/流程面說明）
@@ -3299,7 +3302,6 @@ function populateAssessmentReportSheet_(ws, report) {
     } else {
       ws.getRange(r, 1, 1, colCount).setBackground('#F2F2F2').setFontColor('#999999');
     }
-    ws.getRange(r, 1, 1, colCount).setBorder(true,true,true,true,true,true);
   }
 
   // Non-compliance summary at bottom

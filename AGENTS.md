@@ -67,3 +67,4 @@ For pull requests, include:
 - **2026-08-13**: 增強匯入更新寫入後端時的使用者體驗。在 `AppScript_Index.html` 的 `applyAssessmentImportPreview` 中，將送出匯入時單純的文字提示 `showToast`，升級為具有動態進度條效果的 `showProgressToast` 與 `finishProgressToast`。這樣使用者在等待後端寫入資料庫時，能有更明確的視覺回饋（顯示進度條並在完成時填滿轉為綠色成功狀態）。
 - **2026-08-13**: 修復首頁系統卡片（`.sys-card`）中標籤（`.sys-tag`）因 Flexbox 特性被異常拉伸的問題。在 `AppScript_Index.html` 內的 CSS 中，為 `.sys-tags` 容器加上 `align-items: center`，並為 `.sys-tag` 加上 `white-space: nowrap`，確保彩色外框能緊密包覆文字，維持整齊一致的膠囊形狀。
 - **2026-09-11**: 新增通行碼輸入框「顯示／隱藏通行碼」切換功能。修改 `AppScript_Code.js` 的 `createPasscodeOutput_`，在通行碼輸入框右側加入經典極簡線條眼睛（Eye / Eye-off）SVG 切換按鈕，預設維持密碼遮蔽狀態（符合防護基準第 46 項要求），點擊切換明文與遮蔽，按鈕設為 type="button" 避免誤觸表單提交，且不依賴外部 CDN 圖示庫。
+- **2026-09-16**: 修復自評匯出 Excel 開啟時出現「We found a problem with some content」錯誤。修改 `AppScript_Code.js` 內的 `populateAssessmentReportSheet_`，取消第 1 列大跨度（A1:Q1）合併儲存格以解除與 `setFrozenRows(5)` 的 OpenXML 視圖幾何衝突，標題改於 A1 儲存格獨立設定；並將資料區塊邊框改為一次性批次寫入，大幅精簡樣式表 XML 定義，解決 Excel 開啟損壞提示。
