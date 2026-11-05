@@ -3258,6 +3258,13 @@ function populateAssessmentReportSheet_(ws, report) {
   var assessment = report.assessment;
 
   var colCount = headers.length;
+  var summaryRow = 6 + rows.length + 2;
+
+  // 整個寫入區先設為純文字，避免 setValues 把使用者文字當輸入解析：
+  // 「#ERROR!」會變成 Excel 無法識別的錯誤儲存格（t="e"）導致整份檔案損毀，
+  // 「=...」會被當成公式，「1.10」「6-2」會被轉成數字／日期。
+  ws.getRange(1, 1, summaryRow, colCount).setNumberFormat('@');
+
   ws.getRange('A1').setValue('資通系統防護基準檢核表（依據附表十修正規定）')
     .setFontSize(14).setFontWeight('bold');
 
@@ -3305,7 +3312,6 @@ function populateAssessmentReportSheet_(ws, report) {
   }
 
   // Non-compliance summary at bottom
-  var summaryRow = 6 + rows.length + 2;
   ws.getRange(summaryRow, 1).setValue('不符合防護基準項目代碼：');
   ws.getRange(summaryRow, 1).setFontWeight('bold');
   ws.getRange(summaryRow, 3).setValue(report.nonComplianceCodes);
