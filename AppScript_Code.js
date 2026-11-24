@@ -2076,86 +2076,86 @@ function updateSystemLevel_(systemId, level) {
 function getControlMeasures() {
   assertPageAccess_();
   return [
-    {index:1, dimension:"存取控制", category:"帳號管理", level:"普", description:"建立帳號管理機制，包含帳號之申請、建立、修改、啟用、停用及刪除之程序。", aspect:"面向：開發面＋流程面\n開發面：實作帳號 CRUD 與啟用/停用狀態\n流程面：訂定帳號申請/核准/刪除程序"},
-    {index:2, dimension:"存取控制", category:"帳號管理", level:"普", description:"已逾期之臨時或緊急帳號應刪除或禁用。", aspect:"面向：開發面＋流程面\n開發面：到期欄位與自動禁用邏輯\n流程面：臨時帳號核發與清查作業"},
-    {index:3, dimension:"存取控制", category:"帳號管理", level:"普", description:"資通系統閒置帳號應禁用。", aspect:"面向：開發面"},
-    {index:4, dimension:"存取控制", category:"帳號管理", level:"普", description:"定期審核資通系統帳號之申請、建立、修改、啟用、停用及刪除。", aspect:"面向：開發面＋流程面\n開發面：產生帳號異動稽核日誌\n流程面：定期審核帳號異動並留記錄"},
-    {index:5, dimension:"存取控制", category:"帳號管理", level:"中", description:"機關應定義各系統之閒置時間或可使用期限與資通系統之使用情況及條件。", aspect:"面向：開發面＋流程面\n開發面：實作 session timeout 設定\n流程面：機關定義閒置時間/可使用期限政策"},
-    {index:6, dimension:"存取控制", category:"帳號管理", level:"中", description:"逾越機關所許可之閒置時間或可使用期限時，系統應自動將使用者登出。", aspect:"面向：開發面"},
-    {index:7, dimension:"存取控制", category:"帳號管理", level:"高", description:"應依機關規定之情況及條件，使用資通系統。", aspect:"面向：開發面＋流程面\n開發面：實作條件式存取控制\n流程面：訂定系統使用情況與條件規範"},
-    {index:8, dimension:"存取控制", category:"帳號管理", level:"高", description:"監控資通系統帳號，如發現帳號違常使用時，回報管理者。", aspect:"面向：開發面＋部署維運面\n開發面：實作違常偵測與告警觸發\n部署維運面：設定通報管道/監控整合"},
-    {index:9, dimension:"存取控制", category:"最小權限", level:"普", description:"採最小權限原則，僅允許使用者（或代表使用者行為之程序）依機關任務及業務功能，完成指派任務所需之授權存取。", aspect:"面向：開發面"},
-    {index:10, dimension:"存取控制", category:"遠端存取", level:"普", description:"對於每一種允許之遠端存取類型，均應先取得授權，建立使用限制、組態需求、連線需求及文件化。", aspect:"面向：開發面＋流程面\n開發面：管理端點存取限制\n流程面：遠端存取授權核准與文件化"},
-    {index:11, dimension:"存取控制", category:"遠端存取", level:"普", description:"使用者之權限檢查作業應於伺服器端完成。", aspect:"面向：開發面"},
-    {index:12, dimension:"存取控制", category:"遠端存取", level:"普", description:"應監控遠端存取機關內部網段或資通系統後臺之連線。", aspect:"面向：開發面＋部署維運面\n開發面：記錄後台存取日誌\n部署維運面：監控遠端/後台連線"},
-    {index:13, dimension:"存取控制", category:"遠端存取", level:"普", description:"應採用加密機制。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制 HTTPS/HSTS\n部署維運面：安裝設定 TLS 憑證"},
-    {index:14, dimension:"存取控制", category:"遠端存取", level:"普", description:"遠端存取之來源應為機關已預先定義及管理之存取控制點。", aspect:"面向：開發面＋部署維運面\n開發面：實作來源檢查\n部署維運面：設定 IP allowlist/跳板/閘道"},
-    {index:15, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"訂定日誌之記錄時間週期及留存政策，並保留日誌至少六個月。", aspect:"面向：部署維運面＋流程面\n部署維運面：設定日誌留存/輪替與容量\n流程面：訂定日誌留存政策（≥6 個月）"},
-    {index:16, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"確保資通系統有記錄特定事件之功能，並決定應記錄之特定資通系統事件。", aspect:"面向：開發面＋流程面\n開發面：應用程式產生事件日誌\n流程面：決定應記錄之特定事件"},
-    {index:17, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"應記錄資通系統管理者帳號所執行之各項功能。", aspect:"面向：開發面"},
-    {index:18, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"中", description:"應定期審查機關所保留資通系統產生之日誌。", aspect:"面向：開發面＋流程面\n開發面：提供日誌彙整/查詢介面\n流程面：定期審查日誌並留記錄"},
-    {index:19, dimension:"事件日誌與可歸責性", category:"日誌紀錄內容", level:"普", description:"資通系統產生之日誌應包含事件類型、發生時間、發生位置及任何與事件相關之使用者身分識別等資訊，採用單一日誌機制，確保輸出格式之一致性。", aspect:"面向：開發面"},
-    {index:20, dimension:"事件日誌與可歸責性", category:"日誌儲存容量", level:"普", description:"依據日誌儲存需求，配置所需之儲存容量。", aspect:"面向：部署維運面"},
-    {index:21, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"普", description:"資通系統於日誌處理失效時，應採取適當之行動。", aspect:"面向：開發面"},
-    {index:22, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"高", description:"機關規定需要即時通報之日誌處理失效事件發生時，資通系統應於機關規定之時效內，對特定人員提出警告。", aspect:"面向：開發面＋部署維運面\n開發面：偵測日誌處理失效並觸發警告\n部署維運面：設定即時通報管道與時效"},
-    {index:23, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"資通系統應使用系統內部時鐘產生日誌所需時戳，並可以對應到世界協調時間（UTC）或格林威治標準時間（GMT）。", aspect:"面向：開發面"},
-    {index:24, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"系統內部時鐘應定期與基準時間源進行同步。", aspect:"面向：部署維運面"},
-    {index:25, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"普", description:"對日誌之存取管理，僅限於有權限之使用者。", aspect:"面向：開發面＋部署維運面\n開發面：日誌查詢介面授權控管\n部署維運面：日誌檔案系統權限設定"},
-    {index:26, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"中", description:"應運用雜湊或其他適當方式之完整性確保機制。", aspect:"面向：開發面＋部署維運面\n開發面：日誌雜湊/簽章機制\n部署維運面：WORM/不可竄改儲存設定"},
-    {index:27, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"高", description:"定期備份日誌至原系統外之其他實體系統。", aspect:"面向：部署維運面"},
-    {index:28, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"訂定資料可容忍損失之時間要求。", aspect:"面向：流程面"},
-    {index:29, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"執行資料備份。", aspect:"面向：部署維運面"},
-    {index:30, dimension:"營運持續計畫", category:"資料備份", level:"中", description:"應定期測試備份資料，以驗證備份媒體之可靠性及資訊之完整性。", aspect:"面向：流程面＋部署維運面\n流程面：訂定備份測試頻率/政策\n部署維運面：定期執行備份測試"},
-    {index:31, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應將備份還原，作為營運持續計畫演練之一部分。", aspect:"面向：流程面＋部署維運面\n流程面：制定演練計劃\n部署維運面：執行演練與備份還原"},
-    {index:32, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應建立資料異地備份機制。", aspect:"面向：部署維運面"},
-    {index:33, dimension:"營運持續計畫", category:"系統備援", level:"普", description:"訂定資通系統從中斷後至重新恢復服務之最大可容忍中斷時間要求。", aspect:"面向：流程面"},
-    {index:34, dimension:"營運持續計畫", category:"系統備援", level:"中", description:"應定期測試原服務中斷時，於最大可容忍中斷時間內，由備援設備或其他方式取代並提供服務。", aspect:"面向：部署維運面＋流程面\n部署維運面：健康檢查/failover/多副本設定、定期執行備援測試\n流程面：留存測試記錄"},
-    {index:35, dimension:"營運持續計畫", category:"系統備援", level:"高", description:"應將備援啟動作為營運持續計畫演練之一部分。", aspect:"面向：流程面"},
-    {index:36, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"普", description:"資通系統應識別及鑑別使用者，並禁止使用者使用共用帳號。", aspect:"面向：開發面"},
-    {index:37, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"高", description:"對資通系統之存取採取多因子鑑別技術。", aspect:"面向：開發面"},
-    {index:38, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用預設密碼初次登入系統時，應於登入後立即變更。", aspect:"面向：開發面"},
-    {index:39, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"身分驗證相關資訊不以明文傳輸。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制 HTTPS、不以明文/GET 傳憑證\n部署維運面：TLS 憑證安裝設定"},
-    {index:40, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"具備帳戶鎖定機制，帳號登入進行身分驗證失敗達五次後，至少十五分鐘內不允許該帳號繼續嘗試登入或使用機關自建之失敗驗證機制。", aspect:"面向：開發面"},
-    {index:41, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用密碼進行驗證時，應強制最低密碼複雜度；依機關密碼效期規定變更密碼。", aspect:"面向：開發面"},
-    {index:42, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"密碼變更時，至少不可以與前三次使用過之密碼相同。", aspect:"面向：開發面"},
+    {index:1, dimension:"存取控制", category:"帳號管理", level:"普", description:"建立帳號管理機制，包含帳號之申請、建立、修改、啟用、停用及刪除之程序。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：實作帳號 CRUD 與啟用/停用狀態\n部署維運面：OS：建立 OS 帳號申請／異動／註銷程序，留存帳號權限清單與異動紀錄\nDB：建立 DB 帳號申請／異動／刪除程序，留存使用者與角色權限清單\n流程面：訂定帳號申請/核准/刪除程序"},
+    {index:2, dimension:"存取控制", category:"帳號管理", level:"普", description:"已逾期之臨時或緊急帳號應刪除或禁用。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：到期欄位與自動禁用邏輯\n部署維運面：OS：臨時維護帳號設定到期日（如 Linux chage -E），逾期立即停用或刪除\nDB：臨時維護帳號設定效期，或於工單結束後立即鎖定／刪除\n流程面：臨時帳號核發與清查作業"},
+    {index:3, dimension:"存取控制", category:"帳號管理", level:"普", description:"資通系統閒置帳號應禁用。", aspect:"面向：開發面＋部署維運面＋流程面\n部署維運面：OS：設定閒置帳號自動停用（如 Linux INACTIVE 天數），並定期清查鎖定\nDB：定期清查長期未登入之 DB 帳號並停用或鎖定\n流程面：定期清查閒置帳號（含 AP、OS、DB）並留存紀錄"},
+    {index:4, dimension:"存取控制", category:"帳號管理", level:"普", description:"定期審核資通系統帳號之申請、建立、修改、啟用、停用及刪除。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：產生帳號異動稽核日誌\n部署維運面：OS：定期匯出 OS 帳號與特權清冊（如 passwd、sudoers）盤點簽核\nDB：定期匯出 DB 帳號與角色權限清單盤點簽核\n流程面：定期審核帳號異動並留記錄"},
+    {index:5, dimension:"存取控制", category:"帳號管理", level:"中", description:"機關應定義各系統之閒置時間或可使用期限與資通系統之使用情況及條件。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：實作 session timeout 設定\n部署維運面：OS：定義 Shell／SSH 閒置登出時間與臨時帳號使用期限\nDB：定義資料庫連線閒置逾時與維護帳號使用期限\n流程面：機關定義閒置時間/可使用期限政策"},
+    {index:6, dimension:"存取控制", category:"帳號管理", level:"中", description:"逾越機關所許可之閒置時間或可使用期限時，系統應自動將使用者登出。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：設定 Shell 與 SSH 閒置自動登出（如 TMOUT、ClientAliveInterval）\nDB：設定閒置連線自動斷線參數（如 wait_timeout、idle_session_timeout）"},
+    {index:7, dimension:"存取控制", category:"帳號管理", level:"高", description:"應依機關規定之情況及條件，使用資通系統。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：實作條件式存取控制\n部署維運面：OS：限制 OS 僅能於核准來源網段／時段登入（如 PAM 存取規則、跳板機）\nDB：限制 DB 管理存取僅來自核准之 AP 主機或維護時段\n流程面：訂定系統使用情況與條件規範"},
+    {index:8, dimension:"存取控制", category:"帳號管理", level:"高", description:"監控資通系統帳號，如發現帳號違常使用時，回報管理者。", aspect:"面向：開發面＋部署維運面\n開發面：實作違常偵測與告警觸發\n部署維運面：設定通報管道/監控整合\nOS：偵測 OS 異常時段登入、異常提權與異地連線並自動告警\nDB：偵測 DB 特權帳號大量匯出、非預期來源連線或頻繁登入失敗並告警"},
+    {index:9, dimension:"存取控制", category:"最小權限", level:"普", description:"採最小權限原則，僅允許使用者（或代表使用者行為之程序）依機關任務及業務功能，完成指派任務所需之授權存取。", aspect:"面向：開發面＋部署維運面＋流程面\n部署維運面：OS：禁止 root 直接遠端登入，依職責設定最小 sudo 權限與檔案目錄權限\nDB：AP 連線 DB 不得使用最高權限帳號（如 root、sa、postgres），改用僅具必要權限之專用帳號\n流程面：依職務定義角色權限並定期檢視"},
+    {index:10, dimension:"存取控制", category:"遠端存取", level:"普", description:"對於每一種允許之遠端存取類型，均應先取得授權，建立使用限制、組態需求、連線需求及文件化。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：管理端點存取限制\n部署維運面：OS：文件化 SSH 遠端連線授權、來源 IP 限制與安全組態需求\nDB：規範 DB 遠端存取政策（如僅限本機或 AP 內網特定 IP 連入）\n流程面：遠端存取授權核准與文件化"},
+    {index:11, dimension:"存取控制", category:"遠端存取", level:"普", description:"使用者之權限檢查作業應於伺服器端完成。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：OS 遠端與本機存取權限由伺服器端驗證（如 PAM）\nDB：DB 連線身分與物件權限由資料庫伺服器端檢查"},
+    {index:12, dimension:"存取控制", category:"遠端存取", level:"普", description:"應監控遠端存取機關內部網段或資通系統後臺之連線。", aspect:"面向：開發面＋部署維運面\n開發面：記錄後台存取日誌\n部署維運面：監控遠端/後台連線\nOS：記錄並監控 SSH 登入成功／失敗與異常來源 IP\nDB：記錄並監控 DB 遠端連線與 DBA 管理連線（含來源 IP、帳號）"},
+    {index:13, dimension:"存取控制", category:"遠端存取", level:"普", description:"應採用加密機制。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制 HTTPS/HSTS\n部署維運面：安裝設定 TLS 憑證\nOS：遠端管理僅限 SSHv2，並停用明文管理協定\nDB：AP 連 DB 與 DBA 遠端連線啟用 TLS 加密（或限本機 Socket／加密通道）"},
+    {index:14, dimension:"存取控制", category:"遠端存取", level:"普", description:"遠端存取之來源應為機關已預先定義及管理之存取控制點。", aspect:"面向：開發面＋部署維運面\n開發面：實作來源檢查\n部署維運面：設定 IP allowlist/跳板/閘道\nOS：SSH 僅允許經指定跳板機或管理網段白名單連入\nDB：DB 埠僅允許 AP 主機或指定跳板機連入"},
+    {index:15, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"訂定日誌之記錄時間週期及留存政策，並保留日誌至少六個月。", aspect:"面向：部署維運面＋流程面\n部署維運面：設定日誌留存/輪替與容量\nOS：OS 安全／稽核日誌留存至少 6 個月\nDB：DB 連線、錯誤與稽核日誌留存至少 6 個月\n流程面：訂定日誌留存政策（≥6 個月）"},
+    {index:16, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"確保資通系統有記錄特定事件之功能，並決定應記錄之特定資通系統事件。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：應用程式產生事件日誌\n部署維運面：OS：啟用系統稽核（如 auditd、rsyslog），記錄登入登出、帳號異動與設定檔變更\nDB：記錄 DB 啟停、登入失敗、結構變更（DDL）與特權存取\n流程面：決定應記錄之特定事件"},
+    {index:17, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"普", description:"應記錄資通系統管理者帳號所執行之各項功能。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：記錄 root 登入與所有 sudo 特權指令\nDB：記錄 DBA／最高權限帳號之管理指令與 DDL 變更"},
+    {index:18, dimension:"事件日誌與可歸責性", category:"記錄事件", level:"中", description:"應定期審查機關所保留資通系統產生之日誌。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：提供日誌彙整/查詢介面\n部署維運面：OS：定期審查 OS 異常登入、提權與稽核日誌並留存紀錄\nDB：定期審查 DB 登入失敗、DBA 變更指令與異常存取日誌\n流程面：定期審查日誌並留記錄"},
+    {index:19, dimension:"事件日誌與可歸責性", category:"日誌紀錄內容", level:"普", description:"資通系統產生之日誌應包含事件類型、發生時間、發生位置及任何與事件相關之使用者身分識別等資訊，採用單一日誌機制，確保輸出格式之一致性。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：OS 日誌以標準欄位統一送至集中日誌伺服器（如 rsyslog、journald）\nDB：DB 日誌採一致時間與欄位格式（帳號、來源 IP、事件），並匯入集中日誌"},
+    {index:20, dimension:"事件日誌與可歸責性", category:"日誌儲存容量", level:"普", description:"依據日誌儲存需求，配置所需之儲存容量。", aspect:"面向：部署維運面\n部署維運面：OS：OS 本機日誌目錄配置獨立空間與輪替上限（如 logrotate）\nDB：配置 DB 日誌目錄容量與輪替清除策略，避免寫滿導致停擺"},
+    {index:21, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"普", description:"資通系統於日誌處理失效時，應採取適當之行動。", aspect:"面向：開發面＋部署維運面＋流程面\n部署維運面：OS：設定稽核日誌空間不足與寫入失敗之處置參數及告警（如 auditd space_left_action）\nDB：DB 日誌寫入失敗或磁碟將滿時發出告警\n流程面：訂定日誌處理失效之應變處置程序"},
+    {index:22, dimension:"事件日誌與可歸責性", category:"日誌處理失效之回應", level:"高", description:"機關規定需要即時通報之日誌處理失效事件發生時，資通系統應於機關規定之時效內，對特定人員提出警告。", aspect:"面向：開發面＋部署維運面\n開發面：偵測日誌處理失效並觸發警告\n部署維運面：設定即時通報管道與時效\nOS：監控稽核／日誌服務存活與磁碟空間，失效時即時告警\nDB：監控 DB 日誌寫入與收集代理連線，異常時即時告警"},
+    {index:23, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"資通系統應使用系統內部時鐘產生日誌所需時戳，並可以對應到世界協調時間（UTC）或格林威治標準時間（GMT）。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：所有主機（AP、DB、日誌）設定標準時區，並可對應 UTC\nDB：DB 時區參數與 OS 系統時鐘一致"},
+    {index:24, dimension:"事件日誌與可歸責性", category:"時戳及校時", level:"普", description:"系統內部時鐘應定期與基準時間源進行同步。", aspect:"面向：部署維運面\n部署維運面：OS：AP、DB 與日誌主機皆定期與基準 NTP 校時（如 chrony）\nDB：確認 DB 主機已校時，交易與稽核時間一致"},
+    {index:25, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"普", description:"對日誌之存取管理，僅限於有權限之使用者。", aspect:"面向：開發面＋部署維運面\n開發面：日誌查詢介面授權控管\n部署維運面：日誌檔案系統權限設定\nOS：限制本機日誌與稽核設定目錄之權限\nDB：限制 DB 日誌檔與稽核表存取，禁止一般帳號讀取或刪除"},
+    {index:26, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"中", description:"應運用雜湊或其他適當方式之完整性確保機制。", aspect:"面向：開發面＋部署維運面\n開發面：日誌雜湊/簽章機制\n部署維運面：WORM/不可竄改儲存設定\nOS：封存之 OS 日誌計算雜湊（如 SHA-256）或送至不可竄改儲存\nDB：DB 稽核日誌匯出保護與雜湊驗證，防止 DBA 自行竄改"},
+    {index:27, dimension:"事件日誌與可歸責性", category:"日誌資訊之保護", level:"高", description:"定期備份日誌至原系統外之其他實體系統。", aspect:"面向：部署維運面\n部署維運面：OS：OS 系統與安全日誌即時或定期備份至原主機外之日誌伺服器\nDB：DB 稽核、連線與錯誤日誌即時或定期備份至外部實體伺服器"},
+    {index:28, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"訂定資料可容忍損失之時間要求。", aspect:"面向：流程面\n流程面：訂定資料可容忍損失時間（RPO）\nOS：RPO 涵蓋 OS 關鍵組態與系統檔案\nDB：RPO 涵蓋資料庫交易與業務資料"},
+    {index:29, dimension:"營運持續計畫", category:"資料備份", level:"普", description:"執行資料備份。", aspect:"面向：部署維運面\n部署維運面：OS：定期備份主機快照或關鍵設定檔（如 /etc、Web/DB 組態、憑證）\nDB：定期執行資料庫完整／差異備份並留存紀錄"},
+    {index:30, dimension:"營運持續計畫", category:"資料備份", level:"中", description:"應定期測試備份資料，以驗證備份媒體之可靠性及資訊之完整性。", aspect:"面向：部署維運面＋流程面\n部署維運面：定期執行備份測試\nOS：定期驗證 OS 快照與設定檔備份可正常還原\nDB：定期將 DB 備份還原至測試環境驗證完整性，並留存紀錄\n流程面：訂定備份測試頻率/政策"},
+    {index:31, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應將備份還原，作為營運持續計畫演練之一部分。", aspect:"面向：部署維運面＋流程面\n部署維運面：執行演練與備份還原\nOS：演練納入 OS 環境重建／快照還原\nDB：演練執行 DB 備份完整還原，並驗證資料一致性\n流程面：制定演練計劃"},
+    {index:32, dimension:"營運持續計畫", category:"資料備份", level:"高", description:"應建立資料異地備份機制。", aspect:"面向：部署維運面\n部署維運面：OS：OS 系統映像與關鍵組態備份存放異地\nDB：DB 備份檔定期異地存放（並符合境內存放限制）"},
+    {index:33, dimension:"營運持續計畫", category:"系統備援", level:"普", description:"訂定資通系統從中斷後至重新恢復服務之最大可容忍中斷時間要求。", aspect:"面向：流程面\n流程面：訂定最大可容忍中斷時間（RTO）\nOS：RTO 評估納入 OS 主機重建／環境還原時間\nDB：RTO 評估納入 DB 還原與資料匯入時間"},
+    {index:34, dimension:"營運持續計畫", category:"系統備援", level:"中", description:"應定期測試原服務中斷時，於最大可容忍中斷時間內，由備援設備或其他方式取代並提供服務。", aspect:"面向：部署維運面＋流程面\n部署維運面：健康檢查/failover/多副本設定、定期執行備援測試\nOS：定期測試主機／VM 備援節點切換，並計時驗證符合 RTO\nDB：定期測試資料庫主從切換並留存紀錄\n流程面：留存測試記錄"},
+    {index:35, dimension:"營運持續計畫", category:"系統備援", level:"高", description:"應將備援啟動作為營運持續計畫演練之一部分。", aspect:"面向：部署維運面＋流程面\n部署維運面：OS：演練實際切換至備援主機／異地節點接管服務\nDB：演練實際提升備援 DB 節點，並驗證資料同步"},
+    {index:36, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"普", description:"資通系統應識別及鑑別使用者，並禁止使用者使用共用帳號。", aspect:"面向：開發面＋部署維運面＋流程面\n部署維運面：OS：維運人員一人一帳，禁止共用 root 或維運帳號\nDB：除 AP 專用連線帳號外，DBA 須使用個人具名帳號\n流程面：禁止共用帳號並定期檢視帳號歸屬"},
+    {index:37, dimension:"識別與鑑別", category:"使用者之識別與鑑別", level:"高", description:"對資通系統之存取採取多因子鑑別技術。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：遠端 OS 維運強制多因子驗證（如 FIDO2 金鑰或經 MFA 堡壘機）\nDB：DBA 存取 DB 須經具 MFA 之跳板機或目錄認證"},
+    {index:38, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用預設密碼初次登入系統時，應於登入後立即變更。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：新建帳號強制首次登入變更密碼（如 Linux chage -d 0）\nDB：新建 DB 人員帳號或初始密碼於首次登入時強制變更"},
+    {index:39, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"身分驗證相關資訊不以明文傳輸。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制 HTTPS、不以明文/GET 傳憑證\n部署維運面：TLS 憑證安裝設定\nOS：停用 Telnet、FTP、rsh 等明文服務，改用 SSH\nDB：AP 連 DB 與 DBA 遠端驗證採 TLS 或本機加密通道"},
+    {index:40, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"具備帳戶鎖定機制，帳號登入進行身分驗證失敗達五次後，至少十五分鐘內不允許該帳號繼續嘗試登入或使用機關自建之失敗驗證機制。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：登入失敗 5 次鎖定至少 15 分鐘（如 Linux pam_faillock deny=5 unlock_time=900）\nDB：啟用 DB 登入失敗鎖定；不支援時以內網白名單＋跳板機作為替代控制"},
+    {index:41, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"使用密碼進行驗證時，應強制最低密碼複雜度；依機關密碼效期規定變更密碼。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：實作密碼複雜度與效期（如 pam_pwquality、login.defs PASS_MAX_DAYS）；採金鑰登入者另行註明\nDB：啟用 DB 密碼複雜度與效期參數；不支援時改以定期人工輪換高強度密碼"},
+    {index:42, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"密碼變更時，至少不可以與前三次使用過之密碼相同。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：密碼不可與前 3 次相同（如 pam_pwhistory remember≥3）\nDB：啟用 DB 密碼歷史參數；不支援時納入定期人工輪換規範"},
     {index:43, dimension:"識別與鑑別", category:"身分驗證管理", level:"普", description:"第四點及第五點所定措施，對外部使用者，機關得自行規範辦理。", aspect:"面向：流程面\n流程面：第四點、第五點（即項次41 密碼複雜度與效期、42 密碼不可與前三次相同）對外部使用者得由機關自行規範辦理"},
-    {index:44, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"身分驗證機制應防範自動化程式之登入或密碼更換嘗試。", aspect:"面向：開發面"},
+    {index:44, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"身分驗證機制應防範自動化程式之登入或密碼更換嘗試。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：防範自動化暴力登入（如 SSH MaxAuthTries、Fail2ban、改採金鑰登入）\nDB：以內網白名單與失敗延遲／鎖定防範自動化嘗試"},
     {index:45, dimension:"識別與鑑別", category:"身分驗證管理", level:"中", description:"密碼重設機制對使用者重新身分確認後，發送一次性及具有時效性符記。", aspect:"面向：開發面"},
-    {index:46, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"普", description:"資通系統應遮蔽鑑別過程中之資訊。", aspect:"面向：開發面"},
-    {index:47, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"中", description:"資通系統如以密碼進行鑑別時，該密碼應經雜湊或其他適當方式處理後儲存。", aspect:"面向：開發面"},
-    {index:48, dimension:"系統與服務獲得", category:"系統發展生命週期需求階段", level:"普", description:"針對系統安全需求（含機密性、可用性、完整性）進行確認。", aspect:"面向：流程面＋開發面\n流程面：確認並記錄系統安全需求\n開發面：以需求/設計文件或實作佐證"},
-    {index:49, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"根據系統功能與要求，識別可能影響系統之威脅，進行風險分析及評估。", aspect:"面向：流程面"},
-    {index:50, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"將風險評估結果回饋需求階段之檢核項目，並提出安全需求修正。", aspect:"面向：流程面"},
+    {index:46, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"普", description:"資通系統應遮蔽鑑別過程中之資訊。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：終端機與 sudo 密碼輸入不回顯\nDB：DB CLI 不在命令列明文帶入密碼，改採互動輸入或權限 600 之設定檔"},
+    {index:47, dimension:"識別與鑑別", category:"鑑別資訊保護", level:"中", description:"資通系統如以密碼進行鑑別時，該密碼應經雜湊或其他適當方式處理後儲存。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：OS 密碼採強單向雜湊（如 SHA-512、yescrypt）\nDB：DB 使用者密碼採安全雜湊（如 scram-sha-256），停用 md5 或明文"},
+    {index:48, dimension:"系統與服務獲得", category:"系統發展生命週期需求階段", level:"普", description:"針對系統安全需求（含機密性、可用性、完整性）進行確認。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：以需求/設計文件或實作佐證\n部署維運面：OS：安全需求涵蓋 OS 加固、存取隔離與資源可用性\nDB：安全需求涵蓋 DB 權限隔離、傳輸／儲存保護與備份可用性\n流程面：確認並記錄系統安全需求"},
+    {index:49, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"根據系統功能與要求，識別可能影響系統之威脅，進行風險分析及評估。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：於設計文件記錄威脅分析結果\n部署維運面：OS：威脅評估納入主機弱點曝險、橫向移動與網路隔離\nDB：威脅評估納入 DB 未授權存取、提權與資料外洩"},
+    {index:50, dimension:"系統與服務獲得", category:"系統發展生命週期設計階段", level:"中", description:"將風險評估結果回饋需求階段之檢核項目，並提出安全需求修正。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：依修正後之安全需求調整設計與實作\n部署維運面：OS：回饋並增修 OS 加固標準（如 GCB、CIS）\nDB：回饋並增修 DB 加密、稽核與權限隔離需求"},
     {index:51, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"應針對安全需求實作必要控制措施。", aspect:"面向：開發面"},
     {index:52, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"應注意避免軟體常見漏洞及實作必要控制措施。", aspect:"面向：開發面"},
-    {index:53, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"發生錯誤時，使用者頁面僅顯示簡短錯誤訊息及代碼，不包含詳細之錯誤訊息。", aspect:"面向：開發面＋部署維運面\n開發面：自訂簡短錯誤頁\n部署維運面：正式環境關閉 debug"},
+    {index:53, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"普", description:"發生錯誤時，使用者頁面僅顯示簡短錯誤訊息及代碼，不包含詳細之錯誤訊息。", aspect:"面向：開發面＋部署維運面\n開發面：自訂簡短錯誤頁\n部署維運面：正式環境關閉 debug\nOS：隱藏 Web Server 版本與系統路徑錯誤頁\nDB：DB 錯誤訊息（SQL、資料表結構、連線字串）不回傳前端"},
     {index:54, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"執行「源碼掃描」安全檢測。", aspect:"面向：部署維運面＋開發面\n部署維運面：CI 整合 SAST 源碼掃描\n開發面：執行並追蹤掃描結果"},
-    {index:55, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"系統應具備發生嚴重錯誤時之通知機制。", aspect:"面向：開發面＋部署維運面\n開發面：捕捉嚴重錯誤並觸發通知\n部署維運面：整合告警/監控服務"},
-    {index:56, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"普", description:"執行「弱點掃描」安全檢測。", aspect:"面向：部署維運面＋開發面\n部署維運面：CI 整合弱點/相依掃描\n開發面：定期執行並追蹤修補"},
-    {index:57, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"高", description:"執行「滲透測試」安全檢測。", aspect:"面向：流程面"},
-    {index:58, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"於部署環境中應針對相關資通安全威脅，進行更新與修補。", aspect:"面向：開發面＋部署維運面\n開發面：定期修補與驗證\n部署維運面：相依/環境自動更新設定、協助確認"},
-    {index:59, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"識別並關閉不必要服務及埠口。", aspect:"面向：部署維運面"},
-    {index:60, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"資通系統不使用預設密碼。", aspect:"面向：開發面＋部署維運面\n開發面：不在碼中寫死預設密碼、改讀環境變數\n部署維運面：部署時設定強式憑證"},
+    {index:55, dimension:"系統與服務獲得", category:"系統發展生命週期開發階段", level:"高", description:"系統應具備發生嚴重錯誤時之通知機制。", aspect:"面向：開發面＋部署維運面\n開發面：捕捉嚴重錯誤並觸發通知\n部署維運面：整合告警/監控服務\nOS：OS 核心錯誤、磁碟滿載或關鍵服務中斷時自動通知\nDB：DB 服務中斷、連線數耗盡或複寫中斷時自動告警"},
+    {index:56, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"普", description:"執行「弱點掃描」安全檢測。", aspect:"面向：開發面＋部署維運面\n開發面：定期執行並追蹤修補\n部署維運面：CI 整合弱點/相依掃描\nOS：弱掃範圍包含 OS 主機弱點掃描，並留存修補佐證\nDB：DB 伺服器與 DB 服務埠納入主機弱點掃描"},
+    {index:57, dimension:"系統與服務獲得", category:"系統發展生命週期測試階段", level:"高", description:"執行「滲透測試」安全檢測。", aspect:"面向：部署維運面＋流程面\n部署維運面：OS：滲透測試涵蓋取得 OS 指令執行（RCE）或本地提權\nDB：滲透測試涵蓋經 SQL Injection 或橫向移動存取 DB"},
+    {index:58, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"於部署環境中應針對相關資通安全威脅，進行更新與修補。", aspect:"面向：開發面＋部署維運面\n開發面：定期修補與驗證\n部署維運面：相依/環境自動更新設定、協助確認\nOS：定期安裝 OS 安全更新並留存紀錄\nDB：定期評估並執行 DB 引擎與執行環境之安全更新"},
+    {index:59, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"識別並關閉不必要服務及埠口。", aspect:"面向：部署維運面＋流程面\n部署維運面：OS：停用非必要常駐服務，主機防火牆僅開放必要埠（如附 ss -tulnp 清冊）\nDB：關閉 DB 非必要對外埠、擴充元件與管理介面\n流程面：定期盤點開放服務與埠口並留存清冊"},
+    {index:60, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"資通系統不使用預設密碼。", aspect:"面向：開發面＋部署維運面\n開發面：不在碼中寫死預設密碼、改讀環境變數\n部署維運面：部署時設定強式憑證\nOS：確認無原廠預設密碼或空密碼帳號\nDB：DB 內建預設帳號（如 root、postgres、sa）已改為強密碼或停用"},
     {index:61, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"普", description:"執行系統源碼備份。", aspect:"面向：部署維運面"},
-    {index:62, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"中", description:"於系統發展生命週期之維運階段，應執行版本控制與變更管理。", aspect:"面向：開發面＋部署維運面\n開發面：變更管理與 PR 審查程序\n部署維運面：版本控制系統（git）"},
+    {index:62, dimension:"系統與服務獲得", category:"系統發展生命週期部署與維運階段", level:"中", description:"於系統發展生命週期之維運階段，應執行版本控制與變更管理。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：變更管理與 PR 審查程序\n部署維運面：版本控制系統（git）\nOS：OS 重要組態變更（防火牆、SSH、套件升級）納入變更申請與版控\nDB：DB 結構變更（Schema Migration）與組態異動納入變更審核\n流程面：訂定變更申請與核准程序"},
     {index:63, dimension:"系統與服務獲得", category:"系統發展生命週期委外階段", level:"普", description:"資通系統開發如委外辦理，應將系統發展生命週期各階段依等級將安全需求（含機密性、可用性、完整性）納入委外契約。", aspect:"面向：流程面"},
-    {index:64, dimension:"系統與服務獲得", category:"獲得程序", level:"普", description:"識別資通系統使用之第三方軟體、服務、函式庫或其他元件。", aspect:"面向：開發面"},
-    {index:65, dimension:"系統與服務獲得", category:"獲得程序", level:"中", description:"開發、測試及正式作業環境應為區隔。", aspect:"面向：開發面＋部署維運面\n開發面：多環境設定/環境變數切換\n部署維運面：實際分離開發/測試/正式部署"},
-    {index:66, dimension:"系統與服務獲得", category:"系統文件", level:"普", description:"應儲存與管理系統發展生命週期之相關文件。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：系統從無到有的安全設計與程式碼品質管控之文件\n部署維運面：上線後組態設定、環境防護及資料可用性之文件\n流程面：定義政策、權責並進行監督量測之文件"},
-    {index:67, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"資通系統應採用加密機制，以防止未授權之資訊揭露或偵測資訊之變更。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制全站 HTTPS/HSTS\n部署維運面：TLS 憑證與伺服器加密設定"},
-    {index:68, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"使用公開、國際機構驗證且未遭破解之演算法。", aspect:"面向：開發面"},
-    {index:69, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"加密金鑰或憑證應定期更換。", aspect:"面向：部署維運面"},
-    {index:70, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"伺服器端之金鑰保管應訂定管理規範及實施應有之安全防護措施。", aspect:"面向：開發面＋部署維運面\n開發面：碼中不寫死金鑰、改讀環境變數/KMS\n部署維運面：KMS/Secret Manager 與金鑰保管規範"},
-    {index:71, dimension:"系統與通訊保護", category:"資料儲存之安全", level:"高", description:"資通系統重要組態設定檔案及其他具保護需求之資訊應加密或以其他適當方式儲存。", aspect:"面向：開發面＋部署維運面\n開發面：敏感資料/欄位加密實作\n部署維運面：設定檔/密鑰加密儲存"},
-    {index:72, dimension:"系統與資訊完整性", category:"漏洞修復", level:"普", description:"系統之漏洞修復應測試有效性及潛在影響，並定期更新。", aspect:"面向：部署維運面＋流程面\n部署維運面：相依更新/CI 測試自動化\n流程面：定期修復並驗證有效性"},
-    {index:73, dimension:"系統與資訊完整性", category:"漏洞修復", level:"中", description:"定期確認資通系統相關漏洞修復之狀態。", aspect:"面向：部署維運面＋流程面\n部署維運面：持續弱點掃描整合\n流程面：定期確認修復狀態"},
-    {index:74, dimension:"系統與資訊完整性", category:"資通系統監控", level:"普", description:"發現資通系統有被入侵跡象時，應通報機關特定人員。", aspect:"面向：開發面＋部署維運面\n開發面：偵測入侵跡象並觸發告警\n部署維運面：設定通報對象與管道"},
-    {index:75, dimension:"系統與資訊完整性", category:"資通系統監控", level:"中", description:"監控資通系統，以偵測攻擊與未授權之連線，並識別資通系統之未授權使用。", aspect:"面向：部署維運面＋開發面\n部署維運面：IDS/WAF/異常監控部署\n開發面：存取監控/記錄"},
-    {index:76, dimension:"系統與資訊完整性", category:"資通系統監控", level:"高", description:"資通系統應採用自動化工具監控進出之通信流量，並於發現不尋常或未授權之活動時，針對該事件進行分析。", aspect:"面向：部署維運面"},
+    {index:64, dimension:"系統與服務獲得", category:"獲得程序", level:"普", description:"識別資通系統使用之第三方軟體、服務、函式庫或其他元件。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：元件清冊列出 OS 發行版、核心與 Web Server 版本\nDB：元件清冊列出 DB 軟體版本與外掛／驅動，以追蹤 CVE 與 EOL"},
+    {index:65, dimension:"系統與服務獲得", category:"獲得程序", level:"中", description:"開發、測試及正式作業環境應為區隔。", aspect:"面向：開發面＋部署維運面\n開發面：多環境設定/環境變數切換\n部署維運面：實際分離開發/測試/正式部署\nOS：各環境主機／網段實體或邏輯區隔\nDB：各環境 DB 執行個體分離，禁止測試程式連正式 DB"},
+    {index:66, dimension:"系統與服務獲得", category:"系統文件", level:"普", description:"應儲存與管理系統發展生命週期之相關文件。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：系統從無到有的安全設計與程式碼品質管控之文件\n部署維運面：上線後組態設定、環境防護及資料可用性之文件\nOS：含主機架構圖、埠口配置、加固組態與安裝維運手冊\nDB：含 DB 架構、Schema、參數組態與備份還原手冊\n流程面：定義政策、權責並進行監督量測之文件"},
+    {index:67, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"資通系統應採用加密機制，以防止未授權之資訊揭露或偵測資訊之變更。", aspect:"面向：開發面＋部署維運面\n開發面：程式強制全站 HTTPS/HSTS\n部署維運面：TLS 憑證與伺服器加密設定\nOS：SSH、SFTP、遠端日誌傳送（如 TLS Syslog）全面加密\nDB：AP 連 DB、主從複寫與 DBA 連線全面啟用 TLS"},
+    {index:68, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"使用公開、國際機構驗證且未遭破解之演算法。", aspect:"面向：開發面＋部署維運面\n部署維運面：OS：停用弱演算法（如 SHA-1、RC4、3DES），可透過 crypto-policies、sshd_config 設定\nDB：DB 與 Web Server 僅啟用 TLS 1.2／1.3 與強加密套件"},
+    {index:69, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"加密金鑰或憑證應定期更換。", aspect:"面向：部署維運面\n部署維運面：OS：定期更換伺服器 TLS 憑證、日誌傳輸憑證，並輪換 SSH 維運金鑰\nDB：定期更換 DB 連線 TLS 憑證與資料庫加密主金鑰"},
+    {index:70, dimension:"系統與通訊保護", category:"傳輸之機密性與完整性", level:"高", description:"伺服器端之金鑰保管應訂定管理規範及實施應有之安全防護措施。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：碼中不寫死金鑰、改讀環境變數/KMS\n部署維運面：KMS/Secret Manager 與金鑰保管規範\nOS：私鑰檔（如 SSH Host Key、TLS 私鑰）設定嚴格權限（600／400）\nDB：DB 加密金鑰、TLS 私鑰與資料分離保管（如 KMS、HSM）\n流程面：訂定金鑰保管管理規範"},
+    {index:71, dimension:"系統與通訊保護", category:"資料儲存之安全", level:"高", description:"資通系統重要組態設定檔案及其他具保護需求之資訊應加密或以其他適當方式儲存。", aspect:"面向：開發面＋部署維運面\n開發面：敏感資料/欄位加密實作\n部署維運面：設定檔/密鑰加密儲存\nOS：關鍵組態檔最小權限保護，必要時啟用磁碟加密（如 LUKS）\nDB：DB 設定檔權限保護、敏感欄位或透明加密（TDE），以及備份檔加密"},
+    {index:72, dimension:"系統與資訊完整性", category:"漏洞修復", level:"普", description:"系統之漏洞修復應測試有效性及潛在影響，並定期更新。", aspect:"面向：部署維運面＋流程面\n部署維運面：相依更新/CI 測試自動化\nOS：OS 更新先於測試環境驗證影響，修補後以弱掃驗證\nDB：DB 修補或升級前於測試環境驗證相容性，並留存複掃紀錄\n流程面：定期修復並驗證有效性"},
+    {index:73, dimension:"系統與資訊完整性", category:"漏洞修復", level:"中", description:"定期確認資通系統相關漏洞修復之狀態。", aspect:"面向：部署維運面＋流程面\n部署維運面：持續弱點掃描整合\nOS：定期追蹤 OS 套件已知 CVE 之修補狀態\nDB：定期檢視 DB 官方安全公告，並維護修補追蹤清冊\n流程面：定期確認修復狀態"},
+    {index:74, dimension:"系統與資訊完整性", category:"資通系統監控", level:"普", description:"發現資通系統有被入侵跡象時，應通報機關特定人員。", aspect:"面向：開發面＋部署維運面＋流程面\n開發面：偵測入侵跡象並觸發告警\n部署維運面：設定通報對象與管道\nOS：通報來源涵蓋端點防護（如 EDR、防毒）與主機異常日誌告警\nDB：通報來源涵蓋 DB 異常連線、大量存取或特權濫用告警\n流程面：訂定入侵通報對象與程序"},
+    {index:75, dimension:"系統與資訊完整性", category:"資通系統監控", level:"中", description:"監控資通系統，以偵測攻擊與未授權之連線，並識別資通系統之未授權使用。", aspect:"面向：開發面＋部署維運面\n開發面：存取監控/記錄\n部署維運面：IDS/WAF/異常監控部署\nOS：部署端點偵測（EDR）、主機防火牆日誌與異常登入告警\nDB：啟用 DB 稽核監控，偵測未授權來源或異常大量讀取"},
+    {index:76, dimension:"系統與資訊完整性", category:"資通系統監控", level:"高", description:"資通系統應採用自動化工具監控進出之通信流量，並於發現不尋常或未授權之活動時，針對該事件進行分析。", aspect:"面向：部署維運面\n部署維運面：OS：主機與網段邊界導入自動化流量監控（如 IDS／IPS），分析異常連線\nDB：監控 DB 網段與埠之異常流量（如非預期大量外傳）"},
     {index:77, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"普", description:"使用者輸入資料合法性檢查應置放於應用系統伺服器端。", aspect:"面向：開發面"},
-    {index:78, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"使用完整性驗證工具，以偵測未授權變更特定軟體及資訊。", aspect:"面向：部署維運面＋開發面\n部署維運面：部署檔案完整性監控工具\n開發面：完整性校驗實作"},
-    {index:79, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"發現違反完整性時，資通系統應實施機關指定之安全保護措施。", aspect:"面向：開發面"},
-    {index:80, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"高", description:"應定期執行軟體與資訊完整性檢查。", aspect:"面向：部署維運面\n部署維運面：完整性檢查排程/簽章驗證設定、定期執行並留記錄"}
+    {index:78, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"使用完整性驗證工具，以偵測未授權變更特定軟體及資訊。", aspect:"面向：開發面＋部署維運面\n開發面：完整性校驗實作\n部署維運面：部署檔案完整性監控工具\nOS：以完整性監控工具（如 AIDE）監控 OS 執行檔、函式庫與組態檔\nDB：DB 執行檔與關鍵設定檔納入完整性監控範圍"},
+    {index:79, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"中", description:"發現違反完整性時，資通系統應實施機關指定之安全保護措施。", aspect:"面向：開發面＋部署維運面＋流程面\n部署維運面：OS：偵測 OS 系統檔遭竄改時告警、隔離主機或還原乾淨備份\nDB：DB 設定或關鍵資料遭竄改時阻斷連線、通報並還原\n流程面：訂定完整性違反之應變處置程序"},
+    {index:80, dimension:"系統與資訊完整性", category:"軟體及資訊完整性", level:"高", description:"應定期執行軟體與資訊完整性檢查。", aspect:"面向：部署維運面＋流程面\n部署維運面：完整性檢查排程/簽章驗證設定、定期執行並留記錄\nOS：排程定期執行檔案與套件完整性檢查（如 AIDE、rpm -Va）\nDB：定期檢查 DB 執行檔、外掛與組態檔之完整性\n流程面：訂定完整性檢查週期"}
   ];
 }
 
@@ -2480,9 +2480,11 @@ function parseAspectToExpandedColumns_(aspectText) {
   var devChecked = '', devDesc = '', opsChecked = '', opsDesc = '', procChecked = '', procDesc = '';
   if (!text) return [devChecked, devDesc, opsChecked, opsDesc, procChecked, procDesc];
 
+  var ASPECT_OPTIONS = ['開發面', '部署維運面', '流程面'];
   var lines = text.split(/\r?\n/);
   var selected = [];
   var details = {};
+  var lastKey = '';
   lines.forEach(function(line) {
     var trimmed = line.replace(/^\s+|\s+$/g, '');
     if (!trimmed) return;
@@ -2495,10 +2497,14 @@ function parseAspectToExpandedColumns_(aspectText) {
       return;
     }
     var dm = trimmed.match(/^([^：:]+)[：:](.*)$/);
-    if (dm) {
-      var key = dm[1].replace(/^\s+|\s+$/g, '');
+    var key = dm ? dm[1].replace(/^\s+|\s+$/g, '') : '';
+    if (dm && ASPECT_OPTIONS.indexOf(key) !== -1) {
+      lastKey = key;
       details[key] = dm[2].replace(/^\s+|\s+$/g, '');
+      return;
     }
+    // 非面向開頭的行（如「OS：…」「DB：…」）視為上一個面向說明的續行
+    if (lastKey) details[lastKey] = details[lastKey] ? details[lastKey] + '\n' + trimmed : trimmed;
   });
 
   if (selected.indexOf('開發面') !== -1) devChecked = 'V';
@@ -2615,6 +2621,163 @@ function migrateAssessmentAspectColumns() {
   migrateAspectColumnToExpanded_(sheet, aspectCol);
   return '遷移完成：已將第 ' + aspectCol + ' 欄的面向資料展開為 6 個欄位';
 }
+
+// ===== 回填 OS/DB 考量預設面向（2026-11-24）=====
+// 2026-11-24 前 getControlMeasures() 的舊預設面向，只列有變動的 72 項。
+// 回填時用來判斷使用者是否動過該面向：說明為空白或與舊預設一字不差才視為未動過。
+function getLegacyControlAspectMap_() {
+  return {
+    1: "面向：開發面＋流程面\n開發面：實作帳號 CRUD 與啟用/停用狀態\n流程面：訂定帳號申請/核准/刪除程序",
+    2: "面向：開發面＋流程面\n開發面：到期欄位與自動禁用邏輯\n流程面：臨時帳號核發與清查作業",
+    3: "面向：開發面",
+    4: "面向：開發面＋流程面\n開發面：產生帳號異動稽核日誌\n流程面：定期審核帳號異動並留記錄",
+    5: "面向：開發面＋流程面\n開發面：實作 session timeout 設定\n流程面：機關定義閒置時間/可使用期限政策",
+    6: "面向：開發面",
+    7: "面向：開發面＋流程面\n開發面：實作條件式存取控制\n流程面：訂定系統使用情況與條件規範",
+    8: "面向：開發面＋部署維運面\n開發面：實作違常偵測與告警觸發\n部署維運面：設定通報管道/監控整合",
+    9: "面向：開發面",
+    10: "面向：開發面＋流程面\n開發面：管理端點存取限制\n流程面：遠端存取授權核准與文件化",
+    11: "面向：開發面",
+    12: "面向：開發面＋部署維運面\n開發面：記錄後台存取日誌\n部署維運面：監控遠端/後台連線",
+    13: "面向：開發面＋部署維運面\n開發面：程式強制 HTTPS/HSTS\n部署維運面：安裝設定 TLS 憑證",
+    14: "面向：開發面＋部署維運面\n開發面：實作來源檢查\n部署維運面：設定 IP allowlist/跳板/閘道",
+    15: "面向：部署維運面＋流程面\n部署維運面：設定日誌留存/輪替與容量\n流程面：訂定日誌留存政策（≥6 個月）",
+    16: "面向：開發面＋流程面\n開發面：應用程式產生事件日誌\n流程面：決定應記錄之特定事件",
+    17: "面向：開發面",
+    18: "面向：開發面＋流程面\n開發面：提供日誌彙整/查詢介面\n流程面：定期審查日誌並留記錄",
+    19: "面向：開發面",
+    20: "面向：部署維運面",
+    21: "面向：開發面",
+    22: "面向：開發面＋部署維運面\n開發面：偵測日誌處理失效並觸發警告\n部署維運面：設定即時通報管道與時效",
+    23: "面向：開發面",
+    24: "面向：部署維運面",
+    25: "面向：開發面＋部署維運面\n開發面：日誌查詢介面授權控管\n部署維運面：日誌檔案系統權限設定",
+    26: "面向：開發面＋部署維運面\n開發面：日誌雜湊/簽章機制\n部署維運面：WORM/不可竄改儲存設定",
+    27: "面向：部署維運面",
+    28: "面向：流程面",
+    29: "面向：部署維運面",
+    30: "面向：流程面＋部署維運面\n流程面：訂定備份測試頻率/政策\n部署維運面：定期執行備份測試",
+    31: "面向：流程面＋部署維運面\n流程面：制定演練計劃\n部署維運面：執行演練與備份還原",
+    32: "面向：部署維運面",
+    33: "面向：流程面",
+    34: "面向：部署維運面＋流程面\n部署維運面：健康檢查/failover/多副本設定、定期執行備援測試\n流程面：留存測試記錄",
+    35: "面向：流程面",
+    36: "面向：開發面",
+    37: "面向：開發面",
+    38: "面向：開發面",
+    39: "面向：開發面＋部署維運面\n開發面：程式強制 HTTPS、不以明文/GET 傳憑證\n部署維運面：TLS 憑證安裝設定",
+    40: "面向：開發面",
+    41: "面向：開發面",
+    42: "面向：開發面",
+    44: "面向：開發面",
+    46: "面向：開發面",
+    47: "面向：開發面",
+    48: "面向：流程面＋開發面\n流程面：確認並記錄系統安全需求\n開發面：以需求/設計文件或實作佐證",
+    49: "面向：流程面",
+    50: "面向：流程面",
+    53: "面向：開發面＋部署維運面\n開發面：自訂簡短錯誤頁\n部署維運面：正式環境關閉 debug",
+    55: "面向：開發面＋部署維運面\n開發面：捕捉嚴重錯誤並觸發通知\n部署維運面：整合告警/監控服務",
+    56: "面向：部署維運面＋開發面\n部署維運面：CI 整合弱點/相依掃描\n開發面：定期執行並追蹤修補",
+    57: "面向：流程面",
+    58: "面向：開發面＋部署維運面\n開發面：定期修補與驗證\n部署維運面：相依/環境自動更新設定、協助確認",
+    59: "面向：部署維運面",
+    60: "面向：開發面＋部署維運面\n開發面：不在碼中寫死預設密碼、改讀環境變數\n部署維運面：部署時設定強式憑證",
+    62: "面向：開發面＋部署維運面\n開發面：變更管理與 PR 審查程序\n部署維運面：版本控制系統（git）",
+    64: "面向：開發面",
+    65: "面向：開發面＋部署維運面\n開發面：多環境設定/環境變數切換\n部署維運面：實際分離開發/測試/正式部署",
+    66: "面向：開發面＋部署維運面＋流程面\n開發面：系統從無到有的安全設計與程式碼品質管控之文件\n部署維運面：上線後組態設定、環境防護及資料可用性之文件\n流程面：定義政策、權責並進行監督量測之文件",
+    67: "面向：開發面＋部署維運面\n開發面：程式強制全站 HTTPS/HSTS\n部署維運面：TLS 憑證與伺服器加密設定",
+    68: "面向：開發面",
+    69: "面向：部署維運面",
+    70: "面向：開發面＋部署維運面\n開發面：碼中不寫死金鑰、改讀環境變數/KMS\n部署維運面：KMS/Secret Manager 與金鑰保管規範",
+    71: "面向：開發面＋部署維運面\n開發面：敏感資料/欄位加密實作\n部署維運面：設定檔/密鑰加密儲存",
+    72: "面向：部署維運面＋流程面\n部署維運面：相依更新/CI 測試自動化\n流程面：定期修復並驗證有效性",
+    73: "面向：部署維運面＋流程面\n部署維運面：持續弱點掃描整合\n流程面：定期確認修復狀態",
+    74: "面向：開發面＋部署維運面\n開發面：偵測入侵跡象並觸發告警\n部署維運面：設定通報對象與管道",
+    75: "面向：部署維運面＋開發面\n部署維運面：IDS/WAF/異常監控部署\n開發面：存取監控/記錄",
+    76: "面向：部署維運面",
+    78: "面向：部署維運面＋開發面\n部署維運面：部署檔案完整性監控工具\n開發面：完整性校驗實作",
+    79: "面向：開發面",
+    80: "面向：部署維運面\n部署維運面：完整性檢查排程/簽章驗證設定、定期執行並留記錄"
+  };
+}
+
+// 試跑：只回報各系統會變動的項次，不寫入。可從 Apps Script 編輯器手動執行。
+function backfillAssessmentOsDbAspectsDryRun() {
+  return backfillAssessmentOsDbAspects_(true);
+}
+
+// 正式寫入：請先執行試跑並確認結果。可從 Apps Script 編輯器手動執行。
+function backfillAssessmentOsDbAspectsApply() {
+  return backfillAssessmentOsDbAspects_(false);
+}
+
+function backfillAssessmentOsDbAspects_(dryRun) {
+  assertRuleAdmin_();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('防護基準自評');
+  if (!sheet || sheet.getLastRow() <= 1) return '找不到「防護基準自評」工作表或無資料';
+  ensureAssessmentExpandedColumns_();
+  var headers = sheet.getRange(1, 1, 1, 20).getValues()[0];
+  if (String(headers[14]).trim() !== '開發面' || String(headers[19]).trim() !== '流程面說明') {
+    throw new Error('「防護基準自評」第 15～20 欄不是面向展開欄位，已中止回填');
+  }
+
+  var legacy = getLegacyControlAspectMap_();
+  var defaults = {};
+  getControlMeasures().forEach(function(c) {
+    if (legacy[c.index] === undefined) return;
+    defaults[String(c.index)] = {
+      oldCols: parseAspectToExpandedColumns_(legacy[c.index]),
+      newCols: parseAspectToExpandedColumns_(c.aspect)
+    };
+  });
+
+  var rowCount = sheet.getLastRow() - 1;
+  var keyData = sheet.getRange(2, 1, rowCount, 3).getDisplayValues();
+  var aspectRange = sheet.getRange(2, 15, rowCount, 6);
+  var aspectData = aspectRange.getValues();
+  var report = {};
+  var changedCells = 0;
+
+  for (var r = 0; r < rowCount; r++) {
+    var def = defaults[String(keyData[r][2] || '').trim()];
+    if (!def) continue;
+    var row = aspectData[r];
+    var rowChanged = false;
+    for (var k = 0; k < 3; k++) {
+      var oldChk = def.oldCols[k * 2] === 'V', oldDesc = def.oldCols[k * 2 + 1];
+      var newChk = def.newCols[k * 2] === 'V', newDesc = def.newCols[k * 2 + 1];
+      if (oldChk === newChk && oldDesc === newDesc) continue;
+      var curChk = String(row[k * 2]).trim() === 'V';
+      var curDesc = String(row[k * 2 + 1] || '').replace(/\r\n/g, '\n').replace(/^\s+|\s+$/g, '');
+      // 使用者改過說明，或取消了舊預設已勾選的面向：不動
+      if (curDesc !== '' && curDesc !== oldDesc) continue;
+      if (oldChk && !curChk) continue;
+      var targetChk = (newChk || curChk) ? 'V' : '';
+      if (targetChk === (curChk ? 'V' : '') && newDesc === curDesc) continue;
+      row[k * 2] = targetChk;
+      row[k * 2 + 1] = newDesc;
+      rowChanged = true;
+      changedCells++;
+    }
+    if (rowChanged) {
+      var sysKey = keyData[r][0] + ' ' + keyData[r][1];
+      (report[sysKey] = report[sysKey] || []).push(keyData[r][2]);
+    }
+  }
+
+  var lines = Object.keys(report).map(function(sysKey) {
+    return sysKey + '：項次 ' + report[sysKey].join('、') + '（共 ' + report[sysKey].length + ' 項）';
+  });
+  if (!dryRun && changedCells > 0) aspectRange.setValues(aspectData);
+  var summary = (dryRun ? '【試跑，未寫入】' : '【已寫入】') +
+    Object.keys(report).length + ' 個系統、' + changedCells + ' 個面向會更新' +
+    (lines.length ? '\n' + lines.join('\n') : '');
+  Logger.log(summary);
+  return summary;
+}
+
 
 function getAssessment(systemId) {
   assertPageAccess_();

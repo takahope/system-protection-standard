@@ -335,7 +335,7 @@
     .assess-aspect-dot.aspect-dev{background:#2563eb}
     .assess-aspect-dot.aspect-ops{background:#0f766e}
     .assess-aspect-dot.aspect-proc{background:#d97706}
-    .assess-aspect-detail-text{font-size:11px;line-height:1.6;color:#475467}
+    .assess-aspect-detail-text{font-size:11px;line-height:1.6;color:#475467;white-space:pre-line}
     .assess-aspect-detail-input{flex:1;min-width:0;border:1px solid #d1d9e6;border-radius:9px;padding:6px 9px;font-size:11px;font-family:inherit;line-height:1.5;color:#111827;background:#fff;min-height:34px;resize:vertical}
     .assess-aspect-detail-input:focus{outline:none;border-color:#7aa7e0;box-shadow:0 0 0 2px rgba(122,167,224,.18)}
     .assess-table tr.dirty .assess-aspect-detail-input{border-color:#e8b86f;background:#fffefb}
@@ -3168,6 +3168,7 @@ function parseAssessmentAspect(raw) {
   var result = { selected: [], details: {} };
   if (!text) return result;
   var lines = text.split(/\r?\n/);
+  var lastKey = '';
   lines.forEach(function(line) {
     var trimmed = line.replace(/^\s+|\s+$/g, '');
     if (!trimmed) return;
@@ -3182,12 +3183,14 @@ function parseAssessmentAspect(raw) {
       return;
     }
     var dm = trimmed.match(/^([^：:]+)[：:](.*)$/);
-    if (dm) {
-      var key = dm[1].replace(/^\s+|\s+$/g, '');
-      if (ASSESSMENT_ASPECT_OPTIONS.indexOf(key) !== -1) {
-        result.details[key] = dm[2].replace(/^\s+|\s+$/g, '');
-      }
+    var key = dm ? dm[1].replace(/^\s+|\s+$/g, '') : '';
+    if (dm && ASSESSMENT_ASPECT_OPTIONS.indexOf(key) !== -1) {
+      lastKey = key;
+      result.details[key] = dm[2].replace(/^\s+|\s+$/g, '');
+      return;
     }
+    // 非面向開頭的行（如「OS：…」「DB：…」）視為上一個面向說明的續行
+    if (lastKey) result.details[lastKey] = result.details[lastKey] ? result.details[lastKey] + '\n' + trimmed : trimmed;
   });
   return result;
 }
@@ -3245,7 +3248,7 @@ function renderAssessmentAspectInner(item, readOnly) {
       if (readOnly) {
         if (d) detailHtml += '<div class="assess-aspect-detail-ro"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><span class="assess-aspect-detail-text"><strong>' + escH(a) + '</strong>：' + escH(d) + '</span></div>';
       } else {
-        detailHtml += '<div class="assess-aspect-detail"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><textarea class="assess-aspect-detail-input" data-aspect="' + escH(a) + '" placeholder="' + escH(a) + ' 細項說明（選填）" oninput="handleAssessmentAspectDetailInput(this)" onchange="handleAssessmentAspectDetailInput(this)">' + escH(d) + '</textarea></div>';
+        detailHtml += '<div class="assess-aspect-detail"><span class="assess-aspect-dot ' + assessmentAspectClass(a) + '"></span><textarea class="assess-aspect-detail-input" rows="' + Math.max(2, d.split('\n').length) + '" data-aspect="' + escH(a) + '" placeholder="' + escH(a) + ' 細項說明（選填）" oninput="handleAssessmentAspectDetailInput(this)" onchange="handleAssessmentAspectDetailInput(this)">' + escH(d) + '</textarea></div>';
       }
     });
     if (detailHtml) html += '<div class="assess-aspect-details">' + detailHtml + '</div>';
