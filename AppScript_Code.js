@@ -1087,6 +1087,7 @@ function getDefaultRuleDefinitions_() {
     {group:'doc_generation', key:'doc_template_transl_center', label:'轉譯中心評估表範本 ID (Doc)', type:'text', value:'', description:'設定用於產出分級評估表的 Google Doc 範本 ID (轉譯中心)', enabled:true, sort:10},
     {group:'doc_generation', key:'doc_template_transl_center_sheet', label:'轉譯中心評估表範本 ID (Sheet)', type:'text', value:'', description:'設定用於產出分級評估表的 Google Sheet 範本 ID (轉譯中心)', enabled:true, sort:11},
     {group:'doc_generation', key:'inventory_sheet_template', label:'資通系統清冊範本 ID (Sheet)', type:'text', value:'', description:'資通系統清冊的 Google Sheet 範本檔案 ID', enabled:true, sort:12},
+    {group:'doc_generation', key:'assessment_checklist_template_transl_center', label:'轉譯中心自評檢核表範本 ID (Sheet)', type:'text', value:'', description:'匯出防護基準自評報告「轉譯中心」版本格式所用的範本檔案 ID，需為 Google 試算表（.xlsx 請先另存為 Google 試算表）', enabled:true, sort:13},
     {group:'doc_generation', key:'doc_output_folder', label:'文件輸出資料夾 ID', type:'text', value:'', description:'設定產出文件的目標 Google Drive 資料夾 ID', enabled:true, sort:20}
   ];
 }
@@ -3317,12 +3318,12 @@ function populateAssessmentReportSheet_(ws, report) {
   ws.getRange(summaryRow, 3).setValue(report.nonComplianceCodes);
 }
 
-function getAssessmentReportFileName_(systemName, extension) {
+function getAssessmentReportFileName_(systemName, extension, prefix) {
   var base = String(systemName || '未命名系統').replace(/[\\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim();
   if (!base) base = '未命名系統';
   if (base.length > 48) base = base.substring(0, 48);
   var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Taipei', 'yyyyMMdd_HHmm');
-  return '防護基準自評_' + base + '_' + stamp + '.' + extension;
+  return (prefix || '防護基準自評') + '_' + base + '_' + stamp + '.' + extension;
 }
 
 function escapeCsvCell_(value) {
@@ -3374,13 +3375,202 @@ function exportSpreadsheetAsXlsxBlob_(spreadsheetId, fileName) {
   return response.getBlob().setName(fileName);
 }
 
-function exportAssessmentFile(systemId, format) {
+// ===== 匯出版本格式：轉譯中心 =====
+// 依「115年轉譯中心資通系統盤點-資通系統防護基準檢核表」範本填寫：A–E 欄保留範本原文，
+// 只填表頭與 F–I 欄；80 列全部保留，不在填寫範圍的項目依範本說明填「不適用」。
+var ASSESSMENT_EXPORT_TEMPLATE_DEFAULT = 'default';
+var ASSESSMENT_EXPORT_TEMPLATE_TRANSL_CENTER = 'transl_center';
+var TRANSL_CENTER_TEMPLATE_RULE_KEY = 'assessment_checklist_template_transl_center';
+var TRANSL_CENTER_AGENCY_NAME = '臺灣人體生物資料庫';
+var TRANSL_CENTER_FILE_PREFIX = '轉譯中心資通系統防護基準檢核表';
+var TRANSL_CENTER_FORM_SHEET_NAME = '資通系統防護基準表';
+var TRANSL_CENTER_NA_TEXT = '不適用';
+// 範本資料區的欄位檢查（col 為 0-based；比對時已移除空白與換行）。範本被改動時及早報錯，避免填錯欄。
+var TRANSL_CENTER_COLUMN_HEADERS = [
+  {col: 0, header: '項次'},
+  {col: 5, header: '符合性或不適用情況說明'},
+  {col: 6, header: '符合不符合不適用'},
+  {col: 7, header: '如不符合預計規劃執行方式'},
+  {col: 8, header: '預計辦理時程'}
+];
+
+function normalizeTemplateText_(value) {
+  return String(value === null || value === undefined ? '' : value).replace(/\s+/g, '');
+}
+
+// isoDate 為 yyyy-MM-dd，回傳範本使用的民國日期，例如 115年11月06日
+function formatRocDateText_(isoDate) {
+  var parts = String(isoDate).split('-');
+  return (parseInt(parts[0], 10) - 1911) + '年' + parts[1] + '月' + parts[2] + '日';
+}
+
+// 範本格式：■普 □中 □高
+function buildSecurityLevelCheckboxText_(level) {
+  return ['普', '中', '高'].map(function(name) {
+    return (name === level ? '■' : '□') + name;
+  }).join(' ');
+}
+
+// 回傳 [F 符合性或不適用情況說明, G 符合/不符合/不適用, H 預計規劃執行方式, I 預計辦理時程]
+// applicableByLevel：{普:bool, 中:bool, 高:bool}，該系統等級下各最低要求等級的項目是否在填寫範圍
+function buildTranslCenterRowValues_(item, sysLevel, applicableByLevel, naLabel) {
+  var status = String(item.currentStatus || '').trim();
+  var evidence = String(item.evidence || '').trim();
+  var note = String(item.note || '').trim();
+  var compliance = String(item.compliance || '').trim();
+
+  // 因系統等級而不在填寫範圍：不用舊的現況說明（可能是殘留文字），由系統產生原因
+  if (applicableByLevel[item.level] === false) {
+    return ['本系統安全等級為' + sysLevel + '級，本項最低要求等級為「' + item.level + '」，無須填寫。', TRANSL_CENTER_NA_TEXT, '', ''];
+  }
+  // 範圍內但使用者自行標為不適用：F 欄放使用者填的原因
+  if (compliance === naLabel) {
+    return [status || note, TRANSL_CENTER_NA_TEXT, '', ''];
+  }
+
+  var partial = compliance === '部分符合';
+  var result = compliance;
+  if (partial || isAssessmentNonCompliant_(compliance)) result = '不符合';
+
+  var text = status;
+  if (evidence) text += (text ? '\n' : '') + '佐證：' + evidence;
+  if (partial) text = '【部分符合】' + text;
+
+  // 範本規定 H、I 只在「不符合」時填寫
+  var showPlan = result === '不符合';
+  return [text, result, showPlan ? String(item.corrective || '').trim() : '', showPlan ? String(item.targetDate || '').trim() : ''];
+}
+
+function getTranslCenterFormSheet_(ss) {
+  var sheets = ss.getSheets();
+  var form = null;
+  sheets.forEach(function(sheet) {
+    if (!form && String(sheet.getName()).trim() === TRANSL_CENTER_FORM_SHEET_NAME) form = sheet;
+  });
+  if (!form) form = sheets[0];
+  // 範本內附的「範例-…」工作表不應出現在正式報告；「設定」工作表是下拉選單來源，要保留
+  sheets.forEach(function(sheet) {
+    if (sheet.getSheetId() !== form.getSheetId() && /^範例/.test(String(sheet.getName()).trim())) ss.deleteSheet(sheet);
+  });
+  ss.setActiveSheet(form);
+  return form;
+}
+
+function populateTranslCenterSheet_(ws, report) {
+  var sys = report.system;
+  var sysLevel = sys['防護需求等級'] || '普';
+  var naLabel = getAssessmentApplicabilityConfig_().naLabel;
+  var applicableByLevel = {};
+  ['普', '中', '高'].forEach(function(level) {
+    applicableByLevel[level] = isAssessmentControlApplicable_(level, sysLevel);
+  });
+
+  var grid = ws.getRange(1, 1, ws.getLastRow(), 9).getDisplayValues();
+  var headerRow = -1;
+  for (var r = 0; r < grid.length; r++) {
+    if (normalizeTemplateText_(grid[r][0]) === '項次') { headerRow = r; break; }
+  }
+  if (headerRow < 0) throw new Error('轉譯中心範本格式不符：找不到「項次」表頭列。');
+  TRANSL_CENTER_COLUMN_HEADERS.forEach(function(spec) {
+    if (normalizeTemplateText_(grid[headerRow][spec.col]) !== spec.header) {
+      throw new Error('轉譯中心範本格式不符：第 ' + (headerRow + 1) + ' 列第 ' + (spec.col + 1) + ' 欄應為「' + spec.header + '」。');
+    }
+  });
+
+  // 表頭資料：標籤右側一格即填寫處（B12、E12、B13、E13、B14 皆為合併儲存格的左上角）
+  function findValueCell(label) {
+    for (var rr = 0; rr < headerRow; rr++) {
+      for (var cc = 0; cc < 8; cc++) {
+        if (normalizeTemplateText_(grid[rr][cc]) === label) return {row: rr + 1, col: cc + 2};
+      }
+    }
+    throw new Error('轉譯中心範本格式不符：找不到「' + label + '」欄位。');
+  }
+  var evaluator = getCurrentEvaluator();
+  var today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+  [
+    ['單位名稱', TRANSL_CENTER_AGENCY_NAME],
+    ['檢核日期', formatRocDateText_(today)],
+    ['資通系統名稱', sys['系統名稱'] || ''],
+    ['安全等級', buildSecurityLevelCheckboxText_(sysLevel)],
+    ['填表人', evaluator.name || evaluator.email || '']
+  ].forEach(function(pair) {
+    var cell = findValueCell(pair[0]);
+    // 先設純文字再寫入，避免使用者文字被解析成公式／錯誤值（參見 2026-11-05 紀錄）
+    ws.getRange(cell.row, cell.col).setNumberFormat('@').setValue(pair[1]);
+  });
+
+  // 資料區：依範本 A 欄的項次逐列對應，遇到第一個非數字列（空白列、簽章列）即結束
+  var assessmentByIndex = {};
+  report.assessment.forEach(function(item) {
+    var key = normalizeAssessmentIndexKey_(item.index);
+    if (key) assessmentByIndex[key] = item;
+  });
+  var firstDataRow = headerRow + 1;
+  var values = [];
+  for (var i = firstDataRow; i < grid.length; i++) {
+    var key = normalizeAssessmentIndexKey_(grid[i][0]);
+    if (!/^\d+$/.test(key)) break;
+    var item = assessmentByIndex[key];
+    values.push(item ? buildTranslCenterRowValues_(item, sysLevel, applicableByLevel, naLabel) : ['', '', '', '']);
+  }
+  if (!values.length) throw new Error('轉譯中心範本格式不符：找不到任何項次資料列。');
+
+  var dataRange = ws.getRange(firstDataRow + 1, 6, values.length, 4);
+  dataRange.setNumberFormat('@');
+  dataRange.setValues(values);
+  dataRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  ws.autoResizeRows(firstDataRow + 1, values.length);
+}
+
+function exportAssessmentTranslCenterXlsx_(report) {
+  var templateId = String(getRuleValue_(getRuleConfig_(), 'doc_generation', TRANSL_CENTER_TEMPLATE_RULE_KEY, '') || '').trim();
+  if (!templateId) throw new Error('請先在系統設定（文件產出設定）中設定「轉譯中心自評檢核表範本 ID (Sheet)」。');
+
+  var templateFile;
+  try {
+    templateFile = DriveApp.getFileById(templateId);
+  } catch (err) {
+    throw new Error('無法讀取轉譯中心自評檢核表範本，請確認範本 ID 與共用權限：' + err.message);
+  }
+  if (templateFile.getMimeType() !== MimeType.GOOGLE_SHEETS) {
+    throw new Error('轉譯中心自評檢核表範本必須是 Google 試算表，請將 .xlsx 範本另存為 Google 試算表後重新設定 ID。');
+  }
+
+  var xlsxName = getAssessmentReportFileName_(report.system['系統名稱'], 'xlsx', TRANSL_CENTER_FILE_PREFIX);
+  var copy = templateFile.makeCopy(xlsxName.replace(/\.xlsx$/, ''));
+  try {
+    var ss = SpreadsheetApp.openById(copy.getId());
+    populateTranslCenterSheet_(getTranslCenterFormSheet_(ss), report);
+    SpreadsheetApp.flush();
+    var xlsxBlob = exportSpreadsheetAsXlsxBlob_(copy.getId(), xlsxName);
+    return {
+      success: true,
+      fileName: xlsxName,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      base64: Utilities.base64Encode(xlsxBlob.getBytes())
+    };
+  } finally {
+    copy.setTrashed(true);
+  }
+}
+
+// template：版本格式（僅 xlsx 有效）。省略或 'default' 為原有格式；CSV 不受影響。
+function exportAssessmentFile(systemId, format, template) {
   assertPageAccess_();
   var fileFormat = String(format || '').toLowerCase();
   if (fileFormat !== 'csv' && fileFormat !== 'xlsx') return {success: false, message: '不支援的匯出格式'};
+  var templateKey = String(template || ASSESSMENT_EXPORT_TEMPLATE_DEFAULT);
+  if (templateKey !== ASSESSMENT_EXPORT_TEMPLATE_DEFAULT && templateKey !== ASSESSMENT_EXPORT_TEMPLATE_TRANSL_CENTER) {
+    return {success: false, message: '不支援的匯出版本格式'};
+  }
 
   var report = buildAssessmentReportPayload_(systemId);
   if (!report.success) return report;
+
+  if (fileFormat === 'xlsx' && templateKey === ASSESSMENT_EXPORT_TEMPLATE_TRANSL_CENTER) {
+    return exportAssessmentTranslCenterXlsx_(report);
+  }
 
   if (fileFormat === 'csv') {
     var csvName = getAssessmentReportFileName_(report.system['系統名稱'], 'csv');

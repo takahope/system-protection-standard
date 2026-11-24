@@ -541,6 +541,11 @@
     .export-meta-item{padding:11px 12px;border-radius:14px;background:#fff;border:1px solid #e2eaf4}
     .export-meta-item label{display:block;font-size:10px;color:#64748b;margin-bottom:4px;font-weight:800}
     .export-meta-item div{font-size:12px;font-weight:800;color:#0f172a;overflow-wrap:anywhere}
+    .export-template-row{display:flex;align-items:center;gap:10px;padding:16px 24px 0}
+    .export-template-row label{font-size:12px;font-weight:800;color:#334155;white-space:nowrap}
+    .export-template-row select{flex:1;min-width:0;border:1px solid #d1d9e6;border-radius:10px;padding:8px 10px;font-size:12px;background:#fff;color:#0f172a}
+    .export-template-row select:disabled{opacity:.55;cursor:not-allowed}
+    .export-template-hint{padding:6px 24px 0;font-size:11px;line-height:1.6;color:#64748b}
     .export-format-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 24px 22px}
     .export-format-card{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start;text-align:left;padding:16px;border-radius:18px;border:1px solid #d7e3f3;background:#fff;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;color:inherit;font-family:inherit}
     .export-format-card:hover{transform:translateY(-1px);border-color:#1a73e8;box-shadow:0 16px 34px rgba(23,78,166,.12);background:#f8fbff}
@@ -3769,6 +3774,10 @@ function openAssessmentExportModal() {
   html += '</div>';
   if (warning) html += '<div class="export-warning">' + escH(warning) + '</div>';
   html += '<div id="assessment-export-result" class="export-result-link"></div>';
+  html += '<div class="export-template-row"><label for="assessment-export-template">XLSX 版本格式</label>';
+  html += '<select id="assessment-export-template" ' + (disabled ? 'disabled' : '') + '>';
+  html += '<option value="default">預設格式</option><option value="transl_center">轉譯中心</option></select></div>';
+  html += '<div class="export-template-hint">僅適用於 XLSX，CSV 不受影響。「轉譯中心」依轉譯中心檢核表範本格式填寫。</div>';
   html += '<div class="export-format-grid">';
   html += '<button type="button" class="export-format-card csv" onclick="downloadAssessmentReportFile(\'csv\')" ' + (disabled ? 'disabled' : '') + '>';
   html += '<span class="export-format-icon">CSV</span><span class="export-format-copy"><strong>下載 CSV</strong><span>純資料格式，適合匯入分析工具、彙整跨系統自評狀態。</span></span></button>';
@@ -3785,6 +3794,8 @@ function setAssessmentExportButtonsDisabled(disabled) {
   document.querySelectorAll('.export-format-card').forEach(function(btn) {
     btn.disabled = !!disabled;
   });
+  var templateSelect = document.getElementById('assessment-export-template');
+  if (templateSelect) templateSelect.disabled = !!disabled;
 }
 
 function base64ToBlob(base64, mimeType) {
@@ -3822,6 +3833,9 @@ function downloadAssessmentReportFile(format) {
     showToast('請先儲存自評變更後再匯出');
     return;
   }
+  // 版本格式只套用於 XLSX；必須在下方停用下拉選單之前讀取
+  var templateSelect = document.getElementById('assessment-export-template');
+  var exportTemplate = (format === 'xlsx' && templateSelect) ? templateSelect.value : 'default';
   assessmentExportSubmitting = true;
   setAssessmentExportButtonsDisabled(true);
   showProgressToast({
@@ -3847,7 +3861,7 @@ function downloadAssessmentReportFile(format) {
     assessmentExportSubmitting = false;
     setAssessmentExportButtonsDisabled(false);
     failProgressToast('匯出失敗：' + e.message);
-  }).exportAssessmentFile(currentSystem['系統ID'], format);
+  }).exportAssessmentFile(currentSystem['系統ID'], format, exportTemplate);
 }
 
 function openAssessmentImportModal() {
