@@ -336,7 +336,7 @@
     .assess-aspect-dot.aspect-ops{background:#0f766e}
     .assess-aspect-dot.aspect-proc{background:#d97706}
     .assess-aspect-detail-text{font-size:11px;line-height:1.6;color:#475467;white-space:pre-line}
-    .assess-aspect-detail-input{flex:1;min-width:0;border:1px solid #d1d9e6;border-radius:9px;padding:6px 9px;font-size:11px;font-family:inherit;line-height:1.5;color:#111827;background:#fff;min-height:34px;resize:vertical}
+    .assess-aspect-detail-input{flex:1;min-width:0;border:1px solid #d1d9e6;border-radius:9px;padding:6px 9px;font-size:11px;font-family:inherit;line-height:1.5;color:#111827;background:#fff;min-height:34px;resize:vertical;overflow:hidden}
     .assess-aspect-detail-input:focus{outline:none;border-color:#7aa7e0;box-shadow:0 0 0 2px rgba(122,167,224,.18)}
     .assess-table tr.dirty .assess-aspect-detail-input{border-color:#e8b86f;background:#fffefb}
     .assess-aspect-detail.is-off,.assess-aspect-detail-ro.is-off{opacity:.62}
@@ -3273,7 +3273,10 @@ function handleAssessmentAspectToggle(btn) {
   if (pos === -1) parsed.selected.push(aspect); else parsed.selected.splice(pos, 1);
   currentAssessment[idx].aspect = serializeAssessmentAspect(parsed.selected, parsed.details);
   var container = btn.closest('.assess-aspect');
-  if (container) container.innerHTML = renderAssessmentAspectInner(currentAssessment[idx], false);
+  if (container) {
+    container.innerHTML = renderAssessmentAspectInner(currentAssessment[idx], false);
+    autoSizeAssessmentAspectInputs(container);
+  }
   updateAssessmentRowDirtyState(idx);
   updateAssessmentDirtyUI();
 }
@@ -3285,9 +3288,31 @@ function handleAssessmentAspectDetailInput(el) {
   var parsed = parseAssessmentAspect(currentAssessment[idx].aspect);
   parsed.details[aspect] = el.value || '';
   currentAssessment[idx].aspect = serializeAssessmentAspect(parsed.selected, parsed.details);
+  autoSizeAssessmentAspectInput(el);
   updateAssessmentRowDirtyState(idx);
   updateAssessmentDirtyUI();
 }
+
+// 面向說明框依內容自動調整高度（含長句自動換行後的實際高度）
+function autoSizeAssessmentAspectInput(el) {
+  if (!el || !el.offsetParent) return; // 隱藏中的元素量不到高度，待顯示後再調整
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+
+function autoSizeAssessmentAspectInputs(root) {
+  if (!root) return;
+  var inputs = root.querySelectorAll('.assess-aspect-detail-input');
+  for (var i = 0; i < inputs.length; i++) autoSizeAssessmentAspectInput(inputs[i]);
+}
+
+var assessmentAspectResizeTimer = null;
+window.addEventListener('resize', function () {
+  clearTimeout(assessmentAspectResizeTimer);
+  assessmentAspectResizeTimer = setTimeout(function () {
+    autoSizeAssessmentAspectInputs(document.getElementById('assess-body'));
+  }, 150);
+});
 
 function normalizeAssessmentDraftValue(value) {
   return String(value === null || value === undefined ? '' : value).replace(/\r\n/g, '\n').trim();
@@ -3532,6 +3557,7 @@ function renderAssessmentRows(items) {
     html+='</tr>';
   });
   tbody.innerHTML=html||'<tr><td colspan="7"><div class="assess-empty-note">無符合篩選條件的項目。</div></td></tr>';
+  autoSizeAssessmentAspectInputs(tbody);
   updateAssessmentDirtyUI();
 }
 
